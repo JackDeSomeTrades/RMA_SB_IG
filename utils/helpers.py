@@ -4,6 +4,11 @@ from isaacgym import gymapi
 from isaacgym import gymutil
 
 from cfg import CFGFILEPATH
+from pathlib import Path
+
+
+def get_project_root() -> Path:
+    return Path(__file__).parent.parent
 
 
 def get_config(cfg_fname):

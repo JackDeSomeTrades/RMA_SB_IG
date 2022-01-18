@@ -78,7 +78,7 @@ task_config:
     decimation: 4
 
   asset:
-    file: '{LEGGED_GYM_ROOT_DIR}/resources/robots/a1/urdf/a1.urdf'
+    file: '{ROOT_DIR}/resources/robots/a1/urdf/a1.urdf'
     name: "a1" # actor name
     foot_name: "foot" # name of the feet bodies, used to index body state and contact force tensors
     penalize_contacts_on: ["thigh", "calf"]

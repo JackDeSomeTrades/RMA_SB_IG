@@ -21,7 +21,8 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         args = get_args()  # needs to be done only to follow gymutils implements it this way. Future work: to redo this.
         sim_params = parse_sim_params(args, config)
         config = Box(config)
-        super(A1LeggedRobotTask, self).__init__(cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device, headless=args.headless, sim_params=sim_params)
+        BaseTask.__init__(self, cfg=config, sim_params=sim_params, sim_device=args.sim_device)
+        EnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device, headless=args.headless, sim_params=sim_params)
         pass
 
     def close(self):
