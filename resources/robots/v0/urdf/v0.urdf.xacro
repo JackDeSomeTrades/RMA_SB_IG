@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="v0">
+
+	<xacro:macro name="box" params="sizeX sizeY sizeZ color *origin">
+		<visual>
+			<geometry>
+				<box size="${sizeX} ${sizeY} ${sizeZ}" />
+			</geometry>
+			<material name="${color}" />
+			<xacro:insert_block name="origin" />
+		</visual>
+		<collision>
+			<geometry>
+				<box size="${sizeX} ${sizeY} ${sizeZ}" />
+			</geometry>
+			<xacro:insert_block name="origin" />
+        </collision>
+		<inertial>
+			<xacro:property name="weight" value="${sizeX * sizeY * sizeZ * 160}"/>
+			<mass value="${weight}"/>
+			<inertia
+				ixx="${1.0/12.0 * weight * (sizeZ * sizeZ + sizeY * sizeY)}"
+				iyy="${1.0/12.0 * weight * (sizeZ * sizeZ + sizeX * sizeX)}"
+				izz="${1.0/12.0 * weight * (sizeY * sizeY + sizeX * sizeX)}"
+				ixy="0.0" ixz="0.0" iyz="0.0"/>
+		</inertial>
+	</xacro:macro>
+
+	<xacro:macro name="leg" params="name reflect *origin">
+		<link name="${name}_segment_1">
+			<xacro:box sizeX="0.1" sizeY="0.1" sizeZ="0.2" color="white">
+				<origin xyz="0 0 0.1" rpy="0 0 0" />
+			</xacro:box>
+		</link>
+
+		<joint name="${name}_base_to_joint_1" type="fixed">
+			<parent link="body" />
+			<child link="${name}_segment_1" />
+			<xacro:insert_block name="origin" />
+		</joint>
+
+		<link name="${name}_segment_2_HIP">
+			<xacro:box sizeX="0.1" sizeY="0.6" sizeZ="0.1" color="yellow">
+				<origin xyz="0 ${reflect*0.25} 0" rpy="0 0 0" />
+			</xacro:box>
+		</link>
+
+		<joint name="${name}_joint_1_to_2" type="revolute">
+			<parent link="${name}_segment_1" />
+			<child link="${name}_segment_2_HIP" />
+			<origin xyz="0 0 0.25" rpy="0 0 0" />
+			<axis xyz="0.0 0.0 1.0" />
+			<limit effort="55" lower="-1.2" upper="1.2" velocity="29"/>
+		</joint>
+
+		<link name="${name}_segment_3_THIGH">
+			<xacro:box sizeX="0.1" sizeY="0.1" sizeZ="0.7" color="red">
+				<origin xyz="0 0 -0.3" rpy="0 0 0" />
+			</xacro:box>
+		</link>
+
+		<joint name="${name}_joint_2_to_3" type="revolute">
+			<parent link="${name}_segment_2_HIP" />
+			<child link="${name}_segment_3_THIGH" />
+			<origin xyz="-0.1 ${reflect*0.5} 0" rpy="0 0 0" />
+			<axis xyz="1.0 0.0 0.0" />
+			<xacro:if value="${reflect == -1}">
+				<limit effort="55" lower="-0.75" upper="0.2" velocity="29"/>
+			</xacro:if>
+			<xacro:unless value="${reflect == -1}">
+				<limit effort="55" lower="-0.2" upper="0.75" velocity="29"/>
+			</xacro:unless>
+		</joint>
+
+		<link name="${name}_segment_4_FOOT">
+			<xacro:box sizeX="0.1" sizeY="0.1" sizeZ="0.4" color="yellow">
+				<origin xyz="0 0 -0.2" rpy="0 0 0" />
+			</xacro:box>
+		</link>
+
+		<joint name="${name}_joint_3_to_4_FOOT" type="revolute">
+			<parent link="${name}_segment_3_THIGH" />
+			<child link="${name}_segment_4_FOOT" />
+			<origin xyz="0.1 0 -0.55" rpy="0 0 0" />
+			<axis xyz="1.0 0.0 0.0" />
+			<xacro:if value="${reflect == -1}">
+				<limit effort="55" lower="-0.5" upper="0.2" velocity="29"/>
+			</xacro:if>
+			<xacro:unless value="${reflect == -1}">
+				<limit effort="55" lower="-0.2" upper="0.5" velocity="29"/>
+			</xacro:unless>
+		</joint>
+	</xacro:macro>
+
+	<material name="grey">
+		<color rgba="0.5 0.5 0.5 1" />
+	</material>
+
+	<material name="white">
+		<color rgba="1 1 1 1" />
+	</material>
+
+	<material name="yellow">
+		<color rgba="0.91 0.7 0.14 1" />
+	</material>
+
+	<material name="red">
+		<color rgba="0.71 0.14 0.14 1" />
+	</material>
+
+	<link name="body">
+		<xacro:box sizeX="1.3" sizeY="0.3" sizeZ="0.1" color="grey">
+			<origin xyz="0 0 0.7" rpy="0 0 0" />
+		</xacro:box>
+	</link>
+
+
+	<xacro:leg name="l1" reflect="1">
+		<origin xyz="0.5 0.1 .75" rpy="0 0 0" />
+	</xacro:leg>
+
+	<!-- <xacro:leg name="l2" reflect="1">
+		<origin xyz="0 0.1 1.05" rpy="0 0 0" />
+	</xacro:leg> -->
+
+	<xacro:leg name="l3" reflect="1">
+		<origin xyz="-0.5 0.1 .75" rpy="0 0 0" />
+	</xacro:leg>
+
+	<xacro:leg name="r1" reflect="-1">
+		<origin xyz="0.5 -0.1 .75" rpy="0 0 0" />
+	</xacro:leg>
+
+	<!-- <xacro:leg name="r2" reflect="-1">
+		<origin xyz="0 -0.1 1.05" rpy="0 0 0" />
+	</xacro:leg> -->
+
+	<xacro:leg name="r3" reflect="-1">
+		<origin xyz="-0.5 -0.1 .75" rpy="0 0 0" />
+	</xacro:leg>
+</robot>
