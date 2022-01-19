@@ -46,7 +46,7 @@ class BaseTask(ABC):
         pass
 
     @abstractmethod
-    def reset(self, env_ids):
+    def reset(self):
         pass
 
     @abstractmethod
@@ -55,8 +55,4 @@ class BaseTask(ABC):
 
     @abstractmethod
     def get_privileged_observations(self):
-        pass
-
-    @abstractmethod
-    def render(self):
         pass
