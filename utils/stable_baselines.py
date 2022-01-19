@@ -1,5 +1,6 @@
 from envs.a1task_rma import A1LeggedRobotTask
 from stable_baselines3.common.vec_env import VecEnv
+from abc import abstractmethod
 
 
 class StableBaselinesVecEnvAdapter(VecEnv):
@@ -25,10 +26,10 @@ class StableBaselinesVecEnvAdapter(VecEnv):
     def env_is_wrapped(self, wrapper_class, indices=None):
         pass
 
-    def reset(self):
+    def close(self):
         pass
 
-    def close(self):
+    def reset(self):
         pass
 
 
