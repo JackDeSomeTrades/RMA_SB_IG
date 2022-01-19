@@ -2,6 +2,8 @@ import yaml
 import os
 from isaacgym import gymapi
 from isaacgym import gymutil
+from isaacgym.torch_utils import quat_apply, normalize
+import numpy as np
 
 from cfg import CFGFILEPATH
 from pathlib import Path
@@ -68,3 +70,19 @@ def parse_sim_params(args, cfg):
         sim_params.physx.num_threads = args.num_threads
 
     return sim_params
+
+
+# Math helpers
+
+
+def wrap_to_pi(angles):
+    angles %= 2*np.pi
+    angles -= 2*np.pi * (angles > np.pi)
+    return angles
+
+
+def quat_apply_yaw(quat, vec):
+    quat_yaw = quat.clone().view(-1, 4)
+    quat_yaw[:, :2] = 0.
+    quat_yaw = normalize(quat_yaw)
+    return quat_apply(quat_yaw, vec)
