@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from isaacgym import gymutil
-
+import gym
 import torch
 
 
-class BaseTask(ABC):
+class BaseTask(ABC, gym.Env):
     def __init__(self, cfg, sim_params, sim_device):
 
         self.cfg = cfg

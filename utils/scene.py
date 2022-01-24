@@ -4,6 +4,7 @@ from utils.terrain import Terrain
 import os
 import sys
 from utils.helpers import *
+import xml.etree.ElementTree as ET
 
 from isaacgym import gymutil
 from isaacgym.torch_utils import *
@@ -182,6 +183,8 @@ class EnvScene:
         dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
         rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(robot_asset)
 
+        self._get_asset_joint_details(asset_path)
+
         # save body names from the asset
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
@@ -234,6 +237,21 @@ class EnvScene:
         self.termination_contact_indices = torch.zeros(len(termination_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
         for i in range(len(termination_contact_names)):
             self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], termination_contact_names[i])
+
+    def _get_asset_joint_details(self, asset_path):
+        self.motor_strength = []
+        self.lower_bounds_joints = []
+        self.upper_bounds_joints = []
+
+        tree = ET.parse(asset_path)
+        robot = tree.getroot()
+        for child in robot:
+            if child.tag == "joint":
+                for joint_type in child:
+                    if joint_type.tag == "limit":
+                        self.motor_strength.append(float(joint_type.attrib['effort']))
+                        self.lower_bounds_joints.append(float(joint_type.attrib['lower']))
+                        self.upper_bounds_joints.append(float(joint_type.attrib['upper']))
 
     def _get_env_origins(self):
         """ Sets environment origins. On rough terrain the origins are defined by the terrain platforms.
@@ -316,6 +334,8 @@ class EnvScene:
         return props
 
     def _process_rigid_body_props(self, props, env_id):
+        # TODO: Fix for all  environments.
+        # TODO: New method for randomising motor strength
         # if env_id==0:
         #     sum = 0
         #     for i, p in enumerate(props):

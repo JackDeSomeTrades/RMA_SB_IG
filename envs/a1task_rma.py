@@ -5,7 +5,8 @@ import os
 from isaacgym import gymapi
 from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
-from box import Box
+import box
+import gym.spaces as gymspace
 
 # import torch
 # from torch import Tensor
@@ -20,7 +21,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         config = cfg['task_config']
         args = get_args()  # needs to be done only to follow gymutils implements it this way. Future work: to redo this.
         sim_params = parse_sim_params(args, config)
-        config = Box(config)
+        config = box.Box(config)
         BaseTask.__init__(self, cfg=config, sim_params=sim_params, sim_device=args.sim_device)
         EnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device, headless=args.headless, sim_params=sim_params)
 
@@ -41,6 +42,9 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
 
         if not self.headless:
             self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
+
+        self.observation_space = self._init_observation_space()
+        self.action_space = self._init_action_space()
 
         actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
         dof_state_tensor = self.gym.acquire_dof_state_tensor(self.sim)
@@ -107,6 +111,43 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         self._prepare_reward_function()
         self.init_done = True
 
+    def _init_observation_space(self):
+        """
+        Observation consists of :
+                        dof_pos - 12
+                        dof_vel - 12
+                        roll - 1
+                        pitch - 1
+                        feet_contact_switches - 4
+                        Mass - 1
+                        COM_x - 1
+                        COM_y - 1
+                        Motor Strength - 12
+                        Friction - 1
+                        Local terrain height - 1
+        :return: obs_space
+        """
+        # TODO: This entire thing.
+        limits_low = np.array([0]*43)
+        limits_high = np.array([]
+        )
+        obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float64)
+        return obs_space
+
+    def _init_action_space(self):
+        """
+        Upper and lower bounds of all 12 joints  of the robot extracted automatically from the URDF.
+        Extraction function and values are defined in the accompanying scene class.
+        Values can be found under <joint ...> <limit ... upper="" lower=""> </joint>
+
+        :return: act_space -> gym.space.Box
+        """
+        lb = np.array(self.lower_bounds_joints)
+        ub = np.array(self.upper_bounds_joints)
+        act_space = gymspace.Box(lb, ub, dtype=np.float64)
+
+        return act_space
+
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.
             Looks for self._reward_<REWARD_NAME>, where <REWARD_NAME> are names of all non zero reward scales in the cfg.
@@ -114,7 +155,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         # remove zero scales + multiply non-zero ones by dt
         for key in list(self.reward_scales.keys()):
             scale = self.reward_scales[key]
-            if scale==0:
+            if scale == 0:
                 self.reward_scales.pop(key)
             else:
                 self.reward_scales[key] *= self.dt
@@ -122,7 +163,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         self.reward_functions = []
         self.reward_names = []
         for name, scale in self.reward_scales.items():
-            if name=="termination":
+            if name == "termination":
                 continue
             self.reward_names.append(name)
             name = '_reward_' + name
@@ -186,9 +227,8 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
             return self.obs_buf, self.rew_buf, self.reset_buf, self.extras, self.privileged_obs_buf
-        
-        return self.obs_buf, self.rew_buf, self.reset_buf, self.extras
 
+        return self.obs_buf, self.rew_buf, self.reset_buf, self.extras
 
     def _compute_torques(self, actions):
         """ Compute torques from actions.
