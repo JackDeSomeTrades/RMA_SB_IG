@@ -208,6 +208,10 @@ class EnvScene:
         env_upper = gymapi.Vec3(0., 0., 0.)
         self.actor_handles = []
         self.envs = []
+        self.body_masses = []
+        self.body_com_x = []
+        self.body_com_y = []
+        self.torque_limits = torch.zeros(self.num_envs, self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
         for i in range(self.num_envs):
             # create env instance
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
@@ -226,6 +230,10 @@ class EnvScene:
             self.envs.append(env_handle)
             self.actor_handles.append(actor_handle)
 
+        self.body_masses = torch.cuda.FloatTensor(self.body_masses)
+        self.body_com_x = torch.cuda.FloatTensor(self.body_com_x)
+        self.body_com_y = torch.cuda.FloatTensor(self.body_com_y)
+
         self.feet_indices = torch.zeros(len(feet_names), dtype=torch.long, device=self.device, requires_grad=False)
         for i in range(len(feet_names)):
             self.feet_indices[i] = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], feet_names[i])
@@ -242,6 +250,7 @@ class EnvScene:
         self.motor_strength = []
         self.lower_bounds_joints = []
         self.upper_bounds_joints = []
+        self.upper_bound_joint_velocities = []
 
         tree = ET.parse(asset_path)
         robot = tree.getroot()
@@ -252,6 +261,7 @@ class EnvScene:
                         self.motor_strength.append(float(joint_type.attrib['effort']))
                         self.lower_bounds_joints.append(float(joint_type.attrib['lower']))
                         self.upper_bounds_joints.append(float(joint_type.attrib['upper']))
+                        self.upper_bound_joint_velocities.append(float(joint_type.attrib['velocity']))
 
     def _get_env_origins(self):
         """ Sets environment origins. On rough terrain the origins are defined by the terrain platforms.
@@ -298,7 +308,7 @@ class EnvScene:
                 friction_range = self.cfg.domain_rand.friction_range
                 num_buckets = 64
                 bucket_ids = torch.randint(0, num_buckets, (self.num_envs, 1))
-                friction_buckets = torch_rand_float(friction_range[0], friction_range[1], (num_buckets, 1), device='cpu')
+                friction_buckets = torch_rand_float(friction_range[0], friction_range[1], (num_buckets, 1), device=self.device)
                 self.friction_coeffs = friction_buckets[bucket_ids]
 
             for s in range(len(props)):
@@ -306,6 +316,7 @@ class EnvScene:
         return props
 
     def _process_dof_props(self, props, env_id):
+        # TODO: Randomise motor strength for all envs
         """ Callback allowing to store/change/randomize the DOF properties of each environment.
             Called During environment creation.
             Base behavior: stores position, velocity and torques limits defined in the URDF
@@ -320,22 +331,24 @@ class EnvScene:
         if env_id == 0:
             self.dof_pos_limits = torch.zeros(self.num_dof, 2, dtype=torch.float, device=self.device, requires_grad=False)
             self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
-            self.torque_limits = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
             for i in range(len(props)):
                 self.dof_pos_limits[i, 0] = props["lower"][i].item()
                 self.dof_pos_limits[i, 1] = props["upper"][i].item()
                 self.dof_vel_limits[i] = props["velocity"][i].item()
-                self.torque_limits[i] = props["effort"][i].item()
+                if self.cfg.domain_rand.randomize_motor_strength:
+                    self.torque_limits[i] = props["effort"][i].item() * np.random.uniform(self.cfg.domain_rand.motor_strength_range[0], self.cfg.domain_rand.motor_strength_range[1])
+                else:
+                    self.torque_limits[i] = props["effort"][i].item()
+                props["effort"][i] = self.torque_limits[i]
                 # soft limits
                 m = (self.dof_pos_limits[i, 0] + self.dof_pos_limits[i, 1]) / 2
                 r = self.dof_pos_limits[i, 1] - self.dof_pos_limits[i, 0]
                 self.dof_pos_limits[i, 0] = m - 0.5 * r * self.cfg.rewards.soft_dof_pos_limit
                 self.dof_pos_limits[i, 1] = m + 0.5 * r * self.cfg.rewards.soft_dof_pos_limit
+
         return props
 
     def _process_rigid_body_props(self, props, env_id):
-        # TODO: Fix for all  environments.
-        # TODO: New method for randomising motor strength
         # if env_id==0:
         #     sum = 0
         #     for i, p in enumerate(props):
@@ -346,6 +359,13 @@ class EnvScene:
         if self.cfg.domain_rand.randomize_base_mass:
             rng = self.cfg.domain_rand.added_mass_range
             props[0].mass += np.random.uniform(rng[0], rng[1])
+        if self.cfg.domain_rand.randomize_com:
+            rng_2 = self.cfg.domain_rand.com_distribution_range
+            props[0].com.x += np.random.uniform(rng_2[0], rng_2[1])
+            props[0].com.y += np.random.uniform(rng_2[0], rng_2[1])
+        self.body_masses.append(props[0].mass)
+        self.body_com_x.append(props[0].com.x)
+        self.body_com_y.append(props[0].com.y)
         return props
 
     def _init_height_points(self):

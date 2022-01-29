@@ -1,6 +1,7 @@
 from envs.a1task_rma import A1LeggedRobotTask
 from stable_baselines3.common.vec_env import VecEnv
 from abc import abstractmethod
+from abc import ABC
 
 
 class StableBaselinesVecEnvAdapter(VecEnv):
@@ -33,6 +34,6 @@ class StableBaselinesVecEnvAdapter(VecEnv):
         pass
 
 
-class RMAA1TaskVecEnvStableBaselineGym(StableBaselinesVecEnvAdapter, A1LeggedRobotTask):
+class RMAA1TaskVecEnvStableBaselineGym(A1LeggedRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):
         A1LeggedRobotTask.__init__(self, *args, **kwargs)
