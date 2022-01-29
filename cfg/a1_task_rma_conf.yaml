@@ -1,6 +1,8 @@
 task_config:
+  seed: 42
+
   env:
-    num_envs: 4096
+    num_envs: 20   # 4096
     num_observations: 236
     num_privileged_obs: None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 12
@@ -104,6 +106,8 @@ task_config:
     friction_range: [0.05, 4.5]
     randomize_base_mass: True
     added_mass_range: [0., 6.]
+    randomize_com: True
+    com_distribution_range: [-0.15, 0.15]
     push_robots: True
     push_interval_s: 15
     max_push_vel_xy: 1.
@@ -122,7 +126,7 @@ task_config:
         termination: -0.0
         tracking_lin_vel: 1.0
         tracking_ang_vel: 0.5
-        lin_vel_z: -2.0
+#        lin_vel_z: -2.0
         ang_vel_xy: -0.05
         dof_vel: -0.
         dof_acc: -2.5e-7
@@ -132,6 +136,9 @@ task_config:
         feet_stumble: -0.0
         action_rate: -0.01
         stand_still: -0.
+        torques: -0.0002
+        dof_pos_limits: -10.0
+        # RMA rewards #
         forward: -20.0
         lateral_movement_rotation: -21.0
         work: -0.002
@@ -141,9 +148,8 @@ task_config:
         joint_speed: -0.002
         orientation: -1.5
         z_acceleration: -2.0
-        foot_slip: -0.8
-        torques: -0.0002
-        dof_pos_limits: -10.0
+#        foot_slip: -0.8
+
 
   normalization:
     clip_observations: 100.
@@ -209,3 +215,10 @@ rl_config:
     n_epochs: 10
     clip_range: 0.2
     num_minibatch: 4
+
+arch_config:
+  encoder:
+    encoded_extrinsic_size: 8
+    action_space_size: 12
+    state_space_size: 30
+    env_size: 17
