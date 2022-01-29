@@ -1,5 +1,5 @@
 import argparse
-from utils.helpers import get_config,get_project_root
+from utils.helpers import get_config, get_project_root
 from models import rma
 from box import Box
 
@@ -18,11 +18,12 @@ if __name__ == "__main__":
 
     # begin RL here
     rl_config = Box(cfg).rl_config    # convert config dict into namespaces
-    arch = rma.Architecture(device=rl_config.device)
+    arch_config = Box(cfg).arch_config
+    arch = rma.Architecture(arch_config=arch_config, device=rl_config.device)
     policy_kwargs = arch.make_architecture()
 
     lr = eval(rl_config.ppo.lr)
-    model = PPO(arch.policy_arch, vec_env, learning_rate=lr, verbose=1,
+    model = PPO(arch.policy_class, vec_env, learning_rate=lr, verbose=1,
                 tensorboard_log=rl_config.logging.dir.format(ROOT_DIR=get_project_root()), policy_kwargs=policy_kwargs)
     model.learn(total_timesteps=rl_config.rl_timesteps, reset_num_timesteps=False)
 

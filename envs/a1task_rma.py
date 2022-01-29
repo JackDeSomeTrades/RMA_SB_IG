@@ -7,6 +7,7 @@ from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
 import box
 import gym.spaces as gymspace
+import math
 
 # import torch
 # from torch import Tensor
@@ -22,12 +23,12 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         args = get_args()  # needs to be done only to follow gymutils implements it this way. Future work: to redo this.
         sim_params = parse_sim_params(args, config)
         config = box.Box(config)
-        BaseTask.__init__(self, cfg=config, sim_params=sim_params, sim_device=args.sim_device)
-        EnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device, headless=args.headless, sim_params=sim_params)
-
         self.height_samples = None
         self.debug_viz = False
         self.init_done = False
+        BaseTask.__init__(self, cfg=config, sim_params=sim_params, sim_device=args.sim_device)
+        EnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device, headless=args.headless, sim_params=sim_params)
+        set_seed(config.seed)
 
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
@@ -127,9 +128,31 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
                         Local terrain height - 1
         :return: obs_space
         """
-        # TODO: This entire thing.
-        limits_low = np.array([0]*43)
-        limits_high = np.array([]
+        limits_low = np.array(
+            self.lower_bounds_joints +
+            [0] * 12 +    # minimum values of joint velocities
+            [-math.inf] +
+            [-math.inf] +
+            [0] * 4 +
+            [0] +
+            [-math.inf] +
+            [-math.inf] +
+            [motor_strength * self.cfg.domain_rand.motor_strength_range[0] for motor_strength in self.motor_strength] +
+            [self.cfg.domain_rand.friction_range[0]] +
+            [0]
+        )
+        limits_high = np.array(
+            self.upper_bounds_joints +
+            self.upper_bound_joint_velocities +
+            [math.inf] +
+            [math.inf] +
+            [1] * 4 +
+            [math.inf] +
+            [math.inf] +
+            [math.inf] +
+            [motor_strength * self.cfg.domain_rand.motor_strength_range[1] for motor_strength in self.motor_strength] +
+            [self.cfg.domain_rand.friction_range[1]] +
+            [math.inf]
         )
         obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float64)
         return obs_space
@@ -242,6 +265,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
             [torch.Tensor]: Torques sent to the simulation
         """
         #pd controller
+        # TODO: For multiple torque limits.
         actions_scaled = actions * self.cfg.control.action_scale
         control_type = self.cfg.control.control_type
         if control_type == "P":
@@ -327,14 +351,27 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         paper. The observation consists of two major parts - the environment variables and the state-action pair."""
         self.compute_heading_deviation()
         feet_contact_switches = self._get_foot_status()
+        local_terrain_height = self._get_local_terrain_height()  # TODO:Implementation of this method.
 
         X_t = torch.cat((self.dof_pos,
                          self.dof_vel,
-                         self.projected_gravity[:, 0],
-                         self.projected_gravity[:, 1],
-                         feet_contact_switches), dim=-1)
-
-        E_t = torch.cat((),dim=-1)   # TODO: Fix this here.
+                         self.projected_gravity[:, 0].unsqueeze(1),
+                         self.projected_gravity[:, 1].unsqueeze(1)
+                         ), dim=-1)
+        a = self.body_masses.unsqueeze(-1)
+        b = self.body_com_x.unsqueeze(-1)
+        c = self.body_com_y.unsqueeze(-1)
+        d = self.torque_limits
+        e = self.friction_coeffs.squeeze(-1)
+        f = local_terrain_height
+        E_t = torch.cat((
+            a,
+            b,
+            c,
+            d,
+            e,
+            f
+        ),dim=-1)   # TODO: Fix this here.
 
         self.obs_buf = torch.cat((X_t,
                                   self.last_actions,
@@ -386,24 +423,23 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         base_x_velocity = self.base_lin_vel[:, 0]
         MAX_FWD_VEL = 0.35
         max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
-        return torch.fmin(base_x_velocity, max_fwd_vel_tensor)
+        reward = torch.fmin(base_x_velocity, max_fwd_vel_tensor)
+        return reward
 
     def _reward_lateral_movement_rotation(self):
         # penalises lateral motion (v_y) and limiting yaw
-        lateral_velocity = self.base_lin_vel[:, 1]
-        yaw = self.base_ang_vel[:, 2]
-        reward = torch.sum(torch.square(lateral_velocity), dim=1) + torch.sum(torch.square(yaw), dim=1)
+        reward = torch.square(self.base_lin_vel[:, 1]) + torch.square(self.base_ang_vel[:, 2])
         return reward
 
     def _reward_work(self):
         diff_joint_pos = self.actions - self.last_actions
-        torque_transpose = torch.transpose(self.torques, 0, 1)
-        reward = torch.abs(torch.matmul(torque_transpose, diff_joint_pos))
+        # torque_transpose = torch.transpose(self.torques, 0, 1)
+        reward = torch.abs(torch.sum(torch.inner(self.torques, diff_joint_pos), dim=1))     # this is the L1 norm
         return reward
 
     def _reward_ground_impact(self):
-        reward = torch.sum(torch.square(self.contact_forces[:, self.feet_indices, :] -
-                                        self.last_contact_forces[:, self.feet_indices, :]), dim=1)
+        reward = torch.sum(torch.square(self.contact_forces[:, self.feet_indices, 2] -
+                                        self.last_contact_forces[:, self.feet_indices, 2]), dim=1)  # only taking into account the vertical reaction, might need to check if parallel ground reaction makes sense.
         return reward
 
     def _reward_smoothness(self):
@@ -411,19 +447,20 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         return reward
 
     def _reward_action_magnitude(self):
-        return torch.sum(torch.square(self.actions), dim=1)
+        reward = torch.sum(torch.square(self.actions), dim=1)
+        return reward
 
     def _reward_joint_speed(self):
         reward = torch.sum(torch.square(self.last_dof_vel), dim=1)
         return reward
 
     def _reward_orientation(self):
-        reward = torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
+        orientation = self.projected_gravity[:, :2]
+        reward = torch.sum(torch.square(orientation), dim=1)
         return reward
 
     def _reward_z_acceleration(self):
-        z_velocity = self.base_lin_vel[:, 2]
-        reward = torch.sum(torch.square(z_velocity), dim=1)
+        reward = torch.square(self.base_lin_vel[:, 2])
         return reward
 
     def _reward_foot_slip(self):
@@ -432,7 +469,8 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity
-        return torch.square(self.base_lin_vel[:, 2])
+        reward = torch.square(self.base_lin_vel[:, 2])
+        return reward
 
     def _reward_ang_vel_xy(self):
         # Penalize xy axes base angular velocity
@@ -481,11 +519,6 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
             (torch.abs(self.dof_vel) - self.dof_vel_limits * self.cfg.rewards.soft_dof_vel_limit).clip(min=0., max=1.),
             dim=1)
 
-    def _reward_torque_limits(self):
-        # penalize torques too close to the limit
-        return torch.sum(
-            (torch.abs(self.torques) - self.torque_limits * self.cfg.rewards.soft_torque_limit).clip(min=0.), dim=1)
-
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
         lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
@@ -522,14 +555,22 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
 
     # ---------------Reward functions end here ---------------------- #
 
-    def _get_foot_status(self):
+    def _get_foot_status(self):    # TODO: Fix this
         foot_status = torch.zeros_like(self.feet_indices)
-        for foot_index in self.feet_indices:
-            contact = self.contact_forces[:, foot_index, 2]
-            if contact > 0.:
-                foot_status[foot_index] = 1.
+        feet_forces = self.contact_forces[:, self.feet_indices, :2]
+        # for foot_index in self.feet_indices:
+        #     contact = self.contact_forces[:, foot_index, 2]
+        #     if contact > 0.:
+        #         foot_status[foot_index] = 1.
 
         return foot_status
+
+    def _get_local_terrain_height(self):
+        # TODO: This
+
+        local_terrain_height = torch.zeros([self.num_envs, 1], device=self.device)
+
+        return local_terrain_height
 
     def check_termination(self):
         """ Check if environments need to be reset. Sets up the dones for the return values of step.

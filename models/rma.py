@@ -6,9 +6,10 @@ import utils
 
 
 class EnvironmentEncoder(BaseFeaturesExtractor):
-    def __init__(self, observation_space, features_dim=40, save_dict=None, save_intermediate=False, device='cpu'):
+    def __init__(self, observation_space, arch_config, features_dim=40, save_dict=None, save_intermediate=False, device='cpu'):
         super(EnvironmentEncoder, self).__init__(observation_space, features_dim)
         self.device = device
+        self.arch_config = arch_config
         if save_intermediate:
             self.save_dict = save_dict
         else:
@@ -16,25 +17,25 @@ class EnvironmentEncoder(BaseFeaturesExtractor):
                 print("Set save_intermediate parameter to True")
                 raise NotImplementedError
 
-        self.zt = torch.empty((0, env_config.ENCODED_EXTRINSIC_SIZE), device=self.device)
+        self.zt = torch.empty((0, self.arch_config.encoder.encoded_extrinsic_size), device=self.device)
         self.environmental_factor_encoder = nn.Sequential(
-            nn.Linear(in_features=env_config.ENV_SIZE, out_features=128),
+            nn.Linear(in_features=self.arch_config.encoder.env_size, out_features=128),
             nn.ReLU(inplace=True),
             nn.Linear(in_features=128, out_features=128),
             nn.ReLU(inplace=True),
-            nn.Linear(in_features=128, out_features=env_config.ENCODED_EXTRINSIC_SIZE)
+            nn.Linear(in_features=128, out_features=self.arch_config.encoder.encoded_extrinsic_size)
         )
 
     def forward(self, observations):
-        et = observations[-env_config.ENV_SIZE:].device(self.device)
+        et = observations[-self.arch_config.encoder.env_size:].device(self.device)
         self.zt = self.environment(et)
 
         # save zt for the second phase here.
         # depending on what saving mechanism is used here ( possibly hdf5)
-        utils.update_encoding_storage(self.save_dict, self.zt)
+        # utils.update_encoding_storage(self.save_dict, self.zt)
 
         # concatenate the environmental encoding with the rest of the state variables.
-        policy_input_variable = torch.cat((observations[0:env_config.ENV_SIZE,:], self.zt), -1)
+        policy_input_variable = torch.cat((observations[0:self.arch_config.encoder.env_size,:], self.zt), -1)
 
         return policy_input_variable
 
@@ -70,12 +71,13 @@ class RMAPhase2(nn.Module):
 
 
 class Architecture():
-    def __init__(self, device='cpu', savefile=None):
+    def __init__(self, arch_config, device='cpu', savefile=None):
         self.device = device
         self.savefile = savefile
+        self.arch_config = arch_config
 
         self.features_encoder_arch = EnvironmentEncoder
-        self.features_dim_encoder = env_config.ENCODED_EXTRINSIC_SIZE + env_config.ACTIONSPACE_SIZE + env_config.STATESPACE_SIZE
+        self.features_dim_encoder = self.arch_config.encoder.encoded_extrinsic_size + self.arch_config.encoder.action_space_size + self.arch_config.encoder.state_space_size
 
         self.policy_class = "MlpPolicy"
         self.policy_arch = [dict(pi=[256, 128], vf=[256, 128])]
@@ -85,7 +87,7 @@ class Architecture():
         return dict(
             features_extractor_class=EnvironmentEncoder,
             features_extractor_kwargs=dict(features_dim=self.features_dim_encoder, save_intermediate=True,
-                                           device=self.device,save_dict=self.savefile),
+                                           device=self.device, save_dict=self.savefile, arch_config=self.arch_config),
             activation_fn=self.policy_activation_fn,
             net_arch=self.policy_arch)
 
