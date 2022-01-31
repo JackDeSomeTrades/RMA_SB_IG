@@ -162,7 +162,7 @@ task_config:
         height_measurements: 5.0
 
   noise:
-    add_noise: True
+    add_noise: False
     noise_level: 1.0 # scales other values
     noise_scales:
       dof_pos: 0.01

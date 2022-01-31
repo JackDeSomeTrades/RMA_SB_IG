@@ -27,15 +27,15 @@ class EnvironmentEncoder(BaseFeaturesExtractor):
         )
 
     def forward(self, observations):
-        et = observations[-self.arch_config.encoder.env_size:].device(self.device)
-        self.zt = self.environment(et)
+        et = observations[:, -self.arch_config.encoder.env_size:]
+        self.zt = self.environmental_factor_encoder(et)
 
         # save zt for the second phase here.
         # depending on what saving mechanism is used here ( possibly hdf5)
         # utils.update_encoding_storage(self.save_dict, self.zt)
 
         # concatenate the environmental encoding with the rest of the state variables.
-        policy_input_variable = torch.cat((observations[0:self.arch_config.encoder.env_size,:], self.zt), -1)
+        policy_input_variable = torch.cat((observations[:, :-self.arch_config.encoder.env_size], self.zt), -1)
 
         return policy_input_variable
 

@@ -212,6 +212,8 @@ class EnvScene:
         self.body_com_x = []
         self.body_com_y = []
         self.torque_limits = torch.zeros(self.num_envs, self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
+        self.dof_pos_limits = torch.zeros(self.num_dof, 2, dtype=torch.float, device=self.device, requires_grad=False)
+        self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
         for i in range(self.num_envs):
             # create env instance
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
@@ -316,7 +318,6 @@ class EnvScene:
         return props
 
     def _process_dof_props(self, props, env_id):
-        # TODO: Randomise motor strength for all envs
         """ Callback allowing to store/change/randomize the DOF properties of each environment.
             Called During environment creation.
             Base behavior: stores position, velocity and torques limits defined in the URDF
@@ -328,23 +329,23 @@ class EnvScene:
         Returns:
             [numpy.array]: Modified DOF properties
         """
-        if env_id == 0:
-            self.dof_pos_limits = torch.zeros(self.num_dof, 2, dtype=torch.float, device=self.device, requires_grad=False)
-            self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
-            for i in range(len(props)):
+        for i in range(len(props)):
+            if env_id == 0:
                 self.dof_pos_limits[i, 0] = props["lower"][i].item()
                 self.dof_pos_limits[i, 1] = props["upper"][i].item()
                 self.dof_vel_limits[i] = props["velocity"][i].item()
-                if self.cfg.domain_rand.randomize_motor_strength:
-                    self.torque_limits[i] = props["effort"][i].item() * np.random.uniform(self.cfg.domain_rand.motor_strength_range[0], self.cfg.domain_rand.motor_strength_range[1])
-                else:
-                    self.torque_limits[i] = props["effort"][i].item()
-                props["effort"][i] = self.torque_limits[i]
                 # soft limits
                 m = (self.dof_pos_limits[i, 0] + self.dof_pos_limits[i, 1]) / 2
                 r = self.dof_pos_limits[i, 1] - self.dof_pos_limits[i, 0]
                 self.dof_pos_limits[i, 0] = m - 0.5 * r * self.cfg.rewards.soft_dof_pos_limit
                 self.dof_pos_limits[i, 1] = m + 0.5 * r * self.cfg.rewards.soft_dof_pos_limit
+
+            if self.cfg.domain_rand.randomize_motor_strength:
+                self.torque_limits[env_id][i] = props["effort"][i].item() * np.random.uniform(
+                    self.cfg.domain_rand.motor_strength_range[0], self.cfg.domain_rand.motor_strength_range[1])
+            else:
+                self.torque_limits[env_id][i] = props["effort"][i].item()
+            props["effort"][i] = self.torque_limits[env_id][i]
 
         return props
 

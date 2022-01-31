@@ -2,6 +2,8 @@ from time import time
 from warnings import WarningMessage
 import numpy as np
 import os
+
+import torch
 from isaacgym import gymapi
 from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
@@ -65,7 +67,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
 
         # initialize some data used later on
         self.common_step_counter = 0
-        self.extras = {}
+        self.infos = {}
         self.noise_scale_vec = self._get_noise_scale_vec(self.cfg)
         self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx), device=self.device).repeat((self.num_envs, 1))
         self.forward_vec = to_torch([1., 0., 0.], device=self.device).repeat((self.num_envs, 1))
@@ -154,7 +156,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
             [self.cfg.domain_rand.friction_range[1]] +
             [math.inf]
         )
-        obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float64)
+        obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float32)
         return obs_space
 
     def _init_action_space(self):
@@ -167,7 +169,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         """
         lb = np.array(self.lower_bounds_joints)
         ub = np.array(self.upper_bounds_joints)
-        act_space = gymspace.Box(lb, ub, dtype=np.float64)
+        act_space = gymspace.Box(lb, ub, dtype=np.float32)
 
         return act_space
 
@@ -197,6 +199,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
                              for name in self.reward_scales.keys()}
 
     def _get_noise_scale_vec(self, cfg):
+        #TODO: Change this for the RMA observation structure.
         """ Sets a vector used to scale the noise added to the observations.
             [NOTE]: Must be adapted when changing the observations structure
 
@@ -229,7 +232,12 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
                     actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
                 """
         # but SB3 requires the step return to be in the form : obs, rews, dones, info
-        # extras is info, dones is reset_buf, rews is rew_buf,
+        # infos is info, dones is reset_buf, rews is rew_buf,
+        # Edit 2:More SB3 woes. SB3 outputs an ndarray after processing, but this requires a torch tensor. Need to
+        # perform sanity checks before processing action.
+
+        if type(actions) == np.ndarray:
+            actions = torch.tensor(actions, device=self.device)
 
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
@@ -249,9 +257,9 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
-            return self.obs_buf, self.rew_buf, self.reset_buf, self.extras, self.privileged_obs_buf
+            return self.obs_buf, self.rew_buf, self.reset_buf, self.infos, self.privileged_obs_buf
 
-        return self.obs_buf, self.rew_buf, self.reset_buf, self.extras
+        return self.obs_buf, self.rew_buf, self.reset_buf, self.infos
 
     def _compute_torques(self, actions):
         """ Compute torques from actions.
@@ -265,7 +273,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
             [torch.Tensor]: Torques sent to the simulation
         """
         #pd controller
-        # TODO: For multiple torque limits.
+        # TODO: For multiple torque limits.  Check this later. Seems done?
         actions_scaled = actions * self.cfg.control.action_scale
         control_type = self.cfg.control.control_type
         if control_type == "P":
@@ -350,27 +358,22 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         """Overrides the base class observation computation to bring it in line with observations proposed in the RMA
         paper. The observation consists of two major parts - the environment variables and the state-action pair."""
         self.compute_heading_deviation()
-        feet_contact_switches = self._get_foot_status()
+        feet_contact_switches = self._get_foot_status()   # TODO: Implement this method.
         local_terrain_height = self._get_local_terrain_height()  # TODO:Implementation of this method.
 
         X_t = torch.cat((self.dof_pos,
                          self.dof_vel,
                          self.projected_gravity[:, 0].unsqueeze(1),
-                         self.projected_gravity[:, 1].unsqueeze(1)
+                         self.projected_gravity[:, 1].unsqueeze(1),
+                         feet_contact_switches
                          ), dim=-1)
-        a = self.body_masses.unsqueeze(-1)
-        b = self.body_com_x.unsqueeze(-1)
-        c = self.body_com_y.unsqueeze(-1)
-        d = self.torque_limits
-        e = self.friction_coeffs.squeeze(-1)
-        f = local_terrain_height
         E_t = torch.cat((
-            a,
-            b,
-            c,
-            d,
-            e,
-            f
+            self.body_masses.unsqueeze(-1),
+            self.body_com_x.unsqueeze(-1),
+            self.body_com_y.unsqueeze(-1),
+            self.torque_limits,
+            self.friction_coeffs.squeeze(-1),
+            local_terrain_height
         ),dim=-1)   # TODO: Fix this here.
 
         self.obs_buf = torch.cat((X_t,
@@ -556,12 +559,14 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
     # ---------------Reward functions end here ---------------------- #
 
     def _get_foot_status(self):    # TODO: Fix this
-        foot_status = torch.zeros_like(self.feet_indices)
-        feet_forces = self.contact_forces[:, self.feet_indices, :2]
+        # foot_status = torch.zeros_like(self.feet_indices)
+        # feet_forces = self.contact_forces[:, self.feet_indices, :2]
         # for foot_index in self.feet_indices:
         #     contact = self.contact_forces[:, foot_index, 2]
         #     if contact > 0.:
         #         foot_status[foot_index] = 1.
+
+        foot_status = torch.ones(20, 4, device=self.device)
 
         return foot_status
 
@@ -612,20 +617,20 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         self.feet_air_time[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
-        # fill extras
-        self.extras["episode"] = {}
+        # fill infos
+        self.infos["episode"] = {}
         for key in self.episode_sums.keys():
-            self.extras["episode"]['rew_' + key] = torch.mean(
+            self.infos["episode"]['rew_' + key] = torch.mean(
                 self.episode_sums[key][env_ids]) / self.max_episode_length_s
             self.episode_sums[key][env_ids] = 0.
         # log additional curriculum info
         if self.cfg.terrain.curriculum:
-            self.extras["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
+            self.infos["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
         if self.cfg.commands.curriculum:
-            self.extras["episode"]["max_command_x"] = self.command_ranges["lin_vel_x"][1]
+            self.infos["episode"]["max_command_x"] = self.command_ranges["lin_vel_x"][1]
         # send timeout info to the algorithm
         if self.cfg.env.send_timeouts:
-            self.extras["time_outs"] = self.time_out_buf
+            self.infos["time_outs"] = self.time_out_buf
 
     def _reset_dofs(self, env_ids):
         """ Resets DOF position and velocities of selected environmments
@@ -668,7 +673,10 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
     def reset(self):
         """ Reset all robots"""
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
-        obs, rews, dones, infos, priv_obs = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+        obs, rews, dones, infos = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+
+        # because SB3 cannot take as input tensors - observation (torch.Tensor) needs to be converted into (np.ndarray)
+        obs = obs.detach().cpu().numpy()
 
         return obs
 

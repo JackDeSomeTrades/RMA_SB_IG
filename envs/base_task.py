@@ -39,7 +39,7 @@ class BaseTask(ABC, gym.Env):
             self.privileged_obs_buf = None
             # self.num_privileged_obs = self.num_obs
 
-        self.extras = {}
+        self.infos = {}
 
     @abstractmethod
     def step(self, actions):
