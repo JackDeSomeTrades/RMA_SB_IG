@@ -67,7 +67,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
 
         # initialize some data used later on
         self.common_step_counter = 0
-        self.infos = {}
+        self.infos = [{} for _ in range(self.num_envs)]
         self.noise_scale_vec = self._get_noise_scale_vec(self.cfg)
         self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx), device=self.device).repeat((self.num_envs, 1))
         self.forward_vec = to_torch([1., 0., 0.], device=self.device).repeat((self.num_envs, 1))
@@ -122,6 +122,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
                         roll - 1
                         pitch - 1
                         feet_contact_switches - 4
+                        previous_actions -12
                         Mass - 1
                         COM_x - 1
                         COM_y - 1
@@ -136,6 +137,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
             [-math.inf] +
             [-math.inf] +
             [0] * 4 +
+            self.lower_bounds_joints +
             [0] +
             [-math.inf] +
             [-math.inf] +
@@ -149,6 +151,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
             [math.inf] +
             [math.inf] +
             [1] * 4 +
+            self.upper_bounds_joints +
             [math.inf] +
             [math.inf] +
             [math.inf] +
@@ -235,8 +238,11 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         # infos is info, dones is reset_buf, rews is rew_buf,
         # Edit 2:More SB3 woes. SB3 outputs an ndarray after processing, but this requires a torch tensor. Need to
         # perform sanity checks before processing action.
+        flag = 0
 
         if type(actions) == np.ndarray:
+            # For SB3 compatibility
+            flag = 1
             actions = torch.tensor(actions, device=self.device)
 
         clip_actions = self.cfg.normalization.clip_actions
@@ -258,6 +264,9 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
             return self.obs_buf, self.rew_buf, self.reset_buf, self.infos, self.privileged_obs_buf
+        if flag:
+            # For SB3 compatibility
+            self.rew_buf = self.rew_buf.detach().cpu().numpy()
 
         return self.obs_buf, self.rew_buf, self.reset_buf, self.infos
 
@@ -618,19 +627,21 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
         # fill infos
-        self.infos["episode"] = {}
-        for key in self.episode_sums.keys():
-            self.infos["episode"]['rew_' + key] = torch.mean(
-                self.episode_sums[key][env_ids]) / self.max_episode_length_s
-            self.episode_sums[key][env_ids] = 0.
-        # log additional curriculum info
-        if self.cfg.terrain.curriculum:
-            self.infos["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
-        if self.cfg.commands.curriculum:
-            self.infos["episode"]["max_command_x"] = self.command_ranges["lin_vel_x"][1]
-        # send timeout info to the algorithm
-        if self.cfg.env.send_timeouts:
-            self.infos["time_outs"] = self.time_out_buf
+        # convert tensor to list -
+        env_ids_list = env_ids.tolist()
+        for env_id in env_ids_list:
+            self.infos[env_id]["episode"] = {}
+            for key in self.episode_sums.keys():
+                self.infos[env_id]["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_id]) / self.max_episode_length_s
+                self.episode_sums[key][env_id] = 0.
+            # log additional curriculum info
+            if self.cfg.terrain.curriculum:
+                self.infos[env_id]["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
+            if self.cfg.commands.curriculum:
+                self.infos[env_id]["episode"]["max_command_x"] = self.command_ranges["lin_vel_x"][1]
+            # send timeout info to the algorithm
+            if self.cfg.env.send_timeouts:
+                self.infos[env_id]["time_outs"] = self.time_out_buf
 
     def _reset_dofs(self, env_ids):
         """ Resets DOF position and velocities of selected environmments
