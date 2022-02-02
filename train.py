@@ -27,5 +27,4 @@ if __name__ == "__main__":
                 tensorboard_log=rl_config.logging.dir.format(ROOT_DIR=get_project_root()), policy_kwargs=policy_kwargs)
     model.learn(total_timesteps=rl_config.rl_timesteps, reset_num_timesteps=False)
 
-    # model = PPO('MlpPolicy', env=vec_env, verbose=1, tensorboard_log=args.logdir, **cfg['rl']['ppo'])
-    # model.learn(total_timesteps=cfg['rl']['total_timesteps'], callback=learn_cb, reset_num_timesteps=False)
+

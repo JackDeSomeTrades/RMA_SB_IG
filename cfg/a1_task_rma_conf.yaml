@@ -2,9 +2,9 @@ task_config:
   seed: 42
 
   env:
-    num_envs: 20   # 4096
-    num_observations: 236
-    num_privileged_obs: None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
+    num_envs: 100
+    num_observations: 59
+    num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 12
     env_spacing: 3.  # not used with heightfields/trimeshes
     send_timeouts: True # send time out information to the algorithm
@@ -162,7 +162,7 @@ task_config:
         height_measurements: 5.0
 
   noise:
-    add_noise: False
+    add_noise: True
     noise_level: 1.0 # scales other values
     noise_scales:
       dof_pos: 0.01
@@ -171,6 +171,7 @@ task_config:
       ang_vel: 0.2
       gravity: 0.05
       height_measurements: 0.1
+      motor_strength: 0.5
 
 # viewer camera:
   viewer:

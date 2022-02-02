@@ -19,7 +19,7 @@ from envs.base_task import BaseTask
 from utils.scene import EnvScene
 
 
-class A1LeggedRobotTask(BaseTask, EnvScene):
+class A1LeggedRobotTask(EnvScene, BaseTask):
     def __init__(self, cfg):
         config = cfg['task_config']
         args = get_args()  # needs to be done only to follow gymutils implements it this way. Future work: to redo this.
@@ -202,7 +202,6 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
                              for name in self.reward_scales.keys()}
 
     def _get_noise_scale_vec(self, cfg):
-        #TODO: Change this for the RMA observation structure.
         """ Sets a vector used to scale the noise added to the observations.
             [NOTE]: Must be adapted when changing the observations structure
 
@@ -216,16 +215,16 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         noise_level = self.cfg.noise.noise_level
-        noise_vec[:3] = noise_scales.lin_vel * noise_level * self.obs_scales.lin_vel
-        noise_vec[3:6] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
-        noise_vec[6:9] = noise_scales.gravity * noise_level
-        noise_vec[9:12] = 0. # commands
-        noise_vec[12:24] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
-        noise_vec[24:36] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
-        noise_vec[36:48] = 0. # previous actions
-        noise_vec[48:49] = 0. # heading deviation
-        if self.cfg.terrain.measure_heights:
-            noise_vec[49:236] = noise_scales.height_measurements* noise_level * self.obs_scales.height_measurements
+
+        noise_vec[:12] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
+        noise_vec[12:24] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
+        noise_vec[24:26] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
+        noise_vec[26:30] = 0.
+        noise_vec[30:42] = 0.  # Previous action.
+        noise_vec[42:45] = 0.  # Mass and COM
+        noise_vec[45:57] = noise_scales.motor_strength * noise_level
+        noise_vec[58] = noise_scales.height_measurements * noise_level * self.obs_scales.height_measurements
+
         return noise_vec
 
     def step(self, actions):
@@ -266,9 +265,15 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
             return self.obs_buf, self.rew_buf, self.reset_buf, self.infos, self.privileged_obs_buf
         if flag:
             # For SB3 compatibility
-            self.rew_buf = self.rew_buf.detach().cpu().numpy()
+            rew_buf = self.rew_buf.detach().cpu().numpy()
+            obs_buf = self.obs_buf.detach().cpu().numpy()
+            dones = self.reset_buf.detach().cpu().numpy()
+        else:
+            rew_buf = self.rew_buf
+            obs_buf = self.obs_buf
+            dones = self.reset_buf
 
-        return self.obs_buf, self.rew_buf, self.reset_buf, self.infos
+        return obs_buf, rew_buf, dones, self.infos
 
     def _compute_torques(self, actions):
         """ Compute torques from actions.
@@ -575,7 +580,7 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
         #     if contact > 0.:
         #         foot_status[foot_index] = 1.
 
-        foot_status = torch.ones(20, 4, device=self.device)
+        foot_status = torch.ones(self.cfg.env.num_envs, 4, device=self.device)
 
         return foot_status
 
@@ -618,14 +623,6 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
 
         self._resample_commands(env_ids)
 
-        # reset buffers
-        self.last_actions[env_ids] = 0.
-        self.last_torques[env_ids] = 0.  # for RMA
-        self.last_contact_forces[env_ids] = 0.
-        self.last_dof_vel[env_ids] = 0.
-        self.feet_air_time[env_ids] = 0.
-        self.episode_length_buf[env_ids] = 0
-        self.reset_buf[env_ids] = 1
         # fill infos
         # convert tensor to list -
         env_ids_list = env_ids.tolist()
@@ -633,7 +630,9 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
             self.infos[env_id]["episode"] = {}
             for key in self.episode_sums.keys():
                 self.infos[env_id]["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_id]) / self.max_episode_length_s
+                self.infos[env_id]["episode"]["r"] = self.rew_buf.clone().detach().cpu().numpy()   #TODO: Fix this.
                 self.episode_sums[key][env_id] = 0.
+            self.infos[env_id]["episode"]["l"] = self.episode_length_buf[env_id].clone().detach().cpu().numpy()
             # log additional curriculum info
             if self.cfg.terrain.curriculum:
                 self.infos[env_id]["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
@@ -642,6 +641,14 @@ class A1LeggedRobotTask(BaseTask, EnvScene):
             # send timeout info to the algorithm
             if self.cfg.env.send_timeouts:
                 self.infos[env_id]["time_outs"] = self.time_out_buf
+        # reset buffers
+        self.last_actions[env_ids] = 0.
+        self.last_torques[env_ids] = 0.  # for RMA
+        self.last_contact_forces[env_ids] = 0.
+        self.last_dof_vel[env_ids] = 0.
+        self.feet_air_time[env_ids] = 0.
+        self.episode_length_buf[env_ids] = 0
+        self.reset_buf[env_ids] = 1
 
     def _reset_dofs(self, env_ids):
         """ Resets DOF position and velocities of selected environmments
