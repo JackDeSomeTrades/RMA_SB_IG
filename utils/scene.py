@@ -304,6 +304,7 @@ class EnvScene:
         Returns:
             [List[gymapi.RigidShapeProperties]]: Modified rigid shape properties
         """
+        # TODO: For the if not case, implement friction.
         if self.cfg.domain_rand.randomize_friction:
             if env_id == 0:
                 # prepare friction randomization
@@ -315,6 +316,8 @@ class EnvScene:
 
             for s in range(len(props)):
                 props[s].friction = self.friction_coeffs[env_id]
+        else:
+            self.friction_coeffs = torch.full((self.num_envs, 1, 1), fill_value=0.1, device=self.device)   # Guesstimate.
         return props
 
     def _process_dof_props(self, props, env_id):
