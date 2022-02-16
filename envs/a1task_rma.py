@@ -84,9 +84,16 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         self.commands_scale = torch.tensor([self.obs_scales.lin_vel, self.obs_scales.lin_vel, self.obs_scales.ang_vel], device=self.device, requires_grad=False, )  # TODO change this
         self.feet_air_time = torch.zeros(self.num_envs, self.feet_indices.shape[0], dtype=torch.float, device=self.device, requires_grad=False)
         self.last_contacts = torch.zeros(self.num_envs, len(self.feet_indices), dtype=torch.bool, device=self.device, requires_grad=False)
-        self.base_lin_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
-        self.base_ang_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
-        self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+
+        self.base_lin_vel = self.root_states[:, 7:10]
+        self.base_ang_vel = self.root_states[:, 10:13]
+        self.base_rpy = get_euler_xyz(self.base_quat)   # provides (r, p, y) tuple of the base torso with each r,p,y of size num_envs
+
+
+        # self.base_lin_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
+        # self.base_ang_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
+        # self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
         self.measured_heights = 0
@@ -287,7 +294,6 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
             [torch.Tensor]: Torques sent to the simulation
         """
         #pd controller
-        # TODO: For multiple torque limits.  Check this later. Seems done?
         actions_scaled = actions * self.cfg.control.action_scale
         control_type = self.cfg.control.control_type
         if control_type == "P":
@@ -317,7 +323,8 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         # self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
         self.base_lin_vel[:] = self.root_states[:, 7:10]
         self.base_ang_vel[:] = self.root_states[:, 10:13]
-        self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        # self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        self.base_rpy = get_euler_xyz(self.base_quat)
 
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).nonzero(as_tuple=False).flatten()
         self._resample_commands(env_ids)
@@ -360,6 +367,9 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         """
         self.commands[env_ids, 0] = torch_rand_float(self.command_ranges["lin_vel_x"][0], self.command_ranges["lin_vel_x"][1], (len(env_ids), 1), device=self.device).squeeze(1)
         self.commands[env_ids, 1] = torch_rand_float(self.command_ranges["lin_vel_y"][0], self.command_ranges["lin_vel_y"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+        # if env_ids.shape[0] != 0:
+        #     print("env_ids:", env_ids)
+        #     print("commands:", self.commands[env_ids, :])
         if self.cfg.commands.heading_command:
             self.commands[env_ids, 3] = torch_rand_float(self.command_ranges["heading"][0], self.command_ranges["heading"][1], (len(env_ids), 1), device=self.device).squeeze(1)
         else:
@@ -371,14 +381,16 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
     def compute_observations(self):
         """Overrides the base class observation computation to bring it in line with observations proposed in the RMA
         paper. The observation consists of two major parts - the environment variables and the state-action pair."""
-        self.compute_heading_deviation()
-        feet_contact_switches = self._get_foot_status()   # TODO: Implement this method.
-        local_terrain_height = self._get_local_terrain_height()  # TODO:Implementation of this method.
+        # self.compute_heading_deviation()
+        feet_contact_switches = self._get_foot_status()
+        local_terrain_height = self._get_local_terrain_height()
 
         X_t = torch.cat((self.dof_pos,
                          self.dof_vel,
-                         self.projected_gravity[:, 0].unsqueeze(1),
-                         self.projected_gravity[:, 1].unsqueeze(1),
+                         self.base_rpy[0].unsqueeze(1),
+                         self.base_rpy[1].unsqueeze(1),
+                         # self.projected_gravity[:, 0].unsqueeze(1),
+                         # self.projected_gravity[:, 1].unsqueeze(1),
                          feet_contact_switches
                          ), dim=-1)
         E_t = torch.cat((
@@ -387,8 +399,8 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
             self.body_com_y.unsqueeze(-1),
             self.torque_limits,
             self.friction_coeffs.squeeze(-1),
-            local_terrain_height
-        ),dim=-1)   # TODO: Fix this here.
+            local_terrain_height.unsqueeze(-1)
+        ), dim=-1)
 
         self.obs_buf = torch.cat((X_t,
                                   self.last_actions,
@@ -436,16 +448,17 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
     # -------------- Reward functions begin below: --------------------------------#
 
     def _reward_forward(self):
-        # penalises forward motion by limiting max forward velocity (v_x)
+        # Rewards forward motion at limited values (v_x)
         base_x_velocity = self.base_lin_vel[:, 0]
         MAX_FWD_VEL = 0.35
         max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
         reward = torch.fmin(base_x_velocity, max_fwd_vel_tensor)
+        reward[reward < 0.0] = 0.0   # TODO: Check if this is right.
         return reward
 
     def _reward_lateral_movement_rotation(self):
-        # penalises lateral motion (v_y) and limiting yaw
-        reward = torch.square(self.base_lin_vel[:, 1]) + torch.square(self.base_ang_vel[:, 2])
+        # penalises lateral motion (v_y) and limiting angular velocity yaw
+        reward = torch.square(self.base_lin_vel[:, 1]) + torch.square(self.base_ang_vel[:, 2])    #TODO check with 1
         return reward
 
     def _reward_work(self):
@@ -572,7 +585,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
 
     # ---------------Reward functions end here ---------------------- #
 
-    def _get_foot_status(self):    # TODO: Fix this
+    def _get_foot_status(self):
         # foot_status = torch.zeros_like(self.feet_indices)
         # feet_forces = self.contact_forces[:, self.feet_indices, :2]
         # for foot_index in self.feet_indices:
@@ -581,13 +594,17 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         #         foot_status[foot_index] = 1.
 
         foot_status = torch.ones(self.cfg.env.num_envs, 4, device=self.device)
+        feet_forces = self.contact_forces[:, self.feet_indices, 2]
+        feet_switches = torch.where(feet_forces == 0., torch.tensor(0.0, device=self.device), foot_status)
 
-        return foot_status
+        return feet_switches
 
     def _get_local_terrain_height(self):
-        # TODO: This
-
-        local_terrain_height = torch.zeros([self.num_envs, 1], device=self.device)
+        local_terrain_height = self.measured_heights
+        # this gives the measured heights of all points below the body of the robot. Max of local terrain height is just
+        # the max of each of the heights of the envs. This is in contrast to the paper which defines terrain height as
+        # the max of the height below the robot feet.
+        local_terrain_height = torch.max(local_terrain_height, dim=-1)[0]
 
         return local_terrain_height
 
