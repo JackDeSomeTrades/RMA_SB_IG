@@ -85,14 +85,16 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         self.feet_air_time = torch.zeros(self.num_envs, self.feet_indices.shape[0], dtype=torch.float, device=self.device, requires_grad=False)
         self.last_contacts = torch.zeros(self.num_envs, len(self.feet_indices), dtype=torch.bool, device=self.device, requires_grad=False)
 
-        self.base_lin_vel = self.root_states[:, 7:10]
-        self.base_ang_vel = self.root_states[:, 10:13]
-        self.base_rpy = get_euler_xyz(self.base_quat)   # provides (r, p, y) tuple of the base torso with each r,p,y of size num_envs
-
+        # self.base_lin_vel = self.root_states[:, 7:10]
+        # self.base_ang_vel = self.root_states[:, 10:13]
+        # self.base_rpy = get_euler_xyz(self.base_quat)   # provides (r, p, y) tuple of the base torso with each r,p,y of size num_envs
 
         # self.base_lin_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
         # self.base_ang_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
-        # self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+
+        self.base_lin_vel = quat_rotate(self.base_quat, self.root_states[:, 7:10])
+        self.base_ang_vel = quat_rotate(self.base_quat, self.root_states[:, 10:13])
 
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
@@ -321,10 +323,12 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         self.base_quat[:] = self.root_states[:, 3:7]
         # self.base_lin_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
         # self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
-        self.base_lin_vel[:] = self.root_states[:, 7:10]
-        self.base_ang_vel[:] = self.root_states[:, 10:13]
-        # self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
-        self.base_rpy = get_euler_xyz(self.base_quat)
+        # self.base_lin_vel[:] = self.root_states[:, 7:10]
+        # self.base_ang_vel[:] = self.root_states[:, 10:13]
+        self.base_lin_vel[:] = quat_rotate(self.base_quat, self.root_states[:, 7:10])
+        self.base_ang_vel[:] = quat_rotate(self.base_quat, self.root_states[:, 10:13])  # TODO: Check this
+        self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        # self.base_rpy = get_euler_xyz(self.base_quat)
 
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).nonzero(as_tuple=False).flatten()
         self._resample_commands(env_ids)
@@ -387,10 +391,10 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
 
         X_t = torch.cat((self.dof_pos,
                          self.dof_vel,
-                         self.base_rpy[0].unsqueeze(1),
-                         self.base_rpy[1].unsqueeze(1),
-                         # self.projected_gravity[:, 0].unsqueeze(1),
-                         # self.projected_gravity[:, 1].unsqueeze(1),
+                         # self.base_rpy[0].unsqueeze(1),
+                         # self.base_rpy[1].unsqueeze(1),
+                         self.projected_gravity[:, 0].unsqueeze(1),
+                         self.projected_gravity[:, 1].unsqueeze(1),
                          feet_contact_switches
                          ), dim=-1)
         E_t = torch.cat((
@@ -450,9 +454,11 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
     def _reward_forward(self):
         # Rewards forward motion at limited values (v_x)
         base_x_velocity = self.base_lin_vel[:, 0]
-        MAX_FWD_VEL = 0.35
+        MAX_FWD_VEL = 1.0
         max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
         reward = torch.fmin(base_x_velocity, max_fwd_vel_tensor)
+        # print(" forward x vel", base_x_velocity)
+        # print(" forward reward", reward)
         reward[reward < 0.0] = 0.0   # TODO: Check if this is right.
         return reward
 
