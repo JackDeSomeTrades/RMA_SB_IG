@@ -10,6 +10,39 @@ import torch
 from cfg import CFGFILEPATH
 from pathlib import Path
 
+torch.set_printoptions(profile="full")
+
+
+def exists(namespace):
+    try:
+        if namespace:
+            return True
+    except Exception:
+        return False
+
+
+def get_run_name(cfg):
+    try:
+        run_name = cfg.logging.run_name
+    except AttributeError:
+        idx_ = []
+        alg_type = []
+        log_dir = cfg.logging.dir.format(ROOT_DIR=get_project_root())
+        folders = os.listdir(log_dir)
+        for folder in folders:
+            if folder[0] != '.':
+                idx_.append(int(folder.split('_')[1]))
+                alg_type.append(folder.split('_')[0])
+        max_id = max(idx_)
+        conf_keys = list(cfg.keys())
+        alg_type = [algs.lower() for algs in alg_type]
+        alg_list = [conf_key for conf_key in conf_keys if conf_key.lower() in alg_type]
+        # alg_lst = [value for value in alg_type if value in conf_keys]  # should generally return a list of 1 element.
+
+        run_name = alg_list[0].upper()+'_'+str((max_id+1))
+
+    return run_name
+
 
 def set_seed(seed):
     if seed == -1:
@@ -77,7 +110,8 @@ def parse_sim_params(args, cfg):
 
     # if sim options are provided in cfg, parse them and update/override above:
     if "sim" in cfg:
-        cfg["sim"]["physx"].update({"max_gpu_contact_pairs": int(eval(cfg["sim"]["physx"]["max_gpu_contact_pairs"]))})
+        if type(cfg["sim"]["physx"]["max_gpu_contact_pairs"]) == str:
+            cfg["sim"]["physx"].update({"max_gpu_contact_pairs": int(eval(cfg["sim"]["physx"]["max_gpu_contact_pairs"]))})
         gymutil.parse_sim_config(cfg["sim"], sim_params)
 
     # Override num_threads if passed on the command line
