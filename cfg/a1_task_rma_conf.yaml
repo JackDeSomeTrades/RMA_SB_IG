@@ -43,9 +43,9 @@ task_config:
     resampling_time: 10. # time before command are changed[s]
     heading_command: False # if true: compute ang vel command from heading error. If false, set to 0.
     ranges:
-      lin_vel_x: [0.0, 1.0] # min max [m/s]
-      lin_vel_y: [0.0, 1.0]   # min max [m/s]
-      ang_vel_yaw: [-1, 1]    # min max [rad/s]
+      lin_vel_x: [0.8, 1.0] # min max [m/s]
+      lin_vel_y: [0.0, 0.0]   # min max [m/s]
+      ang_vel_yaw: [0, 0]    # min max [rad/s]
       heading: [-3.14, 3.14]
 
   init_state:
@@ -141,7 +141,7 @@ task_config:
 #        dof_pos_limits: -10.0
         # RMA rewards #
         forward: 20.0
-        lateral_movement_rotation: -21.0
+#        lateral_movement_rotation: -21.0
 #        work: -0.002
 #        ground_impact: -0.02
 #        smoothness: -0.001
