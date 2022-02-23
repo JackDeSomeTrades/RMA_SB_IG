@@ -142,12 +142,13 @@ task_config:
         # RMA rewards #
         forward: 20.0
 #        lateral_movement_rotation: -21.0
+#        orientation: -1.5
 #        work: -0.002
 #        ground_impact: -0.02
 #        smoothness: -0.001
 #        action_magnitude: -0.07
 #        joint_speed: -0.002
-#        orientation: -1.5
+
 #        z_acceleration: -2.0
 #        foot_slip: -0.8
 
@@ -202,7 +203,7 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 2000000
+  n_timesteps: 30000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'

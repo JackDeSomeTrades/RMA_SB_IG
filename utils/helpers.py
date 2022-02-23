@@ -6,6 +6,7 @@ from isaacgym.torch_utils import quat_apply, normalize
 import numpy as np
 import random
 import torch
+import box
 
 from cfg import CFGFILEPATH
 from pathlib import Path
@@ -20,6 +21,14 @@ def exists(namespace):
     except Exception:
         return False
 
+
+def parse_config(cfg):
+    config = cfg['task_config']
+    args = get_args()  # needs to be done only to follow gymutils implements it this way. Future work: to redo this.
+    sim_params = parse_sim_params(args, config)
+    config = box.Box(config)
+
+    return config, sim_params, args
 
 def get_run_name(cfg):
     try:

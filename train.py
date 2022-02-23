@@ -1,5 +1,6 @@
 import argparse
-from utils.helpers import get_config, get_project_root, get_run_name
+import os
+from utils.helpers import get_config, get_project_root, get_run_name, parse_config
 from models import rma
 from box import Box
 
@@ -11,11 +12,12 @@ from stable_baselines3.common.callbacks import EvalCallback
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', '-c', type=str, default='a1_task_rma')
-    parser.add_argument('--logdir', '-l', type=str, default='outs/tb')
+    parser.add_argument('--savedir', '-s', type=str, default='experiments/')
 
     args = parser.parse_args()
     cfg = get_config(f'{args.cfg}_conf.yaml')
-    vec_env = RMAA1TaskVecEnvStableBaselineGym(cfg)
+
+    vec_env = RMAA1TaskVecEnvStableBaselineGym(parse_config(cfg))
     # eval_env = RMAA1TaskVecEnvStableBaselineGym(cfg)  # for evaluating the performance of learning with SB3, not for learning.
 
     # begin RL here
@@ -25,6 +27,7 @@ if __name__ == "__main__":
     policy_kwargs = arch.make_architecture()
 
     run_name = get_run_name(rl_config)
+    model_save_path = os.path.join(os.path.join(os.getcwd(), f'{args.savedir}'), run_name)
 
     # evaluation of learning performance here.
     # eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/', log_path='./logs/', eval_freq=5000, deterministic=True, render=False)
@@ -41,4 +44,5 @@ if __name__ == "__main__":
                 policy_kwargs=policy_kwargs)
 
     model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name)  #, callback=eval_callback
+    model.save(path=model_save_path)
 
