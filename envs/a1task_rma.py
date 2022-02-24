@@ -247,7 +247,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         # Edit 2:More SB3 woes. SB3 outputs an ndarray after processing, but this requires a torch tensor. Need to
         # perform sanity checks before processing action.
         flag = 0
-        print("actions", actions)
+        # print("actions", actions)
 
         if type(actions) == np.ndarray:
             # For SB3 compatibility
@@ -283,7 +283,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
             obs_buf = self.obs_buf
             dones = self.reset_buf
 
-        print("#", "--"*50, "#")
+        # print("#", "--"*50, "#")
 
         return obs_buf, rew_buf, dones, self.infos
 
@@ -348,8 +348,8 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
             self.root_states[:, 7:9] = torch_rand_float(-max_vel, max_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
             self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
 
-        print("base_lin_vel", self.base_lin_vel)
-        print("base_ang_vel", self.base_ang_vel)
+        # print("base_lin_vel", self.base_lin_vel)
+        # print("base_ang_vel", self.base_ang_vel)
 
         # compute observations, rewards, resets, ...
         self.check_termination()
@@ -464,13 +464,13 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         # print(" forward x vel", base_x_velocity)
         # print(" forward reward", reward)
         reward[reward < 0.0] = 0.0   # TODO: Check if this is right.
-        print(f"forward reward * {self.cfg.rewards.scales.forward}", reward)
+        # print(f"forward reward * {self.cfg.rewards.scales.forward}", reward)
         return reward
 
     def _reward_lateral_movement_rotation(self):
         # penalises lateral motion (v_y) and limiting angular velocity yaw
         reward = self.base_lin_vel[:, 1].pow(2).unsqueeze(-1).sum(dim=1) + self.base_ang_vel[:, 2].pow(2).unsqueeze(-1).sum(dim=1)   #TODO check with 1
-        print(f"lateral reward * {self.cfg.rewards.scales.lateral_movement_rotation}", reward)
+        # print(f"lateral reward * {self.cfg.rewards.scales.lateral_movement_rotation}", reward)
         return reward
 
     def _reward_orientation(self):
