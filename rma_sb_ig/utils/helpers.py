@@ -8,7 +8,7 @@ import random
 import torch
 import box
 
-from cfg import CFGFILEPATH
+from rma_sb_ig.cfg import CFGFILEPATH
 from pathlib import Path
 
 torch.set_printoptions(profile="full")
@@ -46,10 +46,10 @@ def parse_config(cfg):
 def get_run_name(cfg):
     try:
         run_name = cfg.logging.run_name
-    except AttributeError:
+    except (AttributeError, KeyError):
         idx_ = []
         alg_type = []
-        log_dir = cfg.logging.dir.format(ROOT_DIR=get_project_root())
+        log_dir = cfg.logging.dir.format(ROOT_DIR=Path.cwd())
         folders = os.listdir(log_dir)
         for folder in folders:
             if folder[0] != '.':

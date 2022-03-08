@@ -3,20 +3,20 @@ from warnings import WarningMessage
 import numpy as np
 import os
 
-import torch
 from isaacgym import gymapi
 from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
 import box
 import gym.spaces as gymspace
 import math
+import torch
 
 # import torch
 # from torch import Tensor
 # from typing import Tuple, Dict
-from utils.helpers import *
-from envs.base_task import BaseTask
-from utils.scene import EnvScene
+from rma_sb_ig.utils.helpers import *
+from rma_sb_ig.envs.base_task import BaseTask
+from rma_sb_ig.utils.scene import EnvScene
 
 
 class A1LeggedRobotTask(EnvScene, BaseTask):
