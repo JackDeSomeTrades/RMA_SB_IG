@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 25
+    num_envs: 2
     num_observations: 59
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 12
@@ -41,7 +41,7 @@ task_config:
     max_curriculum: 1.
     num_commands: 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
     resampling_time: 10. # time before command are changed[s]
-    heading_command: False # if true: compute ang vel command from heading error. If false, set to 0.
+    heading_command: True # if true: compute ang vel command from heading error. If false, set to 0.
     ranges:
       lin_vel_x: [0.8, 1.0] # min max [m/s]
       lin_vel_y: [0.0, 0.0]   # min max [m/s]
@@ -125,8 +125,8 @@ task_config:
     base_height_target: 0.25
     scales:
 #        termination: -10.0   # 0.0
-#        tracking_lin_vel: 1.0
-#        tracking_ang_vel: 0.5
+#        tracking_lin_vel: -10.0
+#        tracking_ang_vel: -10.0
 #        lin_vel_z: -2.0
 #        ang_vel_xy: -0.05
 #        dof_vel: -0.
@@ -141,7 +141,7 @@ task_config:
 #        dof_pos_limits: -10.0
         # RMA rewards #
         forward: 20.0
-#        lateral_movement_rotation: -21.0
+        lateral_movement_rotation: -21.0
 #        orientation: -1.5
 #        work: -0.002
 #        ground_impact: -0.02
@@ -203,7 +203,7 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 30000
+  n_timesteps: 2000000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'

@@ -89,12 +89,12 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         # self.base_ang_vel = self.root_states[:, 10:13]
         self.base_rpy = get_euler_xyz(self.base_quat)   # provides (r, p, y) tuple of the base torso with each r,p,y of size num_envs
 
-        # self.base_lin_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
-        # self.base_ang_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
-        # self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        self.base_lin_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
+        self.base_ang_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
+        self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
 
-        self.base_lin_vel = quat_rotate(self.base_quat, self.root_states[:, 7:10])
-        self.base_ang_vel = quat_rotate(self.base_quat, self.root_states[:, 10:13])
+        # self.base_lin_vel = quat_rotate(self.base_quat, self.root_states[:, 7:10])
+        # self.base_ang_vel = quat_rotate(self.base_quat, self.root_states[:, 10:13])
 
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
@@ -256,6 +256,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
 
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
+        # print(self.actions)
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
@@ -275,6 +276,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
             return self.obs_buf, self.rew_buf, self.reset_buf, self.infos, self.privileged_obs_buf
         if flag:
             # For SB3 compatibility
+            # print("This is what's causing the slowdown")
             rew_buf = self.rew_buf.detach().cpu().numpy()
             obs_buf = self.obs_buf.detach().cpu().numpy()
             dones = self.reset_buf.detach().cpu().numpy()
@@ -326,9 +328,11 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         self.base_quat[:] = self.root_states[:, 3:7]
         # self.base_lin_vel[:] = self.root_states[:, 7:10]
         # self.base_ang_vel[:] = self.root_states[:, 10:13]
-        self.base_lin_vel[:] = quat_rotate(self.base_quat, self.root_states[:, 7:10])
-        self.base_ang_vel[:] = quat_rotate(self.base_quat, self.root_states[:, 10:13])  # TODO: Check this
-        # self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        # self.base_lin_vel[:] = quat_rotate(self.base_quat, self.root_states[:, 7:10])
+        # self.base_ang_vel[:] = quat_rotate(self.base_quat, self.root_states[:, 10:13])  # TODO: Check this
+        self.base_lin_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
+        self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
+        self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
         self.base_rpy = get_euler_xyz(self.base_quat)
 
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).nonzero(as_tuple=False).flatten()
@@ -389,7 +393,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
     def compute_observations(self):
         """Overrides the base class observation computation to bring it in line with observations proposed in the RMA
         paper. The observation consists of two major parts - the environment variables and the state-action pair."""
-        # self.compute_heading_deviation()
+        self.compute_heading_deviation()
         feet_contact_switches = self._get_foot_status()
         local_terrain_height = self._get_local_terrain_height()
 
@@ -397,8 +401,6 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
                          self.dof_vel,
                          self.base_rpy[0].unsqueeze(1),
                          self.base_rpy[1].unsqueeze(1),
-                         # self.projected_gravity[:, 0].unsqueeze(1),
-                         # self.projected_gravity[:, 1].unsqueeze(1),
                          feet_contact_switches
                          ), dim=-1)
         E_t = torch.cat((
@@ -456,6 +458,18 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
     # -------------- Reward functions begin below: --------------------------------#
 
     def _reward_forward(self):
+        base_x_velocity = self.base_lin_vel[:, 0]
+        MAX_FWD_VEL = 1.0
+
+        forward = quat_apply(self.base_quat, self.forward_vec)
+        max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
+        # reward = torch.abs(base_x_velocity - max_fwd_vel_tensor)
+        diff = base_x_velocity - max_fwd_vel_tensor
+        reward = torch.linalg.norm(diff.unsqueeze(-1), dim=1, ord=0)   # L1 norm
+
+        return reward
+
+    def _reward_maintain_forward(self):
         # Rewards forward motion at limited values (v_x)
         base_x_velocity = self.base_lin_vel[:, 0]
         MAX_FWD_VEL = 1.0
@@ -475,9 +489,14 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
 
     def _reward_orientation(self):
         # orientation = self.projected_gravity[:, :2]
-        orientation = torch.stack(self.base_rpy[0], self.base_rpy[1], dim=1)
+        orientation = torch.stack([self.base_rpy[0], self.base_rpy[1]], dim=1)
         reward = torch.sum(torch.square(orientation), dim=1)
         return reward
+
+    def _reward_maintain_height(self):
+        # Make sure the robot body maintains a minimum distance from the ground based on the z center of mass.
+        MIN_HEIGHT = 0.30    # meters from the ground
+        print()
 
     def _reward_work(self):
         diff_joint_pos = self.actions - self.last_actions

@@ -211,6 +211,7 @@ class EnvScene:
         self.body_masses = []
         self.body_com_x = []
         self.body_com_y = []
+        self.body_com_z = []
         self.torque_limits = torch.zeros(self.num_envs, self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
         self.dof_pos_limits = torch.zeros(self.num_dof, 2, dtype=torch.float, device=self.device, requires_grad=False)
         self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
@@ -235,6 +236,7 @@ class EnvScene:
         self.body_masses = torch.cuda.FloatTensor(self.body_masses)
         self.body_com_x = torch.cuda.FloatTensor(self.body_com_x)
         self.body_com_y = torch.cuda.FloatTensor(self.body_com_y)
+        self.body_com_z = torch.cuda.FloatTensor(self.body_com_z)
 
         self.feet_indices = torch.zeros(len(feet_names), dtype=torch.long, device=self.device, requires_grad=False)
         for i in range(len(feet_names)):
@@ -370,6 +372,7 @@ class EnvScene:
         self.body_masses.append(props[0].mass)
         self.body_com_x.append(props[0].com.x)
         self.body_com_y.append(props[0].com.y)
+        self.body_com_z.append(props[0].com.z)
         return props
 
     def _init_height_points(self):
