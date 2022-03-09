@@ -55,6 +55,11 @@ def get_run_name(cfg):
             if folder[0] != '.':
                 idx_.append(int(folder.split('_')[1]))
                 alg_type.append(folder.split('_')[0])
+
+        if len(idx_) == 0:
+            idx_ = [0]
+            alg_type = ["ppo"]
+
         max_id = max(idx_)
         conf_keys = list(cfg.keys())
         alg_type = [algs.lower() for algs in alg_type]
