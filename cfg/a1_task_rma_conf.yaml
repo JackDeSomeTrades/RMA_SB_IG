@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 2
+    num_envs: 1024
     num_observations: 59
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 12
@@ -58,12 +58,12 @@ task_config:
     'RL_hip_joint': 0.1,  # [rad]
     'FR_hip_joint': -0.1,  # [rad]
     'RR_hip_joint': -0.1,  # [rad]
-    
+
     'FL_thigh_joint': 0.8,  # [rad]
     'RL_thigh_joint': 1.,  # [rad]
     'FR_thigh_joint': 0.8,  # [rad]
     'RR_thigh_joint': 1.,  # [rad]
-    
+
     'FL_calf_joint': -1.5,  # [rad]
     'RL_calf_joint': -1.5,  # [rad]
     'FR_calf_joint': -1.5,  # [rad]
@@ -117,7 +117,7 @@ task_config:
 
   rewards:
     only_positive_rewards: False # if true negative total rewards are clipped at zero (avoids early termination problems)
-    tracking_sigma: 0.25 # tracking reward: exp(-error^2/sigma) 
+    tracking_sigma: 0.25 # tracking reward: exp(-error^2/sigma)
     soft_dof_vel_limit: 1.
     soft_torque_limit: 1.
     max_contact_force: 100. # forces above this value are penalized
@@ -203,24 +203,24 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 2000000
+  n_timesteps: 20000000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
   ppo:
-    gamma: 0.998
-    n_steps: 512
-    lr: 5e-4
-    ent_coef: 0.01   #0.0?
-    vf_coef: 0.5
-    max_grad_norm: 0.5
+    n_steps: 24 # TODO: adapt to your setting
+    batch_size: 6144 # TODO: adapt to your setting
+    n_epochs: 5
     gae_lambda: 0.95
-    batch_size: 128
-    n_epochs: 20
+    gamma: 0.99
+    n_epochs: 10
+    ent_coef: 0.01
+    lr: 1e-3
     clip_range: 0.2
-    num_minibatch: 4
-    sde_sample_freq: 4
-    use_sde: True
+    max_grad_norm: 1.0
+    vf_coef: 1.0
+    # use_sde: False
+    # sde_sample_freq: 4
 
 arch_config:
   encoder:

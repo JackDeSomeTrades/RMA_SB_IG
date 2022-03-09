@@ -38,7 +38,7 @@ if __name__ == "__main__":
                 gae_lambda=rl_config.ppo.gae_lambda, gamma=rl_config.ppo.gamma,
                 clip_range=rl_config.ppo.clip_range, max_grad_norm=rl_config.ppo.max_grad_norm,
                 ent_coef=rl_config.ppo.ent_coef, vf_coef=rl_config.ppo.vf_coef,
-                use_sde=rl_config.ppo.use_sde, sde_sample_freq=rl_config.ppo.sde_sample_freq,
+                # use_sde=rl_config.ppo.use_sde, sde_sample_freq=rl_config.ppo.sde_sample_freq,
                 verbose=1,
                 tensorboard_log=rl_config.logging.dir.format(ROOT_DIR=get_project_root()),
                 policy_kwargs=policy_kwargs)
