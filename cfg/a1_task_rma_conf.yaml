@@ -122,7 +122,7 @@ task_config:
     soft_torque_limit: 1.
     max_contact_force: 100. # forces above this value are penalized
     soft_dof_pos_limit: 0.9 # percentage of urdf limits, values above this limit are penalized
-    base_height_target: 0.25
+    base_height_target: 0.42
     scales:
 #        termination: -10.0   # 0.0
         tracking_lin_vel: 20.0

@@ -393,7 +393,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
     def compute_observations(self):
         """Overrides the base class observation computation to bring it in line with observations proposed in the RMA
         paper. The observation consists of two major parts - the environment variables and the state-action pair."""
-        self.compute_heading_deviation()
+        # self.compute_heading_deviation()
         feet_contact_switches = self._get_foot_status()
         local_terrain_height = self._get_local_terrain_height()
 
@@ -460,12 +460,11 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
     def _reward_forward(self):
         base_x_velocity = self.base_lin_vel[:, 0]
         MAX_FWD_VEL = 1.0
-
         forward = quat_apply(self.base_quat, self.forward_vec)
-        max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
+        # max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
         # reward = torch.abs(base_x_velocity - max_fwd_vel_tensor)
-        diff = base_x_velocity - max_fwd_vel_tensor
-        reward = torch.linalg.norm(diff.unsqueeze(-1), dim=1, ord=0)   # L1 norm
+        diff = base_x_velocity - forward[:, 0]
+        reward = torch.linalg.norm(diff.unsqueeze(-1), dim=1, ord=1)   # L1 norm
 
         return reward
 
@@ -492,11 +491,6 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         orientation = torch.stack([self.base_rpy[0], self.base_rpy[1]], dim=1)
         reward = torch.sum(torch.square(orientation), dim=1)
         return reward
-
-    def _reward_maintain_height(self):
-        # Make sure the robot body maintains a minimum distance from the ground based on the z center of mass.
-        MIN_HEIGHT = 0.30    # meters from the ground
-        print()
 
     def _reward_work(self):
         diff_joint_pos = self.actions - self.last_actions
@@ -539,7 +533,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         return torch.sum(torch.square(self.base_ang_vel[:, :2]), dim=1)
 
     def _reward_base_height(self):
-        # Penalize base height away from target
+        # Make sure the robot body maintains a minimum distance from the ground based on the z center of mass.
         base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
         return torch.square(base_height - self.cfg.rewards.base_height_target)
 
@@ -584,7 +578,8 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
         lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
-        return torch.exp(-lin_vel_error / self.cfg.rewards.tracking_sigma)
+        reward = torch.exp(-lin_vel_error / self.cfg.rewards.tracking_sigma)
+        return reward
 
     def _reward_tracking_ang_vel(self):
         # Tracking of angular velocity commands (yaw)
@@ -605,7 +600,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         self.feet_air_time *= ~contact_filt
         return rew_airTime
 
-    def _reward_stumble(self):
+    def _reward_feet_stumble(self):
         # Penalize feet hitting vertical surfaces
         return torch.any(torch.norm(self.contact_forces[:, self.feet_indices, :2], dim=2) > \
                          5 * torch.abs(self.contact_forces[:, self.feet_indices, 2]), dim=1)
