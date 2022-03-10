@@ -1,7 +1,7 @@
 
-from utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym
+from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym
 import argparse
-from utils.helpers import get_config
+from rma_sb_ig.utils.helpers import get_config
 from stable_baselines3.common.env_checker import check_env
 
 

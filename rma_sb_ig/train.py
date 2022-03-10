@@ -1,10 +1,10 @@
 import argparse
 import os
-from utils.helpers import get_config, get_project_root, get_run_name, parse_config
-from models import rma
+from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, parse_config
+from rma_sb_ig.models import rma
 from box import Box
 
-from utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym
+from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback
 

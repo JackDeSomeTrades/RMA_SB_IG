@@ -2,7 +2,6 @@ import torch
 from torch import nn
 # from configs import env_config
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-import utils
 
 
 class EnvironmentEncoder(BaseFeaturesExtractor):
