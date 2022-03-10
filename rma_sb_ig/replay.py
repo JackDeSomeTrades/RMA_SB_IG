@@ -2,9 +2,9 @@ import os
 import numpy as np
 
 import argparse
-from utils.helpers import get_config, get_project_root, parse_config, UserNamespace, parse_replay_config, get_args
+from rma_sb_ig.utils.helpers import get_config, get_project_root, parse_config, UserNamespace, parse_replay_config, get_args
 from box import Box
-from utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym
+from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 

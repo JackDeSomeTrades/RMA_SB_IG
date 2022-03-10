@@ -1,8 +1,8 @@
 import yaml
 import os
 from box import Box
-from cfg import CFGFILEPATH
-from utils.helpers import get_project_root
+from rma_sb_ig.cfg import CFGFILEPATH
+from rma_sb_ig.utils.helpers import get_project_root
 
 
 
