@@ -1,3 +1,5 @@
 .idea/
-*/__pycache__
-logs/*
+*/*/__pycache__
+rma_sb_ig/logs/*
+rma_sb_ig.egg-info/*
+rma_sb_ig/experiments/*
