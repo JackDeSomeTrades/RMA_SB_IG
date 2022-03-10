@@ -1,9 +1,9 @@
 from isaacgym import gymapi
 import torch
-from utils.terrain import Terrain
+from rma_sb_ig.utils.terrain import Terrain
 import os
 import sys
-from utils.helpers import *
+from rma_sb_ig.utils.helpers import *
 import xml.etree.ElementTree as ET
 
 from isaacgym import gymutil
