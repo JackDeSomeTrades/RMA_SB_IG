@@ -163,3 +163,21 @@ def quat_apply_yaw(quat, vec):
     quat_yaw[:, :2] = 0.
     quat_yaw = normalize(quat_yaw)
     return quat_apply(quat_yaw, vec)
+
+
+def set_sim_params_up_axis(sim_params: gymapi.SimParams, axis: str) -> int:
+    """Set gravity based on up axis and return axis index.
+
+    Args:
+        sim_params: sim params to modify the axis for.
+        axis: axis to set sim params for.
+    Returns:
+        axis index for up axis.
+    """
+    if axis == 'z':
+        sim_params.up_axis = gymapi.UP_AXIS_Z
+        sim_params.gravity.x = 0
+        sim_params.gravity.y = 0
+        sim_params.gravity.z = -9.81
+        return 2
+    return 1

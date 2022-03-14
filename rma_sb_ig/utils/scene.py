@@ -36,7 +36,8 @@ class EnvScene:
             self.graphics_device_id = -1
 
         # create envs, sim and viewer
-        self.up_axis_idx = 2  # 2 for z, 1 for y -> adapt gravity accordingly
+
+        self.up_axis_idx = set_sim_params_up_axis(self.sim_params, 'z')   # 2  # 2 for z, 1 for y -> adapt gravity accordingly
         self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
         self.create_sim()
         self.gym.prepare_sim(self.sim)
