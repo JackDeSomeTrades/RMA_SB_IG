@@ -4,7 +4,7 @@ from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, 
 from rma_sb_ig.models import rma
 from box import Box
 
-from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym
+from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym, SaveHistoryCallback
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback
 
@@ -32,6 +32,8 @@ if __name__ == "__main__":
     # evaluation of learning performance here.
     # eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/', log_path='./logs/', eval_freq=5000, deterministic=True, render=False)
 
+    save_history_callback = SaveHistoryCallback()
+
     model = PPO(arch.policy_class, vec_env,
                 learning_rate=eval(rl_config.ppo.lr), n_steps=rl_config.ppo.n_steps,
                 batch_size=rl_config.ppo.batch_size, n_epochs=rl_config.ppo.n_epochs,
@@ -43,6 +45,6 @@ if __name__ == "__main__":
                 tensorboard_log=rl_config.logging.dir.format(ROOT_DIR=get_project_root()),
                 policy_kwargs=policy_kwargs)
 
-    model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name)  #, callback=eval_callback
+    model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name, callback=save_history_callback)  #, callback=eval_callback
     model.save(path=model_save_path)
 
