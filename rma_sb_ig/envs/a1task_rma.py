@@ -397,7 +397,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
         feet_contact_switches = self._get_foot_status()
         local_terrain_height = self._get_local_terrain_height()
 
-        X_t = torch.cat((self.dof_pos,
+        self.X_t = torch.cat((self.dof_pos,
                          self.dof_vel,
                          self.base_rpy[0].unsqueeze(1),
                          self.base_rpy[1].unsqueeze(1),
@@ -412,7 +412,7 @@ class A1LeggedRobotTask(EnvScene, BaseTask):
             local_terrain_height.unsqueeze(-1)
         ), dim=-1)
 
-        self.obs_buf = torch.cat((X_t,
+        self.obs_buf = torch.cat((self.X_t,
                                   self.last_actions,
                                   E_t), dim=-1)
 
