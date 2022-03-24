@@ -13,6 +13,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', '-c', type=str, default='a1_task_rma')
     parser.add_argument('--savedir', '-s', type=str, default='experiments/')
+    parser.add_argument('--dsetsavedir', '-k', type=str, default='output/')
 
     args = parser.parse_args()
     cfg = get_config(f'{args.cfg}_conf.yaml')
@@ -28,11 +29,12 @@ if __name__ == "__main__":
 
     run_name = get_run_name(rl_config)
     model_save_path = os.path.join(os.path.join(os.getcwd(), f'{args.savedir}'), run_name)
+    intermediate_dset_save_path = os.path.join(os.getcwd(), f'{args.dsetsavedir}', run_name)
 
     # evaluation of learning performance here.
     # eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/', log_path='./logs/', eval_freq=5000, deterministic=True, render=False)
 
-    save_history_callback = SaveHistoryCallback()
+    save_history_callback = SaveHistoryCallback(savepath=intermediate_dset_save_path)
 
     model = PPO(arch.policy_class, vec_env,
                 learning_rate=eval(rl_config.ppo.lr), n_steps=rl_config.ppo.n_steps,

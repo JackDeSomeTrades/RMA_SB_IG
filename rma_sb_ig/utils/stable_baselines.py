@@ -4,19 +4,31 @@ from stable_baselines3.common.vec_env import VecEnv
 from abc import abstractmethod
 from abc import ABC
 from stable_baselines3.common.callbacks import EventCallback, EvalCallback
-
+import numpy as np
+import hickle as hkl
 
 
 class SaveHistoryCallback(EventCallback):
-    def __init__(self, verbose=0):
+    def __init__(self, savepath=None, verbose=0):
         super(SaveHistoryCallback, self).__init__(verbose=verbose)
+        if savepath is not None:
+            self.savepath = savepath
+        else:
+            return False
+        self.file = open(self.savepath+'.hkl', 'w')
+        self.datadict = {}
 
     def _on_step(self) -> bool:
         zt = self.model.policy.features_extractor.zt
         current_state = self.model.env.X_t
-        current_actions = self.model.actions
-        print("here")
+        current_actions = self.model.env.actions
+        self.datadict[self.n_calls] = {'state': current_state, 'env_encoding': zt, 'actions': current_actions}
+
         return True
+
+    def _on_training_end(self) -> None:
+        hkl.dump(self.datadict, self.file)
+        self.file.close()
 
 
 class StableBaselinesVecEnvAdapter(VecEnv):
