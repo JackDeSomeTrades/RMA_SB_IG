@@ -40,10 +40,10 @@ class EnvironmentEncoder(BaseFeaturesExtractor):
 
 
 class RMAPhase2(nn.Module):
-    def __init__(self):
+    def __init__(self, arch_config):
         super(RMAPhase2, self).__init__()
         self.adaptation_module = nn.Sequential(
-            nn.Linear(in_features=(env_config.STATESPACE_SIZE + env_config.ACTIONSPACE_SIZE) * 50, out_features=128),
+            nn.Linear(in_features=(arch_config.encoder.state_space_size + arch_config.encoder.action_space_size) * arch_config.state_action_horizon, out_features=128),
             nn.ReLU(inplace=True),
             nn.Linear(in_features=128, out_features=32),
 
@@ -54,16 +54,15 @@ class RMAPhase2(nn.Module):
             nn.Flatten()
         )
 
-        self.linear = nn.LazyLinear(out_features=env_config.ENCODED_EXTRINSIC_SIZE)  # automatically infers the input dim
+        self.linear = nn.LazyLinear(out_features=arch_config.encoder.encoded_extrinsic_size)  # automatically infers the input dim
 
     def forward(self, data):
         """in adaptation (phase2):
-            data is a tuple of cat of 50 previous state action pair tensors and current statespace data as before
-            data = (torch.cat((x_51, a_51),.....,(x_tprev, a_tprev),dim=0), statespace_t_prev)
+            data contains past timesteps of the robot state-action pair. If the shape of the data is (1024 x 42 x 50):
+            1024 is the number of environments derived from isaac gym, 42 is the size of the ( state + action) space and
+            50 is the time horizon of state evolution.
         """
-
-        temporal_data = data[0]
-        intermediate = self.adaptation_module(temporal_data)
+        intermediate = self.adaptation_module(data)
         z_cap_t = self.linear(intermediate)
 
         return z_cap_t
