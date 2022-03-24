@@ -210,7 +210,7 @@ rl_config:
   ppo:
     n_steps: 24 # TODO: adapt to your setting
     batch_size: 6144 # TODO: adapt to your setting
-    n_epochs: 5
+#    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
     n_epochs: 10
@@ -223,8 +223,10 @@ rl_config:
     # sde_sample_freq: 4
 
 arch_config:
+  state_action_horizon: 50
   encoder:
     encoded_extrinsic_size: 8
     action_space_size: 12
     state_space_size: 30
     env_size: 17
+
