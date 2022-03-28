@@ -223,10 +223,15 @@ rl_config:
     # sde_sample_freq: 4
 
 arch_config:
+  device: 'cuda:0'
   state_action_horizon: 50
   encoder:
     encoded_extrinsic_size: 8
     action_space_size: 12
     state_space_size: 30
     env_size: 17
-
+  adaptation:
+    epochs: 1000
+    optimizer: 'Adam'
+    lr: 5.0e-4
+    loss: 'mse'
