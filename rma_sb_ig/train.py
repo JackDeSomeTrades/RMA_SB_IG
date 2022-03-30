@@ -38,6 +38,7 @@ if __name__ == "__main__":
     # ----------- Loaders and Callbacks ---#
     save_history_callback = SaveHistoryCallback(savepath=intermediate_dset_save_path)
 
+
     dataset_iterator = RMAPhase2Dataset(hkl_filepath=intermediate_dset_save_path, device=arch_config.device,
                                         horizon=arch_config.state_action_horizon)
     phase2dataloader = DataLoader(dataset_iterator)
