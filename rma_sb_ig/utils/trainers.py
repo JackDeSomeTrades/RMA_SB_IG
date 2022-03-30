@@ -1,6 +1,7 @@
 from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, parse_config
 import torch.optim as optim
 import torch.nn as nn
+import torch
 from tqdm import tqdm
 
 from box import Box
@@ -25,10 +26,16 @@ class Adaptation:
         for i in tqdm(range(self.epochs)):
             epoch_loss = 0
             epoch_acc = 0
+            itr_cntr = 0
             self.model.train()
-            for data, label in iterator:
+            for label, data in iterator:
                 data = data.squeeze()
+                data = data.double()
                 label = label.squeeze()
+                label = label.double()
+                # print(itr_cntr, data.shape, label.shape)
+
+                data = torch.flatten(data, start_dim=1)
 
                 zt = label.to(self.device)
                 data = data.to(self.device)
@@ -38,13 +45,12 @@ class Adaptation:
                 zt_cap = self.model(data)
                 loss = self.criterion(zt_cap, zt)
 
-                # accuracy = self.calc_accuracy(zt_cap, zt)
-
                 loss.backward()
                 self.optimizer.step()
 
                 epoch_loss += loss.item()
-                # epoch_acc += accuracy.item()
+                # itr_cntr += 1
+            print(epoch_loss)
 
 
 if __name__ == '__main__':

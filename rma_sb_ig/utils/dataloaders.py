@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import hickle as hkl
+import torch.nn.functional as F
 
 
 class RMAPhase2Dataset(Dataset):
@@ -34,15 +35,11 @@ class RMAPhase2Dataset(Dataset):
         print("Ready")
 
     def __getitem__(self, idx):
-        try:
-            labels = self.dataset['zt'][:, :, idx:idx+self.horizon]
-        except IndexError:
-            # repeat last values until 50 steps. TODO
-            labels = self.dataset['zt'][:, :, idx:]
-        try:
-            data = self.dataset['x_a'][:, :, idx:idx+self.horizon]
-        except IndexError:
-            data = self.dataset['x_a'][:, :, idx:]
+        labels = self.dataset['zt'][:, :, idx]
+        out = self.dataset['x_a'][:, :, idx:idx+self.horizon]
+        pad_val = self.horizon - out.size()[-1]
+        # print(pad_val)
+        data = F.pad(out, (0, pad_val), mode='replicate')
 
         return labels, data
 

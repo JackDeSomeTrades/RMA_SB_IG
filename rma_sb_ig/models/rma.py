@@ -1,7 +1,10 @@
+from rma_sb_ig.utils.helpers import get_config
 import torch
 from torch import nn
 # from configs import env_config
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from torchinfo import summary
+from box import Box
 
 
 class EnvironmentEncoder(BaseFeaturesExtractor):
@@ -29,10 +32,6 @@ class EnvironmentEncoder(BaseFeaturesExtractor):
         et = observations[:, -self.arch_config.encoder.env_size:]
         self.zt = self.environmental_factor_encoder(et)
 
-        # save zt for the second phase here.
-        # depending on what saving mechanism is used here ( possibly hdf5)
-        # utils.update_encoding_storage(self.save_dict, self.zt)
-
         # concatenate the environmental encoding with the rest of the state variables.
         policy_input_variable = torch.cat((observations[:, :-self.arch_config.encoder.env_size], self.zt), -1)
 
@@ -42,14 +41,15 @@ class EnvironmentEncoder(BaseFeaturesExtractor):
 class RMAPhase2(nn.Module):
     def __init__(self, arch_config):
         super(RMAPhase2, self).__init__()
-        self.adaptation_module = nn.Sequential(
+        self.adaptation_module_lin = nn.Sequential(
             nn.Linear(in_features=(arch_config.encoder.state_space_size + arch_config.encoder.action_space_size) * arch_config.state_action_horizon, out_features=128),
             nn.ReLU(inplace=True),
-            nn.Linear(in_features=128, out_features=32),
-
-            nn.Conv1d(in_channels=32, out_channels=32, kernel_size=8, stride=4),
-            nn.Conv1d(in_channels=32, out_channels=32, kernel_size=5, stride=1),
-            nn.Conv1d(in_channels=32, out_channels=32, kernel_size=5, stride=1),
+            nn.Linear(in_features=128, out_features=32)
+        )
+        self.adaptation_module_conv = nn.Sequential(
+            nn.Conv1d(in_channels=32, out_channels=32, kernel_size=1, stride=4),
+            nn.Conv1d(in_channels=32, out_channels=32, kernel_size=1, stride=1),
+            nn.Conv1d(in_channels=32, out_channels=32, kernel_size=1, stride=1),
 
             nn.Flatten()
         )
@@ -62,8 +62,10 @@ class RMAPhase2(nn.Module):
             1024 is the number of environments derived from isaac gym, 42 is the size of the ( state + action) space and
             50 is the time horizon of state evolution.
         """
-        intermediate = self.adaptation_module(data)
-        z_cap_t = self.linear(intermediate)
+        intermediate = self.adaptation_module_lin(data)
+        intermediate = intermediate.unsqueeze(dim=2)
+        conv_intermediate = self.adaptation_module_conv(intermediate)
+        z_cap_t = self.linear(conv_intermediate)
 
         return z_cap_t
 
@@ -90,6 +92,14 @@ class Architecture():
             net_arch=self.policy_arch)
 
 
+def test_net():
+    cfg = 'a1_task_rma_conf.yaml'
+    cfg = get_config(cfg)
+    arch_cfg = Box(cfg).arch_config
+    net = RMAPhase2(arch_config=arch_cfg)
+    input_data_size = (1024, 2100)
+    summary(net, input_size=input_data_size)
 
 
-
+if __name__ == '__main__':
+    test_net()
