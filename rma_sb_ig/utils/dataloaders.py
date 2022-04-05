@@ -22,12 +22,12 @@ class RMAPhase2Dataset(Dataset):
         # concat the state action pair and stack by step for the final tensor and
         # stack zt over steps
         for step in tqdm(range(1, max_len_datadict), desc='Reading state action data:'):
-            state_at_step = full_hkl_data_dict[step]['state']
-            action_at_step = full_hkl_data_dict[step]['actions']
+            state_at_step = full_hkl_data_dict[step]['state'].cuda()
+            action_at_step = full_hkl_data_dict[step]['actions'].cuda()
             state_action_pair_at_step = torch.cat((state_at_step, action_at_step), dim=1)
             state_action_pair = torch.cat((state_action_pair, state_action_pair_at_step.unsqueeze(-1)), dim=-1)
 
-            env_at_step = full_hkl_data_dict[step]['env_encoding']
+            env_at_step = full_hkl_data_dict[step]['env_encoding'].cuda()
             zt = torch.cat((zt, env_at_step.unsqueeze(-1)), dim=-1)
 
         self.dataset['zt'] = zt

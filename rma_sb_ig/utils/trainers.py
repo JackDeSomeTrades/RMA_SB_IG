@@ -3,15 +3,17 @@ import torch.optim as optim
 import torch.nn as nn
 import torch
 from tqdm import tqdm
+import zipfile
 
 from box import Box
 from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset
 from rma_sb_ig.models.rma import RMAPhase2
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 
 class Adaptation:
-    def __init__(self, net, arch_config):
+    def __init__(self, net, arch_config, tensorboard_log_writer=None):
         self.device = arch_config.device
         self.model = net(arch_config).to(self.device)
         self.model.double()
@@ -22,8 +24,11 @@ class Adaptation:
         if arch_config.adaptation.loss == 'mse':
             self.criterion = nn.MSELoss()
 
+        if tensorboard_log_writer is not None:
+            self.log_writer = tensorboard_log_writer
+
     def adapt(self, iterator):
-        for i in tqdm(range(self.epochs)):
+        for epoch in tqdm(range(self.epochs)):
             epoch_loss = 0
             epoch_acc = 0
             itr_cntr = 0
@@ -49,21 +54,40 @@ class Adaptation:
                 self.optimizer.step()
 
                 epoch_loss += loss.item()
+                if self.log_writer:
+                    try:
+                        self.log_writer.add_scalar('phase2/train/loss', epoch_loss, epoch)
+                    except AttributeError:
+                        self.log_writer.writer.add_scalar('phase2/train/loss', epoch_loss, epoch)
+                        self.log_writer.writer.flush()
+
                 # itr_cntr += 1
-            print(epoch_loss)
+            # print(epoch_loss)
+
+    def save(self, path:str, suffix='.zip'):
+        """path should contain the path to the zip folder created by stable baselines. This function only adds the
+        phase 2 adapted parameters into the same zip folder"""
+        self.save_path = path+suffix
+        with zipfile.ZipFile(self.save_path, mode='a') as archive:
+            if self.model.state_dict() is not None:
+                with archive.open('adaptation_module_parameters.pth', mode='w') as adapted_parameters:
+                    torch.save(self.model.state_dict(), adapted_parameters)
+
 
 
 if __name__ == '__main__':
     cfg = get_config('a1_task_rma_conf.yaml')
     hkl_fpath = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_71.hkl'
+    tb_logs = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_71_p2'
 
     arch_config = Box(cfg).arch_config
 
     dataset_iterator = RMAPhase2Dataset(hkl_filepath=hkl_fpath, device=arch_config.device,
                                         horizon=arch_config.state_action_horizon)
     phase2dataloader = DataLoader(dataset_iterator)
+    logger = SummaryWriter(log_dir=tb_logs)
 
-    model_adapted = Adaptation(net=RMAPhase2, arch_config=arch_config)
+    model_adapted = Adaptation(net=RMAPhase2, arch_config=arch_config, tensorboard_log_writer=logger)
     model_adapted.adapt(phase2dataloader)
 
 

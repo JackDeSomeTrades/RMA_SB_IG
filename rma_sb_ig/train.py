@@ -6,9 +6,10 @@ from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, 
 from rma_sb_ig.utils.trainers import Adaptation
 from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset
 from rma_sb_ig.models import rma
-from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym, SaveHistoryCallback
+from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym, RMAV0TaskVecEnvStableBaselineGym, SaveHistoryCallback
 
 from torch.utils.data import DataLoader
+import torch
 from stable_baselines3 import PPO
 
 
@@ -22,28 +23,27 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     cfg = get_config(f'{args.cfg}_conf.yaml')
-    vec_env = RMAA1TaskVecEnvStableBaselineGym(parse_config(cfg))
+    robot_name = cfg['task_config']['asset']['name']
+    if robot_name == 'a1':
+        vec_env = RMAA1TaskVecEnvStableBaselineGym(parse_config(cfg))
+    elif robot_name == 'v0':
+        vec_env = RMAV0TaskVecEnvStableBaselineGym(parse_config(cfg))
 
     # begin RL here
-
     # ----------- Configs -----------------#
     rl_config = Box(cfg).rl_config  # convert config dict into namespaces
     arch_config = Box(cfg).arch_config
 
     # ----------- Paths -------------------#
     run_name = get_run_name(rl_config)
+    run_name = run_name + '_' + robot_name  # to avoid confusion
     model_save_path = os.path.join(os.path.join(os.getcwd(), f'{args.savedir}'), run_name)
-    intermediate_dset_save_path = os.path.join(os.getcwd(), f'{args.dsetsavedir}', run_name)
+    intermediate_dset_save_path = os.path.join(os.getcwd(), f'{args.dsetsavedir}', run_name)+'.hkl'
 
     # ----------- Loaders and Callbacks ---#
     save_history_callback = SaveHistoryCallback(savepath=intermediate_dset_save_path)
 
-
-    dataset_iterator = RMAPhase2Dataset(hkl_filepath=intermediate_dset_save_path, device=arch_config.device,
-                                        horizon=arch_config.state_action_horizon)
-    phase2dataloader = DataLoader(dataset_iterator)
-
-    if args.phase == ('1' or None):
+    if args.phase == '1' or args.phase == None:
         # ----------------- RMA Phase 1 -------------------------------------------- #
         arch = rma.Architecture(arch_config=arch_config, device=arch_config.device)
         policy_kwargs = arch.make_architecture()
@@ -61,12 +61,20 @@ if __name__ == "__main__":
 
         model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name, callback=save_history_callback)
         model.save(path=model_save_path)
+        # need to close the sim env here to release GPU mem for the next phase.
 
-    if args.phase == ('2' or None):
+        vec_env.close()
+        torch.cuda.empty_cache()  # to see if everything is released after the first phase.
+
+    if args.phase == '2' or args.phase == None:
         # ----------------- RMA Phase 2 -------------------------------------------- #
+        dataset_iterator = RMAPhase2Dataset(hkl_filepath=intermediate_dset_save_path, device=arch_config.device,
+                                            horizon=arch_config.state_action_horizon)
+        phase2dataloader = DataLoader(dataset_iterator)
 
-        model_adapted = Adaptation(net=rma.RMAPhase2, arch_config=arch_config)
+        model_adapted = Adaptation(net=rma.RMAPhase2, arch_config=arch_config, tensorboard_log_writer=save_history_callback.tb_formatter)
         model_adapted.adapt(phase2dataloader)
+        model_adapted.save(path=model_save_path)
 
 
 

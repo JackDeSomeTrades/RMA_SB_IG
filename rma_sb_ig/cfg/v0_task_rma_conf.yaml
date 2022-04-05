@@ -81,7 +81,7 @@ task_config:
     decimation: 4
 
   asset:
-    file: '{ROOT_DIR}/resources/robots/a1/urdf/a1.urdf'
+    file: '{ROOT_DIR}/resources/robots/a1/urdf/v0.urdf'
     name: "a1" # actor name
     foot_name: "foot" # name of the feet bodies, used to index body state and contact force tensors
     penalize_contacts_on: ["thigh", "calf"]
@@ -203,7 +203,7 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 18000000
+  n_timesteps: 20000000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'

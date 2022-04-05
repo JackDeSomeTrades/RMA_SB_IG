@@ -1,9 +1,11 @@
 from rma_sb_ig.envs.a1task_rma import A1LeggedRobotTask
+from rma_sb_ig.envs.v0_task_rma import V0LeggedRobotTask
 from rma_sb_ig.envs.a1_rma_minimal import A1LeggedRobotTaskMinimal
 from stable_baselines3.common.vec_env import VecEnv
 from abc import abstractmethod
 from abc import ABC
 from stable_baselines3.common.callbacks import EventCallback, EvalCallback
+from stable_baselines3.common.logger import TensorBoardOutputFormat
 import numpy as np
 import hickle as hkl
 
@@ -15,13 +17,20 @@ class SaveHistoryCallback(EventCallback):
             self.savepath = savepath
         else:
             return False
-        self.file = open(self.savepath+'.hkl', 'w')
+        self.file = open(self.savepath, 'w')
         self.datadict = {}
 
+    def _on_training_start(self):
+        output_formats = self.logger.output_formats
+        # Save reference to tensorboard formatter object
+        # note: the failure case (not formatter found) is not handled here, should be done with try/except.
+        self.tb_formatter = next(
+            formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))
+
     def _on_step(self) -> bool:
-        zt = self.model.policy.features_extractor.zt
-        current_state = self.model.env.X_t
-        current_actions = self.model.env.actions
+        zt = self.model.policy.features_extractor.zt.clone().detach().cpu()
+        current_state = self.model.env.X_t.clone().detach().cpu()
+        current_actions = self.model.env.actions.clone().detach().cpu()
         self.datadict[self.n_calls] = {'state': current_state, 'env_encoding': zt, 'actions': current_actions}
 
         return True
@@ -66,6 +75,6 @@ class RMAA1TaskVecEnvStableBaselineGym(A1LeggedRobotTask, StableBaselinesVecEnvA
         A1LeggedRobotTask.__init__(self, *args, **kwargs)
 
 
-class RMAA1TaskVecEnvStableBaselineGymMinimal(A1LeggedRobotTaskMinimal, StableBaselinesVecEnvAdapter):
+class RMAV0TaskVecEnvStableBaselineGym(V0LeggedRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):
-        A1LeggedRobotTaskMinimal.__init__(self, *args, **kwargs)
+        V0LeggedRobotTask.__init__(self, *args, **kwargs)
