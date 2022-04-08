@@ -20,7 +20,7 @@ if __name__ == "__main__":
     parser.add_argument('--dsetsavedir', '-k', type=str, default='output/')
     parser.add_argument('--phase', '-p', type=str, default='2')
 
-    args = parser.parse_args()
+    args, remaining_list = parser.parse_known_args()
 
     cfg = get_config(f'{args.cfg}_conf.yaml')
     robot_name = cfg['task_config']['asset']['name']
