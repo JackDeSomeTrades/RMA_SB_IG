@@ -16,7 +16,7 @@ class SaveHistoryCallback(EventCallback):
         if savepath is not None:
             self.savepath = savepath
         else:
-            return False
+            raise ValueError("Provide a path to save environment data")
         self.file = open(self.savepath, 'w')
         self.datadict = {}
 

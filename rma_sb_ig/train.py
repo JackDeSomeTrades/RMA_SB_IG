@@ -4,7 +4,7 @@ from box import Box
 
 from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, parse_config
 from rma_sb_ig.utils.trainers import Adaptation
-from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset
+from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset, RMAPhase2FastDataset
 from rma_sb_ig.models import rma
 from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym, RMAV0TaskVecEnvStableBaselineGym, SaveHistoryCallback
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_argument('--cfg', '-c', type=str, default='a1_task_rma')
     parser.add_argument('--savedir', '-s', type=str, default='experiments/')
     parser.add_argument('--dsetsavedir', '-k', type=str, default='output/')
-    parser.add_argument('--phase', '-p', type=str, default=None)
+    parser.add_argument('--phase', '-p', type=str, default='2')
 
     args = parser.parse_args()
 
@@ -68,8 +68,8 @@ if __name__ == "__main__":
 
     if args.phase == '2' or args.phase == None:
         # ----------------- RMA Phase 2 -------------------------------------------- #
-        dataset_iterator = RMAPhase2Dataset(hkl_filepath=intermediate_dset_save_path, device=arch_config.device,
-                                            horizon=arch_config.state_action_horizon)
+        dataset_iterator = RMAPhase2FastDataset(hkl_filepath=intermediate_dset_save_path, device=arch_config.device,
+                                                horizon=arch_config.state_action_horizon)
         phase2dataloader = DataLoader(dataset_iterator)
 
         model_adapted = Adaptation(net=rma.RMAPhase2, arch_config=arch_config, tensorboard_log_writer=save_history_callback.tb_formatter)

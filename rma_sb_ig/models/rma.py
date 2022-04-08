@@ -42,7 +42,8 @@ class RMAPhase2(nn.Module):
     def __init__(self, arch_config):
         super(RMAPhase2, self).__init__()
         self.adaptation_module_lin = nn.Sequential(
-            nn.Linear(in_features=(arch_config.encoder.state_space_size + arch_config.encoder.action_space_size) * arch_config.state_action_horizon, out_features=128),
+            # nn.Linear(in_features=(arch_config.encoder.state_space_size + arch_config.encoder.action_space_size) * arch_config.state_action_horizon, out_features=128),
+            nn.LazyLinear(out_features=128),
             nn.ReLU(inplace=True),
             nn.Linear(in_features=128, out_features=32)
         )
@@ -63,10 +64,12 @@ class RMAPhase2(nn.Module):
             50 is the time horizon of state evolution.
         """
         intermediate = self.adaptation_module_lin(data)
-        intermediate = intermediate.unsqueeze(dim=2)
+        intermediate = intermediate.unsqueeze(dim=3)
+        intermediate = intermediate.view(intermediate.size(0)*intermediate.size(1), intermediate.size(2), 1)
         conv_intermediate = self.adaptation_module_conv(intermediate)
         z_cap_t = self.linear(conv_intermediate)
 
+        z_cap_t = z_cap_t.view(data.size(0), -1, z_cap_t.size(-1))
         return z_cap_t
 
 
@@ -97,7 +100,7 @@ def test_net():
     cfg = get_config(cfg)
     arch_cfg = Box(cfg).arch_config
     net = RMAPhase2(arch_config=arch_cfg)
-    input_data_size = (1024, 2100)
+    input_data_size = (64, 1024, 2100)
     summary(net, input_size=input_data_size)
 
 
