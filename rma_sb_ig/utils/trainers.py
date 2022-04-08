@@ -6,7 +6,7 @@ from tqdm import tqdm
 import zipfile
 
 from box import Box
-from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset
+from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset, RMAPhase2FastDataset
 from rma_sb_ig.models.rma import RMAPhase2
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -33,14 +33,14 @@ class Adaptation:
             epoch_acc = 0
             itr_cntr = 0
             self.model.train()
-            for label, data in iterator:
+            for label, data in tqdm(iterator, desc='|----', leave=False):
                 data = data.squeeze()
                 data = data.double()
                 label = label.squeeze()
                 label = label.double()
                 # print(itr_cntr, data.shape, label.shape)
 
-                data = torch.flatten(data, start_dim=1)
+                data = torch.flatten(data, start_dim=2)
 
                 zt = label.to(self.device)
                 data = data.to(self.device)
@@ -74,17 +74,18 @@ class Adaptation:
                     torch.save(self.model.state_dict(), adapted_parameters)
 
 
-
 if __name__ == '__main__':
     cfg = get_config('a1_task_rma_conf.yaml')
-    hkl_fpath = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_71.hkl'
-    tb_logs = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_71_p2'
+    hkl_fpath = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_68_a1.hkl'
+    tb_logs = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_68_a1'
 
     arch_config = Box(cfg).arch_config
 
-    dataset_iterator = RMAPhase2Dataset(hkl_filepath=hkl_fpath, device=arch_config.device,
-                                        horizon=arch_config.state_action_horizon)
-    phase2dataloader = DataLoader(dataset_iterator)
+    dataset_iterator = RMAPhase2FastDataset(hkl_filepath=hkl_fpath, device=arch_config.device,
+                                            horizon=arch_config.state_action_horizon)
+    # dataset_iterator = RMAPhase2Dataset(hkl_filepath=hkl_fpath, device=arch_config.device,
+    #                                     horizon=arch_config.state_action_horizon)
+    phase2dataloader = DataLoader(dataset_iterator, batch_size=128, pin_memory=False)
     logger = SummaryWriter(log_dir=tb_logs)
 
     model_adapted = Adaptation(net=RMAPhase2, arch_config=arch_config, tensorboard_log_writer=logger)
