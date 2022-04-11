@@ -8,6 +8,7 @@ import random
 import torch
 import box
 import argparse
+import datetime
 
 from rma_sb_ig.cfg import CFGFILEPATH
 from pathlib import Path
@@ -44,7 +45,7 @@ def parse_config(cfg):
     return config, sim_params, args
 
 
-def get_run_name(cfg):
+def get_run_name(cfg, args):
     try:
         run_name = cfg.logging.run_name
     except (AttributeError, KeyError):
@@ -67,7 +68,12 @@ def get_run_name(cfg):
         alg_list = [conf_key for conf_key in conf_keys if conf_key.lower() in alg_type]
         # alg_lst = [value for value in alg_type if value in conf_keys]  # should generally return a list of 1 element.
 
-        run_name = alg_list[0].upper()+'_'+str((max_id+1))
+        if (args.run_comment is not None) or args.timestamp:
+            run_comment = args.run_comment + '_' + datetime.datetime.now().strftime("%d_%b_%H%M%S") + '_'
+        else:
+            run_comment = '_'
+
+        run_name = alg_list[0].upper()+'_'+str((max_id+1)) + '_' + run_comment + args.robot_name
 
     return run_name
 

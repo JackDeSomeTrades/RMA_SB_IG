@@ -19,11 +19,14 @@ if __name__ == "__main__":
     parser.add_argument('--savedir', '-s', type=str, default='experiments/')
     parser.add_argument('--dsetsavedir', '-k', type=str, default='output/')
     parser.add_argument('--phase', '-p', type=str, default='2')
+    parser.add_argument('--run_comment', '-m', type=str, default=None)
+    parser.add_argument('--robot_name', '-r', type=str, default='a1')
+    parser.add_argument('--timestamp', '-t', type=bool, default=False)
 
-    args, remaining_list = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     cfg = get_config(f'{args.cfg}_conf.yaml')
-    robot_name = cfg['task_config']['asset']['name']
+    robot_name = args.robot_name
     if robot_name == 'a1':
         vec_env = RMAA1TaskVecEnvStableBaselineGym(parse_config(cfg))
     elif robot_name == 'v0':
@@ -35,8 +38,8 @@ if __name__ == "__main__":
     arch_config = Box(cfg).arch_config
 
     # ----------- Paths -------------------#
-    run_name = get_run_name(rl_config)
-    run_name = run_name + '_' + robot_name  # to avoid confusion
+
+    run_name = get_run_name(rl_config, args)
     model_save_path = os.path.join(os.path.join(os.getcwd(), f'{args.savedir}'), run_name)
     intermediate_dset_save_path = os.path.join(os.getcwd(), f'{args.dsetsavedir}', run_name)+'.hkl'
 
