@@ -136,7 +136,7 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
 
     def _init_observation_space(self):
         """
-        Observation consists of :
+        Observation for 4 legged v0 robot consists of :
                         dof_pos - 12
                         dof_vel - 12
                         roll - 1
@@ -144,11 +144,12 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
                         feet_contact_switches - 4
                         previous_actions -12
                         Mass - 1
+                        Gravity - 1
                         COM_x - 1
                         COM_y - 1
-                        Motor Strength - 12
+                        COM_z - 1
                         Friction - 1
-                        Local terrain height - 1
+                        Local terrain height - 4 ( for each of the 4 legs)
         :return: obs_space
         """
         limits_low = np.array(
@@ -158,12 +159,13 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
             [-math.inf] +
             [0] * 4 +
             self.lower_bounds_joints +
-            [0] +
+            [0] +            # Mass
+            [-math.inf] +    # Gravity
             [-math.inf] +
             [-math.inf] +
-            [motor_strength * self.cfg.domain_rand.motor_strength_range[0] for motor_strength in self.motor_strength] +
+            [-math.inf] +
             [self.cfg.domain_rand.friction_range[0]] +
-            [0]
+            [0] * 4
         )
         limits_high = np.array(
             self.upper_bounds_joints +
@@ -172,12 +174,13 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
             [math.inf] +
             [1] * 4 +
             self.upper_bounds_joints +
+            [math.inf] +      # Mass
+            [0] +             # Gravity
             [math.inf] +
             [math.inf] +
             [math.inf] +
-            [motor_strength * self.cfg.domain_rand.motor_strength_range[1] for motor_strength in self.motor_strength] +
             [self.cfg.domain_rand.friction_range[1]] +
-            [math.inf]
+            [math.inf] * 4
         )
         obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float32)
         return obs_space
@@ -241,9 +244,8 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
         noise_vec[24:26] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
         noise_vec[26:30] = 0.
         noise_vec[30:42] = 0.  # Previous action.
-        noise_vec[42:45] = 0.  # Mass and COM
-        noise_vec[45:57] = noise_scales.motor_strength * noise_level
-        noise_vec[58] = noise_scales.height_measurements * noise_level * self.obs_scales.height_measurements
+        noise_vec[42:48] = 0.  # Mass, Gravity and COM
+        noise_vec[48:52] = noise_scales.height_measurements * noise_level * self.obs_scales.height_measurements
 
         return noise_vec
 
@@ -416,9 +418,10 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
                               ), dim=-1)
         E_t = torch.cat((
             self.body_masses.unsqueeze(-1),
+            self.projected_gravity,    # TODO: Check this to see if the dimensions are right.
             self.body_com_x.unsqueeze(-1),
             self.body_com_y.unsqueeze(-1),
-            self.torque_limits,
+            self.body_com_z.unsqueeze(-1),
             self.friction_coeffs.squeeze(-1),
             local_terrain_height.unsqueeze(-1)
         ), dim=-1)
@@ -486,6 +489,8 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
         # the max of each of the heights of the envs. This is in contrast to the paper which defines terrain height as
         # the max of the height below the robot feet.
         local_terrain_height = torch.max(local_terrain_height, dim=-1)[0]
+
+        # TODO: Change this to height beneath the legs.
 
         return local_terrain_height
 

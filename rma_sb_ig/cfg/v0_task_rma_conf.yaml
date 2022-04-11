@@ -3,7 +3,7 @@ task_config:
 
   env:
     num_envs: 1024
-    num_observations: 59
+    num_observations: 52
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 12
     env_spacing: 3.  # not used with heightfields/trimeshes
