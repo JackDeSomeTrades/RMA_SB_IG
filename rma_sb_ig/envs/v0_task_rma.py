@@ -484,13 +484,23 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
         return feet_switches
 
     def _get_local_terrain_height(self):
-        local_terrain_height = self.measured_heights
-        # this gives the measured heights of all points below the body of the robot. Max of local terrain height is just
-        # the max of each of the heights of the envs. This is in contrast to the paper which defines terrain height as
-        # the max of the height below the robot feet.
-        local_terrain_height = torch.max(local_terrain_height, dim=-1)[0]
+        # Getting local terrain height is different for this robot compared to the A1. In this, we're extracting the
+        # COM-z data for each of the robots' feet
 
-        # TODO: Change this to height beneath the legs.
+        # get rigid body properties for each handle.
+        # Extract props of the feet using feet indices.
+        # Extract COMM-x from feet props. That is the local terrain height.
+        feet_pos_all = []
+        for i in range(self.num_envs):
+            feet_pos_per_env = []
+            env_handle = self.gym.get_env(self.sim, i)
+            actor_handle = self.gym.find_actor_handle(env_handle, self.cfg.asset.name)
+            body_props = self.gym.get_actor_rigid_body_properties(env_handle, actor_handle)
+            for foot_index in self.feet_indices:
+                feet_pos_per_env.append(body_props[foot_index].com.z)
+            feet_pos_all.append(feet_pos_per_env)
+
+        local_terrain_height = torch.cuda.FloatTensor(feet_pos_all)
 
         return local_terrain_height
 
