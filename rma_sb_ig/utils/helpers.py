@@ -52,6 +52,8 @@ def get_run_name(cfg, args):
         idx_ = []
         alg_type = []
         log_dir = cfg.logging.dir.format(ROOT_DIR=Path.cwd())
+        if os.path.isdir(log_dir) is False:
+            Path(log_dir).mkdir(parents=True, exist_ok=True)
         folders = os.listdir(log_dir)
         for folder in folders:
             if folder[0] != '.':

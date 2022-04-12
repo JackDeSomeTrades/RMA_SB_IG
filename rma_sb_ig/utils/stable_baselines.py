@@ -8,12 +8,16 @@ from stable_baselines3.common.callbacks import EventCallback, EvalCallback
 from stable_baselines3.common.logger import TensorBoardOutputFormat
 import numpy as np
 import hickle as hkl
+import os
+from pathlib import Path
 
 
 class SaveHistoryCallback(EventCallback):
     def __init__(self, savepath=None, verbose=0):
         super(SaveHistoryCallback, self).__init__(verbose=verbose)
         if savepath is not None:
+            if os.path.exists(savepath) is False:
+                Path(savepath).mkdir(parents=True, exist_ok=True)
             self.savepath = savepath
         else:
             raise ValueError("Provide a path to save environment data")
