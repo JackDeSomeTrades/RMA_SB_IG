@@ -31,8 +31,8 @@
       <origin rpy="0 0 0" xyz="0 0 0.7"/>
     </collision>
     <inertial>
-      <mass value="6.240000000000001"/>
-      <inertia ixx="0.052000000000000005" ixy="0.0" ixz="0.0" iyy="0.8840000000000001" iyz="0.0" izz="0.9256000000000002"/>
+      <mass value="99.84000000000002"/>
+      <inertia ixx="0.8320000000000001" ixy="0.0" ixz="0.0" iyy="14.144000000000002" iyz="0.0" izz="14.809600000000003"/>
     </inertial>
   </link>
   <link name="l1_segment_1">
@@ -50,8 +50,8 @@
       <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </collision>
     <inertial>
-      <mass value="0.32000000000000006"/>
-      <inertia ixx="0.001333333333333334" ixy="0.0" ixz="0.0" iyy="0.001333333333333334" iyz="0.0" izz="0.0005333333333333336"/>
+      <mass value="5.120000000000001"/>
+      <inertia ixx="0.021333333333333343" ixy="0.0" ixz="0.0" iyy="0.021333333333333343" iyz="0.0" izz="0.008533333333333337"/>
     </inertial>
   </link>
   <joint name="l1_base_to_joint_1" type="fixed">
@@ -74,8 +74,8 @@
       <origin rpy="0 0 0" xyz="0 0.25 0"/>
     </collision>
     <inertial>
-      <mass value="0.96"/>
-      <inertia ixx="0.029599999999999994" ixy="0.0" ixz="0.0" iyy="0.0016" iyz="0.0" izz="0.029599999999999994"/>
+      <mass value="15.36"/>
+      <inertia ixx="0.4735999999999999" ixy="0.0" ixz="0.0" iyy="0.0256" iyz="0.0" izz="0.4735999999999999"/>
     </inertial>
   </link>
   <joint name="l1_joint_1_to_2" type="revolute">
@@ -83,7 +83,7 @@
     <child link="l1_segment_2_HIP"/>
     <origin rpy="0 0 0" xyz="0 0 0.25"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <limit effort="55" lower="-1.2" upper="1.2" velocity="29"/>
+    <limit effort="2048" lower="-1.2" upper="1.2" velocity="15"/>
   </joint>
   <link name="l1_segment_3_THIGH">
     <visual>
@@ -100,8 +100,8 @@
       <origin rpy="0 0 0" xyz="0 0 -0.3"/>
     </collision>
     <inertial>
-      <mass value="1.12"/>
-      <inertia ixx="0.04666666666666666" ixy="0.0" ixz="0.0" iyy="0.04666666666666666" iyz="0.0" izz="0.001866666666666667"/>
+      <mass value="17.92"/>
+      <inertia ixx="0.7466666666666666" ixy="0.0" ixz="0.0" iyy="0.7466666666666666" iyz="0.0" izz="0.029866666666666673"/>
     </inertial>
   </link>
   <joint name="l1_joint_2_to_3" type="revolute">
@@ -109,7 +109,7 @@
     <child link="l1_segment_3_THIGH"/>
     <origin rpy="0 0 0" xyz="-0.1 0.5 0"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <limit effort="55" lower="-0.2" upper="0.75" velocity="29"/>
+    <limit effort="2048" lower="-0.2" upper="0.75" velocity="15"/>
   </joint>
   <link name="l1_segment_4_FOOT">
     <visual>
@@ -126,8 +126,8 @@
       <origin rpy="0 0 0" xyz="0 0 -0.2"/>
     </collision>
     <inertial>
-      <mass value="0.6400000000000001"/>
-      <inertia ixx="0.00906666666666667" ixy="0.0" ixz="0.0" iyy="0.00906666666666667" iyz="0.0" izz="0.0010666666666666672"/>
+      <mass value="10.240000000000002"/>
+      <inertia ixx="0.14506666666666673" ixy="0.0" ixz="0.0" iyy="0.14506666666666673" iyz="0.0" izz="0.017066666666666674"/>
     </inertial>
   </link>
   <joint name="l1_joint_3_to_4_FOOT" type="revolute">
@@ -135,7 +135,7 @@
     <child link="l1_segment_4_FOOT"/>
     <origin rpy="0 0 0" xyz="0.1 0 -0.55"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <limit effort="55" lower="-0.2" upper="0.5" velocity="29"/>
+    <limit effort="2048" lower="-0.2" upper="0.5" velocity="9"/>
   </joint>
   <!-- <xacro:leg name="l2" reflect="1">
 		<origin xyz="0 0.1 1.05" rpy="0 0 0" />
@@ -155,8 +155,8 @@
       <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </collision>
     <inertial>
-      <mass value="0.32000000000000006"/>
-      <inertia ixx="0.001333333333333334" ixy="0.0" ixz="0.0" iyy="0.001333333333333334" iyz="0.0" izz="0.0005333333333333336"/>
+      <mass value="5.120000000000001"/>
+      <inertia ixx="0.021333333333333343" ixy="0.0" ixz="0.0" iyy="0.021333333333333343" iyz="0.0" izz="0.008533333333333337"/>
     </inertial>
   </link>
   <joint name="l3_base_to_joint_1" type="fixed">
@@ -179,8 +179,8 @@
       <origin rpy="0 0 0" xyz="0 0.25 0"/>
     </collision>
     <inertial>
-      <mass value="0.96"/>
-      <inertia ixx="0.029599999999999994" ixy="0.0" ixz="0.0" iyy="0.0016" iyz="0.0" izz="0.029599999999999994"/>
+      <mass value="15.36"/>
+      <inertia ixx="0.4735999999999999" ixy="0.0" ixz="0.0" iyy="0.0256" iyz="0.0" izz="0.4735999999999999"/>
     </inertial>
   </link>
   <joint name="l3_joint_1_to_2" type="revolute">
@@ -188,7 +188,7 @@
     <child link="l3_segment_2_HIP"/>
     <origin rpy="0 0 0" xyz="0 0 0.25"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <limit effort="55" lower="-1.2" upper="1.2" velocity="29"/>
+    <limit effort="2048" lower="-1.2" upper="1.2" velocity="15"/>
   </joint>
   <link name="l3_segment_3_THIGH">
     <visual>
@@ -205,8 +205,8 @@
       <origin rpy="0 0 0" xyz="0 0 -0.3"/>
     </collision>
     <inertial>
-      <mass value="1.12"/>
-      <inertia ixx="0.04666666666666666" ixy="0.0" ixz="0.0" iyy="0.04666666666666666" iyz="0.0" izz="0.001866666666666667"/>
+      <mass value="17.92"/>
+      <inertia ixx="0.7466666666666666" ixy="0.0" ixz="0.0" iyy="0.7466666666666666" iyz="0.0" izz="0.029866666666666673"/>
     </inertial>
   </link>
   <joint name="l3_joint_2_to_3" type="revolute">
@@ -214,7 +214,7 @@
     <child link="l3_segment_3_THIGH"/>
     <origin rpy="0 0 0" xyz="-0.1 0.5 0"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <limit effort="55" lower="-0.2" upper="0.75" velocity="29"/>
+    <limit effort="2048" lower="-0.2" upper="0.75" velocity="15"/>
   </joint>
   <link name="l3_segment_4_FOOT">
     <visual>
@@ -231,8 +231,8 @@
       <origin rpy="0 0 0" xyz="0 0 -0.2"/>
     </collision>
     <inertial>
-      <mass value="0.6400000000000001"/>
-      <inertia ixx="0.00906666666666667" ixy="0.0" ixz="0.0" iyy="0.00906666666666667" iyz="0.0" izz="0.0010666666666666672"/>
+      <mass value="10.240000000000002"/>
+      <inertia ixx="0.14506666666666673" ixy="0.0" ixz="0.0" iyy="0.14506666666666673" iyz="0.0" izz="0.017066666666666674"/>
     </inertial>
   </link>
   <joint name="l3_joint_3_to_4_FOOT" type="revolute">
@@ -240,7 +240,7 @@
     <child link="l3_segment_4_FOOT"/>
     <origin rpy="0 0 0" xyz="0.1 0 -0.55"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <limit effort="55" lower="-0.2" upper="0.5" velocity="29"/>
+    <limit effort="2048" lower="-0.2" upper="0.5" velocity="9"/>
   </joint>
   <link name="r1_segment_1">
     <visual>
@@ -257,8 +257,8 @@
       <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </collision>
     <inertial>
-      <mass value="0.32000000000000006"/>
-      <inertia ixx="0.001333333333333334" ixy="0.0" ixz="0.0" iyy="0.001333333333333334" iyz="0.0" izz="0.0005333333333333336"/>
+      <mass value="5.120000000000001"/>
+      <inertia ixx="0.021333333333333343" ixy="0.0" ixz="0.0" iyy="0.021333333333333343" iyz="0.0" izz="0.008533333333333337"/>
     </inertial>
   </link>
   <joint name="r1_base_to_joint_1" type="fixed">
@@ -281,8 +281,8 @@
       <origin rpy="0 0 0" xyz="0 -0.25 0"/>
     </collision>
     <inertial>
-      <mass value="0.96"/>
-      <inertia ixx="0.029599999999999994" ixy="0.0" ixz="0.0" iyy="0.0016" iyz="0.0" izz="0.029599999999999994"/>
+      <mass value="15.36"/>
+      <inertia ixx="0.4735999999999999" ixy="0.0" ixz="0.0" iyy="0.0256" iyz="0.0" izz="0.4735999999999999"/>
     </inertial>
   </link>
   <joint name="r1_joint_1_to_2" type="revolute">
@@ -290,7 +290,7 @@
     <child link="r1_segment_2_HIP"/>
     <origin rpy="0 0 0" xyz="0 0 0.25"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <limit effort="55" lower="-1.2" upper="1.2" velocity="29"/>
+    <limit effort="2048" lower="-1.2" upper="1.2" velocity="15"/>
   </joint>
   <link name="r1_segment_3_THIGH">
     <visual>
@@ -307,8 +307,8 @@
       <origin rpy="0 0 0" xyz="0 0 -0.3"/>
     </collision>
     <inertial>
-      <mass value="1.12"/>
-      <inertia ixx="0.04666666666666666" ixy="0.0" ixz="0.0" iyy="0.04666666666666666" iyz="0.0" izz="0.001866666666666667"/>
+      <mass value="17.92"/>
+      <inertia ixx="0.7466666666666666" ixy="0.0" ixz="0.0" iyy="0.7466666666666666" iyz="0.0" izz="0.029866666666666673"/>
     </inertial>
   </link>
   <joint name="r1_joint_2_to_3" type="revolute">
@@ -316,7 +316,7 @@
     <child link="r1_segment_3_THIGH"/>
     <origin rpy="0 0 0" xyz="-0.1 -0.5 0"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <limit effort="55" lower="-0.75" upper="0.2" velocity="29"/>
+    <limit effort="2048" lower="-0.75" upper="0.2" velocity="15"/>
   </joint>
   <link name="r1_segment_4_FOOT">
     <visual>
@@ -333,8 +333,8 @@
       <origin rpy="0 0 0" xyz="0 0 -0.2"/>
     </collision>
     <inertial>
-      <mass value="0.6400000000000001"/>
-      <inertia ixx="0.00906666666666667" ixy="0.0" ixz="0.0" iyy="0.00906666666666667" iyz="0.0" izz="0.0010666666666666672"/>
+      <mass value="10.240000000000002"/>
+      <inertia ixx="0.14506666666666673" ixy="0.0" ixz="0.0" iyy="0.14506666666666673" iyz="0.0" izz="0.017066666666666674"/>
     </inertial>
   </link>
   <joint name="r1_joint_3_to_4_FOOT" type="revolute">
@@ -342,7 +342,7 @@
     <child link="r1_segment_4_FOOT"/>
     <origin rpy="0 0 0" xyz="0.1 0 -0.55"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <limit effort="55" lower="-0.5" upper="0.2" velocity="29"/>
+    <limit effort="2048" lower="-0.5" upper="0.2" velocity="9"/>
   </joint>
   <!-- <xacro:leg name="r2" reflect="-1">
 		<origin xyz="0 -0.1 1.05" rpy="0 0 0" />
@@ -362,8 +362,8 @@
       <origin rpy="0 0 0" xyz="0 0 0.1"/>
     </collision>
     <inertial>
-      <mass value="0.32000000000000006"/>
-      <inertia ixx="0.001333333333333334" ixy="0.0" ixz="0.0" iyy="0.001333333333333334" iyz="0.0" izz="0.0005333333333333336"/>
+      <mass value="5.120000000000001"/>
+      <inertia ixx="0.021333333333333343" ixy="0.0" ixz="0.0" iyy="0.021333333333333343" iyz="0.0" izz="0.008533333333333337"/>
     </inertial>
   </link>
   <joint name="r3_base_to_joint_1" type="fixed">
@@ -386,8 +386,8 @@
       <origin rpy="0 0 0" xyz="0 -0.25 0"/>
     </collision>
     <inertial>
-      <mass value="0.96"/>
-      <inertia ixx="0.029599999999999994" ixy="0.0" ixz="0.0" iyy="0.0016" iyz="0.0" izz="0.029599999999999994"/>
+      <mass value="15.36"/>
+      <inertia ixx="0.4735999999999999" ixy="0.0" ixz="0.0" iyy="0.0256" iyz="0.0" izz="0.4735999999999999"/>
     </inertial>
   </link>
   <joint name="r3_joint_1_to_2" type="revolute">
@@ -395,7 +395,7 @@
     <child link="r3_segment_2_HIP"/>
     <origin rpy="0 0 0" xyz="0 0 0.25"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <limit effort="55" lower="-1.2" upper="1.2" velocity="29"/>
+    <limit effort="2048" lower="-1.2" upper="1.2" velocity="15"/>
   </joint>
   <link name="r3_segment_3_THIGH">
     <visual>
@@ -412,8 +412,8 @@
       <origin rpy="0 0 0" xyz="0 0 -0.3"/>
     </collision>
     <inertial>
-      <mass value="1.12"/>
-      <inertia ixx="0.04666666666666666" ixy="0.0" ixz="0.0" iyy="0.04666666666666666" iyz="0.0" izz="0.001866666666666667"/>
+      <mass value="17.92"/>
+      <inertia ixx="0.7466666666666666" ixy="0.0" ixz="0.0" iyy="0.7466666666666666" iyz="0.0" izz="0.029866666666666673"/>
     </inertial>
   </link>
   <joint name="r3_joint_2_to_3" type="revolute">
@@ -421,7 +421,7 @@
     <child link="r3_segment_3_THIGH"/>
     <origin rpy="0 0 0" xyz="-0.1 -0.5 0"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <limit effort="55" lower="-0.75" upper="0.2" velocity="29"/>
+    <limit effort="2048" lower="-0.75" upper="0.2" velocity="15"/>
   </joint>
   <link name="r3_segment_4_FOOT">
     <visual>
@@ -438,8 +438,8 @@
       <origin rpy="0 0 0" xyz="0 0 -0.2"/>
     </collision>
     <inertial>
-      <mass value="0.6400000000000001"/>
-      <inertia ixx="0.00906666666666667" ixy="0.0" ixz="0.0" iyy="0.00906666666666667" iyz="0.0" izz="0.0010666666666666672"/>
+      <mass value="10.240000000000002"/>
+      <inertia ixx="0.14506666666666673" ixy="0.0" ixz="0.0" iyy="0.14506666666666673" iyz="0.0" izz="0.017066666666666674"/>
     </inertial>
   </link>
   <joint name="r3_joint_3_to_4_FOOT" type="revolute">
@@ -447,6 +447,6 @@
     <child link="r3_segment_4_FOOT"/>
     <origin rpy="0 0 0" xyz="0.1 0 -0.55"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <limit effort="55" lower="-0.5" upper="0.2" velocity="29"/>
+    <limit effort="2048" lower="-0.5" upper="0.2" velocity="9"/>
   </joint>
 </robot>
