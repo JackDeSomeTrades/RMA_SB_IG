@@ -559,7 +559,7 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
             if self.cfg.env.send_timeouts:
                 self.infos[env_id]["time_outs"] = self.time_out_buf
             self.infos[env_id]["TimeLimit.truncated"] = 1  #TODO: New addition, not checked
-            self.infos[env_id]["terminal_observation"] = self.obs_buf[env_id,:]  #TODO: New addition, not checked
+            self.infos[env_id]["terminal_observation"] = self.obs_buf[env_id,:].detach().cpu().numpy()
         # reset buffers
         self.last_actions[env_ids] = 0.
         self.last_torques[env_ids] = 0.  # for RMA
