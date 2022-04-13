@@ -43,7 +43,7 @@ task_config:
     resampling_time: 10. # time before command are changed[s]
     heading_command: True # if true: compute ang vel command from heading error. If false, set to 0.
     ranges:
-      lin_vel_x: [0.2, 0.35] # min max [m/s]
+      lin_vel_x: [0.2, 1.75] # min max [m/s]
       lin_vel_y: [0.0, 0.0]   # min max [m/s]
       ang_vel_yaw: [0, 0]    # min max [rad/s]
       heading: [-3.14, 3.14]
@@ -93,7 +93,7 @@ task_config:
   control:
   # PD Drive parameters:
     control_type: 'P' # P: position, V: velocity, T: torques
-    stiffness: {'joint': 70.}  # [N*m/rad]
+    stiffness: {'joint': 2070.}  # [N*m/rad]
     damping: {'joint': 0.2}  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
     action_scale: 0.25
@@ -136,7 +136,7 @@ task_config:
     motor_strength_range: [0.90, 1.10]
 
   rewards:
-    only_positive_rewards: False # if true negative total rewards are clipped at zero (avoids early termination problems)
+    only_positive_rewards: True # if true negative total rewards are clipped at zero (avoids early termination problems)
     tracking_sigma: 0.25 # tracking reward: exp(-error^2/sigma)
     soft_dof_vel_limit: 1.
     soft_torque_limit: 1.
@@ -146,15 +146,15 @@ task_config:
     scales:
 #        termination: -10.0   # 0.0
         tracking_lin_vel: 20.0
-        tracking_ang_vel: 10.0
-        lin_vel_z: -2.0
+        tracking_ang_vel: 0.0
+        lin_vel_z: -0.0
 #        ang_vel_xy: -0.05
 #        dof_vel: -0.
 #        dof_acc: -2.5e-7
-        base_height: -2.0
+        base_height: -0.0
 #        feet_air_time: 1.0
 #        collision: -1.
-        feet_stumble: -0.025
+        feet_stumble: -0.0
 #        action_rate: -0.01
 #        stand_still: -0.0005
 #        torques: -0.0002
@@ -184,7 +184,7 @@ task_config:
         height_measurements: 5.0
 
   noise:
-    add_noise: True
+    add_noise: False
     noise_level: 1.0 # scales other values
     noise_scales:
       dof_pos: 0.01
@@ -248,7 +248,7 @@ arch_config:
   encoder:
     encoded_extrinsic_size: 8
     action_space_size: 12
-    state_space_size: 30
+    state_space_size: 36
     env_size: 12
   adaptation:
     epochs: 500

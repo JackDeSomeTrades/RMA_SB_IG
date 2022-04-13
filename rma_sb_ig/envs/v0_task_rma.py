@@ -158,6 +158,7 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
             [-math.inf] +
             [-math.inf] +
             [0] * 4 +
+            [-math.inf] * 6 +
             self.lower_bounds_joints +
             [0] +             # Mass
             [-math.inf] * 3 + # Projected Gravity
@@ -173,6 +174,7 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
             [math.inf] +
             [math.inf] +
             [1] * 4 +
+            [math.inf] * 6 +
             self.upper_bounds_joints +
             [math.inf] +      # Mass
             [0] * 3 +         # Projected Gravity
@@ -414,7 +416,9 @@ class V0LeggedRobotTask(EnvScene, BaseTask):
                               self.dof_vel,
                               self.base_rpy[0].unsqueeze(1),
                               self.base_rpy[1].unsqueeze(1),
-                              feet_contact_switches
+                              feet_contact_switches,
+                              self.base_lin_vel,
+                              self.commands[:, :3],
                               ), dim=-1)
         E_t = torch.cat((
             self.body_masses.unsqueeze(-1),
