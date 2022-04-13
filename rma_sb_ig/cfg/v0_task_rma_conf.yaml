@@ -3,7 +3,7 @@ task_config:
 
   env:
     num_envs: 1024
-    num_observations: 52
+    num_observations: 54
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 12
     env_spacing: 3.  # not used with heightfields/trimeshes
@@ -52,41 +52,61 @@ task_config:
     rot: [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
     lin_vel: [0.0, 0.0, 0.0]  # x,y,z [m/s]
     ang_vel: [0.0, 0.0, 0.0]  # x,y,z [rad/s]
-    pos: [0.0, 0.0, 0.42]  # x,y,z [m]
-    default_joint_angles: {  #: target angles [rad] when action: 0.0
-    'FL_hip_joint': 0.1,  # [rad]
-    'RL_hip_joint': 0.1,  # [rad]
-    'FR_hip_joint': -0.1,  # [rad]
-    'RR_hip_joint': -0.1,  # [rad]
-
-    'FL_thigh_joint': 0.8,  # [rad]
-    'RL_thigh_joint': 1.,  # [rad]
-    'FR_thigh_joint': 0.8,  # [rad]
-    'RR_thigh_joint': 1.,  # [rad]
-
-    'FL_calf_joint': -1.5,  # [rad]
-    'RL_calf_joint': -1.5,  # [rad]
-    'FR_calf_joint': -1.5,  # [rad]
-    'RR_calf_joint': -1.5,  # [rad]
+    pos: [0.0, 0.0, 0.22]  # x,y,z [m]
+#    default_joint_angles: {  #: target angles [rad] when action: 0.0
+#    'FL_hip_joint': 0.1,  # [rad]
+#    'RL_hip_joint': 0.1,  # [rad]
+#    'FR_hip_joint': -0.1,  # [rad]
+#    'RR_hip_joint': -0.1,  # [rad]
+#
+#    'FL_thigh_joint': 0.8,  # [rad]
+#    'RL_thigh_joint': 1.,  # [rad]
+#    'FR_thigh_joint': 0.8,  # [rad]
+#    'RR_thigh_joint': 1.,  # [rad]
+#
+#    'FL_calf_joint': -1.5,  # [rad]
+#    'RL_calf_joint': -1.5,  # [rad]
+#    'FR_calf_joint': -1.5,  # [rad]
+#    'RR_calf_joint': -1.5,  # [rad]
+#    }
+    default_joint_angles: {  # = target angles [rad] when action = 0.0
+    "l1_joint_1_to_2": -0.4,
+    "l1_joint_2_to_3": 0.15,
+    "l1_joint_3_to_4_FOOT": 0,
+    "l2_joint_1_to_2": 0,
+    "l2_joint_2_to_3": 0.15,
+    "l2_joint_3_to_4_FOOT": 0,
+    "l3_joint_1_to_2": 0.5,
+    "l3_joint_2_to_3": 0.15,
+    "l3_joint_3_to_4_FOOT": 0,
+    "r1_joint_1_to_2": 0.4,
+    "r1_joint_2_to_3": -0.15,
+    "r1_joint_3_to_4_FOOT": 0,
+    "r2_joint_1_to_2": 0,
+    "r2_joint_2_to_3": -0.15,
+    "r2_joint_3_to_4_FOOT": 0,
+    "r3_joint_1_to_2": -0.5,
+    "r3_joint_2_to_3": -0.15,
+    "r3_joint_3_to_4_FOOT": 0,
     }
 
   control:
   # PD Drive parameters:
     control_type: 'P' # P: position, V: velocity, T: torques
-    stiffness: {'joint': 20.}  # [N*m/rad]
-    damping: {'joint': 0.5}  # [N*m*s/rad]
+    stiffness: {'joint': 70.}  # [N*m/rad]
+    damping: {'joint': 0.2}  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
     action_scale: 0.25
   # decimation: Number of control action updates @ sim DT per policy DT
     decimation: 4
 
   asset:
-    file: '{ROOT_DIR}/resources/robots/a1/urdf/v0.urdf'
-    name: "a1" # actor name
-    foot_name: "foot" # name of the feet bodies, used to index body state and contact force tensors
-    penalize_contacts_on: ["thigh", "calf"]
-    terminate_after_contacts_on: ["base"]
-    self_collisions: 1  # 1 to disable, 0 to enable...bitwise filter
+    file: '{ROOT_DIR}/resources/robots/v0/urdf/v0.urdf'
+    name: "v0" # actor name
+    foot_name: "FOOT" # name of the feet bodies, used to index body state and contact force tensors
+    penalize_contacts_on: ["THIGH", "CALF", "HIP"]
+    terminate_after_contacts_on: ["body"]
+    self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
     disable_gravity: False
     collapse_fixed_joints: True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
     fix_base_link: False # fixe the base of the robot
@@ -229,7 +249,7 @@ arch_config:
     encoded_extrinsic_size: 8
     action_space_size: 12
     state_space_size: 30
-    env_size: 17
+    env_size: 12
   adaptation:
     epochs: 500
     optimizer: 'Adam'
