@@ -69,9 +69,11 @@ def get_run_name(cfg, args):
         alg_type = [algs.lower() for algs in alg_type]
         alg_list = [conf_key for conf_key in conf_keys if conf_key.lower() in alg_type]
         # alg_lst = [value for value in alg_type if value in conf_keys]  # should generally return a list of 1 element.
-
-        if (args.run_comment is not None) or args.timestamp:
-            run_comment = args.run_comment + '_' + datetime.datetime.now().strftime("%d_%b_%H%M%S") + '_'
+        run_comment = str()
+        if args.run_comment is not None:
+            run_comment += args.run_comment + '_'
+        if args.timestamp:
+            run_comment += datetime.datetime.now().strftime("%d_%b_%H%M%S") + '_'
         else:
             run_comment = '_'
 

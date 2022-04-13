@@ -16,7 +16,8 @@ class SaveHistoryCallback(EventCallback):
     def __init__(self, savepath=None, verbose=0):
         super(SaveHistoryCallback, self).__init__(verbose=verbose)
         if savepath is not None:
-            if os.path.exists(savepath) is False:
+            svpathparent = Path(savepath).parent
+            if os.path.exists(svpathparent) is False:
                 Path(savepath).mkdir(parents=True, exist_ok=True)
             self.savepath = savepath
         else:
