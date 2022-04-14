@@ -43,7 +43,7 @@ task_config:
     resampling_time: 10. # time before command are changed[s]
     heading_command: True # if true: compute ang vel command from heading error. If false, set to 0.
     ranges:
-      lin_vel_x: [0.2, 0.35] # min max [m/s]
+      lin_vel_x: [0.2, 1.75] # min max [m/s]
       lin_vel_y: [0.0, 0.0]   # min max [m/s]
       ang_vel_yaw: [0, 0]    # min max [rad/s]
       heading: [-3.14, 3.14]
@@ -93,7 +93,7 @@ task_config:
   control:
   # PD Drive parameters:
     control_type: 'P' # P: position, V: velocity, T: torques
-    stiffness: {'joint': 70.}  # [N*m/rad]
+    stiffness: {'joint': 2070.}  # [N*m/rad]
     damping: {'joint': 0.2}  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
     action_scale: 0.25
