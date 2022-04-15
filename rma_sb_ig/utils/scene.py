@@ -320,7 +320,7 @@ class EnvScene:
             for s in range(len(props)):
                 props[s].friction = self.friction_coeffs[env_id]
         else:
-            self.friction_coeffs = torch.full((self.num_envs, 1, 1), fill_value=0.1, device=self.device)   # Guesstimate.
+            self.friction_coeffs = torch.full((self.num_envs, 1, 1), fill_value=0.6, device=self.device)   # Guesstimate.
         return props
 
     def _process_dof_props(self, props, env_id):
