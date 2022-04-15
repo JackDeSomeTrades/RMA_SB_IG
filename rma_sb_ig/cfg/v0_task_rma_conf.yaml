@@ -223,7 +223,7 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 20000000
+  n_timesteps: 25000000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'

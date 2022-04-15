@@ -4,7 +4,7 @@ import numpy as np
 import argparse
 from rma_sb_ig.utils.helpers import get_config, get_project_root, parse_config, UserNamespace, parse_replay_config, get_args
 from box import Box
-from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym
+from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym, RMAV0TaskVecEnvStableBaselineGym
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 
@@ -30,7 +30,11 @@ def play(args):
     policy_save_fpath = os.path.join(os.getcwd(), f'experiments/{env_args.load_run}')
 
     # prepare environment
-    replay_env = RMAA1TaskVecEnvStableBaselineGym((env_cfg, sim_params, env_args))
+    robot_name = env_args.load_run.split('_')[-1]
+    if robot_name == 'a1':
+        replay_env = RMAA1TaskVecEnvStableBaselineGym((env_cfg, sim_params, env_args))
+    if robot_name == 'v0':
+        replay_env = RMAV0TaskVecEnvStableBaselineGym((env_cfg, sim_params, env_args))
     obs = replay_env.get_observations()
     obs = obs.detach().cpu().numpy()    # for SB3 compatibility
 
