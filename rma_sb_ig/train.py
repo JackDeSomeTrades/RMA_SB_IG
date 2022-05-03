@@ -6,7 +6,7 @@ from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, 
 from rma_sb_ig.utils.trainers import Adaptation
 from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset, RMAPhase2FastDataset
 from rma_sb_ig.models import rma
-from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym, RMAV0TaskVecEnvStableBaselineGym, SaveHistoryCallback
+from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym, RMAV0TaskVecEnvStableBaselineGym, RMAV0SixTaskVecEnvStableBaselineGym, SaveHistoryCallback
 
 from torch.utils.data import DataLoader
 import torch
@@ -31,6 +31,8 @@ if __name__ == "__main__":
         vec_env = RMAA1TaskVecEnvStableBaselineGym(parse_config(cfg))
     elif robot_name == 'v0':
         vec_env = RMAV0TaskVecEnvStableBaselineGym(parse_config(cfg))
+    elif robot_name == 'v0six':
+        vec_env = RMAV0SixTaskVecEnvStableBaselineGym(parse_config(cfg))
 
     # begin RL here
     # ----------- Configs -----------------#

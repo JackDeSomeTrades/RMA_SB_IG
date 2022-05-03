@@ -76,8 +76,8 @@ class Adaptation:
 
 if __name__ == '__main__':
     cfg = get_config('v0_task_rma_conf.yaml')
-    hkl_fpath = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_74_14_Apr_183821_v0.hkl'
-    tb_logs = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_74_14_Apr_183821_v0_0'
+    hkl_fpath = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_75_03_May_145037_v0six.hkl'
+    tb_logs = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_75_03_May_145037_v0six_0'
 
     arch_config = Box(cfg).arch_config
 
