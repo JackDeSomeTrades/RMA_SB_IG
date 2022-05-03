@@ -1,5 +1,6 @@
 from rma_sb_ig.envs.a1task_rma import A1LeggedRobotTask
 from rma_sb_ig.envs.v0_task_rma import V0LeggedRobotTask
+from rma_sb_ig.envs.v0six_task_rma import V0SixLeggedRobotTask
 from rma_sb_ig.envs.a1_rma_minimal import A1LeggedRobotTaskMinimal
 from stable_baselines3.common.vec_env import VecEnv
 from abc import abstractmethod
@@ -83,3 +84,8 @@ class RMAA1TaskVecEnvStableBaselineGym(A1LeggedRobotTask, StableBaselinesVecEnvA
 class RMAV0TaskVecEnvStableBaselineGym(V0LeggedRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):
         V0LeggedRobotTask.__init__(self, *args, **kwargs)
+
+
+class RMAV0SixTaskVecEnvStableBaselineGym(V0SixLeggedRobotTask, StableBaselinesVecEnvAdapter):
+    def __init__(self, *args, **kwargs):
+        V0SixLeggedRobotTask.__init__(self, *args, **kwargs)

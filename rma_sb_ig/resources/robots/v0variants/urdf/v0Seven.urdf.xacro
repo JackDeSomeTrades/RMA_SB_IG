@@ -119,9 +119,9 @@
 		<origin xyz="0.35 0.1 .75" rpy="0 0 0" />
 	</xacro:leg>
 
-<!--	<xacro:leg name="l2" reflect="1">-->
-<!--		<origin xyz="0 0.1 1.05" rpy="0 0 0" />-->
-<!--	</xacro:leg>-->
+	<xacro:leg name="l2" reflect="1">
+		<origin xyz="0 0.1 0.75" rpy="0 0 0" />
+	</xacro:leg>
 
 	<xacro:leg name="l3" reflect="1">
 		<origin xyz="-0.5 0.1 .75" rpy="0 0 0" />
@@ -131,9 +131,9 @@
 		<origin xyz="0.35 -0.1 .75" rpy="0 0 0" />
 	</xacro:leg>
 
-<!--	<xacro:leg name="r2" reflect="-1">-->
-<!--		<origin xyz="0 -0.1 1.05" rpy="0 0 0" />-->
-<!--	</xacro:leg>-->
+	<xacro:leg name="r2" reflect="-1">
+		<origin xyz="0 -0.1 0.75" rpy="0 0 0" />
+	</xacro:leg>
 
 	<xacro:leg name="r3" reflect="-1">
 		<origin xyz="-0.5 -0.1 .75" rpy="0 0 0" />
