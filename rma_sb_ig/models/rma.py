@@ -73,6 +73,31 @@ class RMAPhase2(nn.Module):
         return z_cap_t
 
 
+class Phase2Net(nn.Module):
+    def __init__(self):
+        super().__init__()
+        conv1 = nn.Conv1d(1, 32, 3, stride=3)
+        conv2 = nn.Conv1d(32, 64, 5, stride=3)
+        conv3 = nn.Conv1d(64, 128, 5, stride=2)
+
+        conv4 = nn.Conv1d(128, 64, 7, stride=2)
+        conv5 = nn.Conv1d(64, 64, 5, stride=2)
+        conv6 = nn.Conv1d(64, 32, 5, stride=1)
+        conv7 = nn.Conv1d(32, 32, 3, stride=1)
+
+        self.layers = nn.Sequential(conv1, nn.BatchNorm1d(32), nn.ReLU(),
+                                    conv2, nn.BatchNorm1d(64), nn.ReLU(),
+                                    conv3, nn.BatchNorm1d(128), nn.ReLU(),
+                                    conv4, nn.BatchNorm1d(64), nn.ReLU(),
+                                    conv5, nn.BatchNorm1d(64), nn.ReLU(),
+                                    conv6, nn.BatchNorm1d(32), nn.ReLU(),
+                                    conv7, nn.Flatten())
+
+    def forward(self, x):
+        x = self.layers(x)
+        return x
+
+
 class Architecture():
     def __init__(self, arch_config, device='cpu', savefile=None):
         self.device = device
