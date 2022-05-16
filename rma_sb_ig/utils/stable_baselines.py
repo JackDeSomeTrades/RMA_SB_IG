@@ -1,7 +1,6 @@
 from rma_sb_ig.envs.a1task_rma import A1LeggedRobotTask
 from rma_sb_ig.envs.v0_task_rma import V0LeggedRobotTask
 from rma_sb_ig.envs.v0six_task_rma import V0SixLeggedRobotTask
-from rma_sb_ig.envs.a1_rma_minimal import A1LeggedRobotTaskMinimal
 from stable_baselines3.common.vec_env import VecEnv
 from abc import abstractmethod
 from abc import ABC
