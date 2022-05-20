@@ -1,0 +1,6 @@
+geometry_msgs/PointStamped target_point  # Point that sensor_frame_id should target
+string sensor_frame_id
+---
+bool success  # Result status
+geometry_msgs/TransformStamped target_transform  # Transformation from target_point.header.frame_id to sensor_frame_id
+---

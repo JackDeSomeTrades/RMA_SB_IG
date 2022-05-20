@@ -1,0 +1,7 @@
+*~
+CMakeLists.txt.user
+*.user.*
+params_gen*
+/build
+*.pyc
+.idea

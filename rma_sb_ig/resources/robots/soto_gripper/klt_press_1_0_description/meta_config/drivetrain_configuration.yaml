@@ -1,0 +1,32 @@
+drivetrains:
+    press_jaw:
+        limits:
+            min: 0
+            max: 0.2315
+            urdf_min: 0.001
+            urdf_max: 0.230
+            home_offset: 0.005
+        mechanical_tolerances:
+            # placeholder
+            cad_motion_range: [0.6e-3]
+            home_offset: [0.9e-3]
+            limit_switch_distance: [5.0e-3]  # Production configures it to be between 0.3 and 0.6 mm
+        predef_loads:
+            inertia: 18
+            payload: 35
+            axis: horizontal
+        params:
+            max_acceleration: 0.008  # Reduce the acceleration significantly so the motor does not use
+                                     # excessive torque to move.
+            min_homing_speed: 0.01   # Prevent a extremely slow auto generated homing speed
+        parts:
+            - part: Motor
+              type: "CB59"
+              name: "press_jaw"
+            - part: Gear
+              type: "D37-10"
+            - part: Clutch
+              type: "RW-EKL-5-A"
+              rel_installation_depth: 1.0
+            - part: Spindle
+              type: "klt_press_spindle"

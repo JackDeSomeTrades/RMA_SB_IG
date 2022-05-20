@@ -1,0 +1,17 @@
+# goal
+ProfilePosition goal
+---
+#result
+Statusword result
+bool success
+float32 reached_position
+float32 energy
+float32 impulse
+---
+#feedback
+float32 distance_to_target
+float32 position
+float32 velocity
+float32 effort
+float32 energy
+float32 impulse

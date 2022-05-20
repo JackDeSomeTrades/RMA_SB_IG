@@ -1,0 +1,21 @@
+--- !extends:klt_press_1_0_description/klt_press_1_0_urdf.yaml
+press_depth_camera_depth_optical:
+  translation:
+    x: 0
+    y: 0
+    z: 0
+  rotation:
+    r: 0
+    p: 0
+    y: 0
+  parent: press_depth_camera_link
+press_depth_camera_rgb_optical:
+  translation:
+    x: 0.0145
+    y: 0
+    z: 0
+  rotation:
+    r: 0
+    p: 0
+    y: 0
+  parent: press_depth_camera_link

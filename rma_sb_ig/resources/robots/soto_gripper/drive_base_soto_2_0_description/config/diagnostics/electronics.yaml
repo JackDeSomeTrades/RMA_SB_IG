@@ -1,0 +1,10 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      # Group diagnostics
+      drive:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/drive
+        regex: 'hw_diagnostics:wheel:omnidrive*'
+        find_and_remove_prefix: 'hw_diagnostics:wheel:omnidrive'

@@ -1,0 +1,5 @@
+float32 forward_force
+float32 torque
+float32 linear_power
+float32 angular_power
+float32 total_power

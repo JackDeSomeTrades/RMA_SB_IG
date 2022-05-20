@@ -1,0 +1,42 @@
+drivetrains:
+    vertical_axis:
+        limits:
+            min: 0.355
+            max: 1.970
+            urdf_min: 0.355  # just as low as necessary so that safety homing switch triggers, not lower for now
+            urdf_max: 1.968
+            homing_stopping_distance: 0.065  # Homing-offset - 5 mm = 0.07 m - 0.005 m
+            home_offset: 0.07
+        limit_switch:
+            class: IFM
+            type: IQ2013
+            trigger_material: aluminum
+            distance: 0.004
+        mechanical_tolerances:
+            cad_motion_range: [0.01]
+            home_offset: [0.005]
+            limit_switch_distance: [1.0e-3]
+        positions:
+            neutral: 0.35
+        predef_loads:
+            inertia: 84.3 # kg
+            payload: 35 # kg
+            axis: vertical
+        params:
+            inverted_polarity: True
+            state_from_pick: True
+            use_external_encoder: True
+        parts:
+            - part: Motor
+              type: HMD08-035-048-30_ACTILINK
+              name: vertical_axis
+            - part: Brake
+              type: combiperm_p1_05
+            - part: Gear
+              type: PLFE064-12
+            - part: Belt
+              type: va_2_0_connection_belt
+              belt_pretension: 500.0
+            - part: Spindle
+              type: vertical_axis_2_0
+

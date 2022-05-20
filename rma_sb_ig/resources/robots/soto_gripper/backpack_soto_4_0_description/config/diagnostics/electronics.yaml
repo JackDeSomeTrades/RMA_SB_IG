@@ -1,0 +1,45 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      # Motors
+      backpack_tilt:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/backpack_tilt
+        regex: 'hw_diagnostics:motor:backpack_tilt.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:backpack_tilt:'
+      # Group diagnostics
+      backpack_motors_ok:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/backpack
+        regex: 'hw_diagnostics:motor:backpack_tilt.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:backpack_tilt:'
+      backpack_operational:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: backpack
+        regex: 'hw_diagnostics:motor:backpack_tilt.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:backpack_tilt:'
+  sw_diagnostics:
+    analyzers:
+      # Motors
+      backpack_tilt:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/backpack_tilt
+        regex: 'sw_diagnostics:motor:backpack_tilt.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:backpack_tilt:'
+      # Group diagnostics
+      backpack_motors_ok:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/backpack
+        regex: 'sw_diagnostics:motor:backpack_tilt.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:backpack_tilt:'
+      backpack_operational:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: backpack
+        regex: 'sw_diagnostics:motor:backpack_tilt.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:backpack_tilt:'

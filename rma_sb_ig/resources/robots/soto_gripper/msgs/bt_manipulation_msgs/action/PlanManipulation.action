@@ -1,0 +1,54 @@
+# Goal
+
+# Note: All the frames in this action should be expressed in a static reference frame
+# (i.e. a frame that is not descendant of odom)
+
+# Representation of the current object shape (geometric primitive or mesh).
+# Should be annotated if part of robot or part of shelf.
+# If the item is in the gripper, the shape should be expressed
+# in a frame of the gripper that rotates with the tower.
+moveit_msgs/CollisionObject[] current_items
+
+# Representation of the target object shape (geometric primitive or mesh).
+# Should be annotated if part of robot or part of shelf.
+# If the item is in the gripper, the shape should be expressed
+# in a frame of the gripper that rotates with the tower.
+moveit_msgs/CollisionObject[] target_items
+
+# Representation of the containers's shape (geometric primitive or mesh)
+# and the obstacles found in it
+moveit_msgs/CollisionObject[] collision_environment
+
+# Transform that allows to convert from a static frame to a robot frame
+geometry_msgs/TransformStamped robot_to_scene
+
+# Flag a dimension as to be measured. Each entry in the array will flag a
+# dimension in target_items/primitives/dimensions as to be measured
+bool[] measure_dimensions
+
+---
+# Result
+
+# True if: Manipulation planning was successful
+# False: else
+bool success
+
+# Identifiers for the computed grasp plan
+string plan_id
+
+# Representation of the expected final object shape
+# after the manipulation execution.
+moveit_msgs/CollisionObject[] expected_items
+
+# Expected Representation of the containers's shape
+# and the obstacles found in it AFTER the execution
+moveit_msgs/CollisionObject[] expected_collision_environment
+
+# Reposition Request to be executet. After the reposition the planner is
+# recalled and will validate the reposition to allow manipulation
+bt_manipulation_msgs/RepositionRequest reposition_to
+
+bt_manipulation_msgs/ExitStatus exit_status
+
+---
+# Feedback

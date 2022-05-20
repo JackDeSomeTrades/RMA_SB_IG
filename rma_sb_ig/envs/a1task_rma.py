@@ -12,6 +12,7 @@ from rma_sb_ig.utils.helpers import *
 from rma_sb_ig.envs.forward_task import ForwardTask
 
 
+
 class A1LeggedRobotTask(ForwardTask):
     def __init__(self, *args):
         super(A1LeggedRobotTask, self).__init__(*args)

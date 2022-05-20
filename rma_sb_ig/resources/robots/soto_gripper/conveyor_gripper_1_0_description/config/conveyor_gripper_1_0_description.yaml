@@ -1,0 +1,31 @@
+--- !extends:conveyor_gripper_1_0_description/conveyor_gripper_1_0_urdf.yaml
+gripper_depth_camera_depth_optical:
+  translation:
+    x: 0
+    y: 0
+    z: 0
+  rotation:
+    r: 0
+    p: 0
+    y: 0
+  parent: gripper_depth_camera_link
+gripper_depth_camera_rgb_optical:
+  translation:
+    x: 0.0145
+    y: 0
+    z: 0
+  rotation:
+    r: 0
+    p: 0
+    y: 0
+  parent: gripper_depth_camera_link
+conveyor_belt_left_barcode_camera:
+  translation:
+    x: 0.260007017149422
+    y: -0.122391992222825
+    z: -0.0116598009191592
+  rotation:
+    r: 1.3660676472658
+    p: 0.00532358718963196
+    y: 1.38245094245529
+  parent: conveyor_belt_left_base_link

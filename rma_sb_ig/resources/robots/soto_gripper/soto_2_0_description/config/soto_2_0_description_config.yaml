@@ -1,0 +1,7 @@
+---
+# package names of modules making up soto_2_0:
+drive_base: 'drive_base_soto_2_0_description'
+vertical_axis: 'vertical_axis_soto_2_0_description'
+gripper: 'conveyor_gripper_1_0_description'
+backpack: 'backpack_soto_4_0_description'
+klt_press: 'klt_press_1_0_description'

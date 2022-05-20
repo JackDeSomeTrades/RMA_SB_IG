@@ -1,0 +1,19 @@
+
+time stamp
+float64 desired_angular
+float64 desired_linear
+float64 desired_left
+float64 desired_right
+float64 tentative_acc_left
+float64 tentative_acc_right
+float64 saturated_acc_left
+float64 saturated_acc_right
+float64 commanded_left
+float64 commanded_right
+float64 current_linear
+float64 current_angular
+float64 current_left
+float64 current_right
+float64 controller_mode
+float64 linear_acc_pid
+float64 angular_acc_pid

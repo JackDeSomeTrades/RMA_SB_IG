@@ -1,0 +1,26 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      navigation_cameras:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: camera/navigation
+        regex: ['nav_3d_cam_front/manager: camera_availability',
+                'nav_3d_cam_rear/manager: camera_availability']
+        find_and_remove_prefix: ['nav_3d_cam_front/manager: camera_availability',
+                                 'nav_3d_cam_rear/manager: camera_availability']
+  sw_diagnostics:
+    analyzers:
+      # Group diagnostics
+      navigation_cameras:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: camera/navigation
+        regex: ['nav_3d_cam_front/manager: color_image',
+                'nav_3d_cam_front/manager: depth_image',
+                'nav_3d_cam_rear/manager: color_image',
+                'nav_3d_cam_rear/manager: depth_image']
+        find_and_remove_prefix: ['nav_3d_cam_front/manager: color_image',
+                                 'nav_3d_cam_front/manager: depth_image',
+                                 'nav_3d_cam_rear/manager: color_image',
+                                 'nav_3d_cam_rear/manager: depth_image']

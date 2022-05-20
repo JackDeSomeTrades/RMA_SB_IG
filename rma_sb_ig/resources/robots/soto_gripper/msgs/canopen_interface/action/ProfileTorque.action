@@ -1,0 +1,10 @@
+# goal
+ProfileTorque goal
+---
+#result
+Statusword result
+bool success
+---
+#feedback
+duration elapsedTime
+

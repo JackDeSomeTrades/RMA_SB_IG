@@ -1,0 +1,21 @@
+filtered:
+  canopen_interface:
+    differential_drive:
+      control_params:
+        angular_pid:
+          upper_limit: 1
+          lower_limit: -1
+          Kp: 10
+          Ki: 0.001
+          Kd: 0.0
+          windup_limit: 20
+        linear_pid:
+          upper_limit: 1
+          lower_limit: -1
+          Kp: 10
+          Ki: 0.001
+          Kd: 0.0
+          windup_limit: 20
+
+            #differential_drive/control_params/angular_pid/upper_limit
+

@@ -1,0 +1,130 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      # Motors
+      gripper_base_x:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/gripper_base_x
+        regex: 'hw_diagnostics:motor:gripper_base_x.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:gripper_base_x'
+      gripper_y_right:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/gripper_y_right
+        regex: 'hw_diagnostics:motor:gripper_y_right.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:gripper_y_right'
+      gripper_y_left:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/gripper_y_left
+        regex: 'hw_diagnostics:motor:gripper_y_left.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:gripper_y_left'
+      conveyor_belt_right:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/conveyor_belt_right
+        regex: 'hw_diagnostics:motor:conveyor_belt_right.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:conveyor_belt_right'
+      conveyor_belt_left:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/conveyor_belt_left
+        regex: 'hw_diagnostics:motor:conveyor_belt_left.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:conveyor_belt_left'
+      gripper_rotate:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/gripper_rotate
+        regex: 'hw_diagnostics:motor:gripper_rotate.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:gripper_rotate'
+      # Group diagnostics
+      camera:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: camera/manipulation
+        analyzers:
+          # Gripper depth camera
+          gripper_depth:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+            path: depth
+            regex: 'gripper_depth_camera/gripper_depth_camera_nodelet_manager: camera_availability'
+            find_and_remove_prefix: 'gripper_depth_camera/gripper_depth_camera_nodelet_manager: camera_availability'
+          # Press depth camera
+          press_depth:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+            path: depth
+            regex: 'press_depth_camera/press_depth_camera_nodelet_manager: camera_availability'
+            find_and_remove_prefix: 'press_depth_camera/press_depth_camera_nodelet_manager: camera_availability'
+          # Barcode camera
+          barcode:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+            path: barcode
+            regex: 'conveyor_belt_left_barcode_camera: camera_availability'
+            find_and_remove_prefix: 'conveyor_belt_left_barcode_camera: camera_availability'
+      manipulation_sensors:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: sensor/manipulation
+        regex: ['hw_diagnostics:custom_pcb:conveyor_belt_x_left_board.*']
+        find_and_remove_prefix: ['hw_diagnostics:custom_pcb:conveyor_belt_x_left_board']
+  sw_diagnostics:
+    analyzers:
+      # Motors
+      gripper_base_x:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/gripper_base_x
+        regex: 'sw_diagnostics:motor:gripper_base_x.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:gripper_base_x'
+      gripper_y_right:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/gripper_y_right
+        regex: 'sw_diagnostics:motor:gripper_y_right.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:gripper_y_right'
+      gripper_y_left:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/gripper_y_left
+        regex: 'sw_diagnostics:motor:gripper_y_left.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:gripper_y_left'
+      conveyor_belt_right:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/conveyor_belt_right
+        regex: 'sw_diagnostics:motor:conveyor_belt_right.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:conveyor_belt_right'
+      conveyor_belt_left:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/conveyor_belt_left
+        regex: 'sw_diagnostics:motor:conveyor_belt_left.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:conveyor_belt_left'
+      gripper_rotate:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/gripper_rotate
+        regex: 'sw_diagnostics:motor:gripper_rotate.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:gripper_rotate'
+      # Group diagnostics
+      manipulator_rotation:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/manipulator_rotation
+        regex: 'sw_diagnostics:motor:gripper_rotate.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:gripper_rotate'
+      camera:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: camera/manipulation
+        regex: 'conveyor_belt_left_barcode_camera: intrinsic_calibration'
+        find_and_remove_prefix: 'conveyor_belt_left_barcode_camera: intrinsic_calibration'
+      manipulation_sensors:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: sensor/manipulation
+        regex: ['sw_diagnostics:custom_pcb:conveyor_belt_x_left_board.*']
+        find_and_remove_prefix: ['sw_diagnostics:custom_pcb:conveyor_belt_x_left_board']

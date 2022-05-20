@@ -1,0 +1,116 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find urdf_utils)/urdf/parts.xacro" /> <!-- has the flow_rack_conveyor macro -->
+
+  <xacro:macro name="backpack_layer" params="layer_index double_compartment:=true left_depth:=0.8 right_depth:=0.8">
+
+    <!-- correct for origin location in flow_rack_conveyor macro -->
+    <xacro:property name="conveyor_length_left_" value="${left_depth - 0.065}" />
+    <xacro:property name="conveyor_length_right_" value="${right_depth - 0.065}" />
+
+    <!-- use index to uniquely identify all joints and links  -->
+    <link
+        name="backpack_${layer_index}_base_link">
+        <inertial>
+        <origin
+            xyz="0 -0.288351 -0.056443"
+            rpy="0 0 0" />
+        <mass
+            value="5" />
+        <inertia
+            ixx="0.30238167"
+            ixy="0"
+            ixz="0"
+            iyy="0.25636833"
+            iyz="0"
+            izz="0.55041667" />
+        </inertial>
+        <visual>
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 ${pi/2}" />
+        <geometry>
+            <mesh
+            filename="package://backpack_soto_4_0_description/meshes/layer_base_link.STL" />
+        </geometry>
+        <material
+            name="">
+            <color
+            rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+        </material>
+        </visual>
+        <collision>
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 ${pi/2}" />
+        <geometry>
+            <mesh
+            filename="package://backpack_soto_4_0_description/meshes/layer_base_link.STL" />
+        </geometry>
+        </collision>
+    </link>
+
+    <!-- left reference exists for both single and double compartments -->
+    <link
+        name="backpack_${layer_index}_left_reference_link" />
+    <joint
+        name="backpack_${layer_index}_base_to_left_reference"
+        type="fixed">
+        <origin
+        xyz="-0.185 0.1286 -0.0236"
+        rpy="0 0 0" />
+        <parent
+        link="backpack_${layer_index}_base_link" />
+        <child
+        link="backpack_${layer_index}_left_reference_link" />
+        <axis
+        xyz="0 0 0" />
+    </joint>
+
+    <xacro:if value="${double_compartment}">
+        <!-- create right reference-->
+        <link
+            name="backpack_${layer_index}_right_reference_link" />
+        <joint
+            name="backpack_${layer_index}_base_to_right_reference"
+            type="fixed">
+            <origin
+            xyz="0.185 0.1286 -0.0236"
+            rpy="0 0 0" />
+            <parent
+            link="backpack_${layer_index}_base_link" />
+            <child
+            link="backpack_${layer_index}_right_reference_link" />
+            <axis
+            xyz="0 0 0" />
+        </joint>
+
+        <!-- create left (0) and right (1) compartments -->
+        <xacro:flow_rack_conveyor joint_name="backpack_${layer_index}_compartment_0" parent_link="backpack_${layer_index}_left_reference_link" conveyor_length="${conveyor_length_left_}" conveyor_width="0.310" joint_xyz="0 -0.1055 -0.004" joint_rpy="0 0 0" stopper_height="0.019" />
+        <xacro:flow_rack_conveyor joint_name="backpack_${layer_index}_compartment_1" parent_link="backpack_${layer_index}_right_reference_link" conveyor_length="${conveyor_length_right_}" conveyor_width="0.310" joint_xyz="0 -0.1055 -0.004" joint_rpy="0 0 0" stopper_height="0.019" />
+    </xacro:if>
+    <xacro:unless value="${double_compartment}">
+        <!-- create left (0) compartment -->
+        <xacro:property name="stopper_distance_" value="0.370" />
+        <xacro:flow_rack_conveyor joint_name="backpack_${layer_index}_compartment_0" parent_link="backpack_${layer_index}_left_reference_link" conveyor_length="${conveyor_length_left_}" conveyor_width="0.610" joint_xyz="${stopper_distance_/2.0} -0.1055 -0.004" joint_rpy="0 0 0" stopper_height="0.019" has_dual_stopper="True" stopper_distance="${stopper_distance_}"/>
+    </xacro:unless>
+
+    <!-- Connection between layer and pivot bar -->
+    <joint
+        name="backpack_${layer_index}_base_pivot"
+        type="continuous">
+        <parent
+            link="backpack_${layer_index}_link" />
+        <child
+            link="backpack_${layer_index}_base_link" />
+        <axis
+            xyz="-1 0 0" />
+        <mimic
+            joint="backpack_tilt"
+            multiplier="1.0" />
+    </joint>
+
+  </xacro:macro>
+
+</robot>

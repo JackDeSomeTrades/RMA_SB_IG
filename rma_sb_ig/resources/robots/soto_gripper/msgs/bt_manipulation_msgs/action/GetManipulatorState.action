@@ -1,0 +1,20 @@
+# Goal
+# Contains the last known pose of the item(s)
+moveit_msgs/CollisionObject[] items_in_manipulator
+
+---
+# Result
+
+# True if status could be determined
+bool success
+
+# Get the resulting state of the manipulator
+uint8 manipulator_state
+
+# Gives the current pose of the item(s)
+moveit_msgs/CollisionObject[] items_in_manipulator
+
+bt_manipulation_msgs/ExitStatus exit_status
+
+---
+#Feedback

@@ -1,0 +1,7 @@
+# Goal
+uint32 cfgword
+---
+# Result
+bool success
+---
+# Feedback

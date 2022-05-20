@@ -1,0 +1,70 @@
+homing_sequence:
+  - home_base_and_gripper_ys:
+      # Just home and stay in homing position,
+      # in order not to crash with gripper rear cover
+      - gripper_base_x:
+          pos: /filtered/canopen_interface/motor_nanotec/gripper_base_x/homing_params/offset
+      - gripper_y_right:
+          pos: /filtered/canopen_interface/motor_nanotec/gripper_y_right/homing_params/offset
+      - gripper_y_left:
+          pos: /filtered/canopen_interface/motor_nanotec/gripper_y_left/homing_params/offset
+      # So that the gripper cover doesn't crash with the boxes in the backpack
+      - backpack_tilt:
+          pos: min
+  - retract_base_x:
+      # Once gripper_ys are in homing position, we can retract gripper_base_x
+      # to the minimum before moving gripper_rotate
+      - gripper_base_x:
+          pos: min
+  - vert_axis_to_rotatable_pos:
+      # Move vertical axis to a height where the gripper can be rotated
+      - vertical_axis:
+          pos: 0.51
+          # Velocity: if higher than 0.1 and never homed, safety will cut the
+          # power. Even with 0.08 it does (overshooting if acceleration is
+          # not limited)
+          vel: 0.05
+  - home_rotate:
+      # Needs to be done before driving vert. axis to the min,
+      # since there you can't rotate without crashing
+      - gripper_rotate:
+          pos: 0
+  - home_rest:
+      - vertical_axis:
+          pos: min  # needed for safety to detect absolute position
+          # Velocity: if higher than 0.1 and never homed, safety will cut the
+          # power. Even with 0.08 it does (overshooting if acceleration is
+          # not limited)
+          vel: 0.05
+      - press_jaw:
+          pos: min
+  - lift_vertical_axis:
+      - vertical_axis:
+          pos: 0.5  # So that gripper doesn't push against mechanical minimum,
+          # and it is also able to rotate without crashing or triggering the
+          # rotation_in_vert_min_pos_X rules
+          vel: 0.05  # Safety only acknowledges the homing when the reference
+          # switch produces a step so the movement up needs to be low speed
+          # as well
+retract_gripper_sequence:
+  # Just home and stay in homing position, in order not to
+  # crash with gripper rear cover
+  - home_base_and_gripper_ys:
+      - gripper_base_x:
+          pos: /filtered/canopen_interface/motor_nanotec/gripper_base_x/homing_params/offset
+      - gripper_y_right:
+          pos: /filtered/canopen_interface/motor_nanotec/gripper_y_right/homing_params/offset
+      - gripper_y_left:
+          pos: /filtered/canopen_interface/motor_nanotec/gripper_y_left/homing_params/offset
+  # Once gripper_ys are in homing position, we can retract
+  # gripper_base_x to the minimum
+  - retract_base_x:
+      - gripper_base_x:
+          pos: min
+move_tower:
+  rotational_joint: gripper_rotate
+  vertical_joint: vertical_axis
+  horizontal_joint: gripper_y_left
+  reference_frame: gripper_y_left_link
+  check_docked_state: false
+stop_at_transition_point: false

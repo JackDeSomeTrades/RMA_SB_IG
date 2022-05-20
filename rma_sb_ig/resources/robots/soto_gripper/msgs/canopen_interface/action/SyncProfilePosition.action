@@ -1,0 +1,16 @@
+# goal
+SyncProfilePositions goal
+bool async_target         # if set to True, the targets will be reached without synchronizing the final times
+---
+#result
+SppInfo result
+bool success
+duration time_difference
+string[] joints
+float32[] reached_positions
+ProfilePositionResult[] pp_result
+---
+#feedback
+duration timeToTarget
+string[] joints
+ProfilePositionFeedback[] pp_feedback

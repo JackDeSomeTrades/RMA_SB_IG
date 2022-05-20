@@ -1,0 +1,272 @@
+supervised_x_motors: ["gripper_base_x"]
+homing_requirement_blacklist: "gripper_rotate, gripper_y_left, gripper_y_right, press_jaw, backpack_tilt, gripper_base_x, "
+
+inf_max: &inf_max 999999
+inf_min: &inf_min -999999
+
+# Gripper_rotate right, centered, left and front tolerances
+# 1.57 +/- 0.05
+gripper_rotate_right_max: &gripper_rotate_right_max 1.62
+gripper_rotate_right_min: &gripper_rotate_right_min 1.52
+# 0 +/- 0.05
+gripper_rotate_cent_max: &gripper_rotate_cent_max 0.05
+gripper_rotate_cent_min: &gripper_rotate_cent_min -0.05
+# -1.57 +/- 0.05
+gripper_rotate_left_max: &gripper_rotate_left_max -1.52
+gripper_rotate_left_min: &gripper_rotate_left_min -1.62
+# 3.14 +/- 0.05
+gripper_rotate_front_max: &gripper_rotate_front_max -3.09
+gripper_rotate_front_min: &gripper_rotate_front_min -3.19
+
+# Gripper_base retracted
+gripper_base_retracted: &gripper_base_retracted 0.05
+# Gripper_base almost touching the calibration pattern
+gripper_base_with_calib_pattern: &gripper_base_with_calib_pattern 0.15
+# Gripper_base almost touching backpack rollers
+gripper_base_with_bkp_rollers: &gripper_base_with_bkp_rollers 0.21
+
+# Vertical axis position when conveyor belt bottom is almost
+# touching top of calibration pattern
+vert_axis_with_calib_pattern_top: &vert_axis_with_calib_pattern_top 0.5
+# Height minimum to be able to rotate retracted gripper
+vert_axis_to_rotate_gripper: &vert_axis_to_rotate_gripper 0.42
+
+depending_joint_limits:
+    # Rules that block gripper_rotate movements
+    rotation_with_extended_gripper_base:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_base_x:
+                min: *gripper_base_retracted
+                max: *inf_max
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *inf_max
+
+    rotation_in_vert_min_pos_1:
+        # Split in 2, otherwise after homing gripper_rotate if the
+        # vert axis position is lower than 0.45, toru_tower_control
+        # can't drive gripper_rotate to 0 during call_homing
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_cent_min
+
+    rotation_in_vert_min_pos_2:
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_max
+                max: *inf_max
+
+    gripper_cover_with_bpk_boxes_right_rotate:
+        # When the backpack is tilted towards the gripper,
+        # the casing may crash with the backpack boxes when
+        # rotating. See HWS-1538
+        ignore_at_homing: True
+        trigger_joints:
+            backpack_tilt:
+                min: 0
+                max: *inf_max
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_max
+                max: *inf_max
+
+    gripper_cover_with_bpk_boxes_left_front_rotate:
+        # Continuation of gripper_cover_with_bpk_boxes_right_rotate
+        ignore_at_homing: True
+        trigger_joints:
+            backpack_tilt:
+                min: 0
+                max: *inf_max
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_cent_min
+
+    # Rules that block gripper_base_x movements
+    gripper_base_extension_with_incomplete_rotation_1:
+        # block front left corner
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_max
+                max: *gripper_rotate_left_min
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_retracted
+                max: *inf_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+
+    gripper_base_extension_with_incomplete_rotation_2:
+        # block rear left corner
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_max
+                max: *gripper_rotate_cent_min
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_retracted
+                max: *inf_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+
+    gripper_base_extension_with_incomplete_rotation_3:
+        # block rear right corner
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_max
+                max: *gripper_rotate_right_min
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_retracted
+                max: *inf_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+
+    gripper_base_extension_into_backpack:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_min
+                max: *gripper_rotate_cent_max
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_bkp_rollers
+                max: *inf_max
+
+    gripper_base_extension_under_backpack:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_min
+                max: *gripper_rotate_cent_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_with_calib_pattern_top
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_calib_pattern
+                max: *inf_max
+
+    gripper_base_extension_into_front_party:
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_with_calib_pattern_top  # calibration pattern is almost the same height as front party
+            gripper_rotate:
+                min: *gripper_rotate_front_min
+                max: *gripper_rotate_front_max
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_retracted
+                max: *inf_max
+
+    # Rules that block vertical axis movements
+    extended_gripper_base_collision_with_front_party_vertical:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_base_x:
+                min: *gripper_base_retracted
+                max: *inf_max
+            gripper_rotate:
+                min: *gripper_rotate_front_min
+                max: *gripper_rotate_front_max
+        blocked_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_with_calib_pattern_top  # calibration pattern is almost the same height as front party
+
+    extended_gripper_base_collision_with_backpack_drive_vertical:
+        # Prevent collision with calibration pattern when driving downwards
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_min
+                max: *gripper_rotate_cent_max
+            gripper_base_x:
+                min: *gripper_base_with_calib_pattern
+                max: *inf_max
+        blocked_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_with_calib_pattern_top
+
+    gripper_cover_with_bpk_boxes_right_vertical:
+        # When the gripper is not looking to the backpack, and the backpack is
+        # tilted towards the gripper, the casing may crash with the backpack boxes when
+        # moving the vertical axis. See HWS-1538
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_max
+                max: *inf_max
+            backpack_tilt:
+                min: 0
+                max: *inf_max
+        blocked_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *inf_max
+
+    gripper_cover_with_bpk_boxes_left_front_vertical:
+        # Continuation of gripper_cover_with_bpk_boxes_right
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_cent_min
+            backpack_tilt:
+                min: 0
+                max: *inf_max
+        blocked_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *inf_max
+
+    # Rules that block klt_jaw movements
+    klt_press_collision_with_gripper:
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: 2.0
+                max: *inf_max
+        blocked_joints:
+            press_jaw:
+                min: *inf_min
+                max: *inf_max
+
+    # Rules that block gripper_y movements
+    gripper_y_left_with_gripper_y_right:
+        # To prevent collision between gripper_y_left and gripper_y_right
+        # we limit the sum of both
+        ignore_at_homing: true
+        trigger_joints:
+            # This could be any joint, we need at least a
+            # trigger joint for the rule to work
+            gripper_y_left:
+                min: *inf_min
+                max: *inf_max
+        summed_blocked_joints:
+            summed_y:
+                summed_joints: ["gripper_y_left", "gripper_y_right"]
+                min: 0.5
+                max: *inf_max

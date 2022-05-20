@@ -1,0 +1,2 @@
+string additional_info
+bool target_reached

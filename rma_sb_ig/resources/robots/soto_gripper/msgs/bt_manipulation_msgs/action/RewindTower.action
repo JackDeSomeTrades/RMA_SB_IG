@@ -1,0 +1,7 @@
+# Goal
+float32 height_delta # How many meters we should rewind the tower after we have regained tension
+---
+# Result
+bool success
+---
+# Feedback

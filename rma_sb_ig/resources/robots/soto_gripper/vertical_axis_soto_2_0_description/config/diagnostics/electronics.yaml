@@ -1,0 +1,57 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      # Motors
+      vertical_axis:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/vertical_axis
+        regex: 'hw_diagnostics:motor:vertical_axis.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:vertical_axis:'
+      # Group diagnostics
+      vertical_axis_motors_ok:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/vertical_axis
+        regex: ['hw_diagnostics:motor:vertical_axis.*']
+        find_and_remove_prefix: ['hw_diagnostics:motor:vertical_axis:']
+      vertical_axis_operational:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: vertical_axis
+        regex: ['hw_diagnostics:motor:vertical_axis.*']
+        find_and_remove_prefix: ['hw_diagnostics:motor:vertical_axis:']
+      vertical_axis_extension:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/vertical_axis_extension
+        regex: 'hw_diagnostics:motor:vertical_axis.*'
+        find_and_remove_prefix: 'hw_diagnostics:motor:vertical_axis:'
+  sw_diagnostics:
+    analyzers:
+      # Motors
+      vertical_axis:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/vertical_axis
+        regex: 'sw_diagnostics:motor:vertical_axis.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:vertical_axis:'
+      # Group diagnostics
+      vertical_axis_motors_ok:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/vertical_axis
+        regex: ['sw_diagnostics:motor:vertical_axis.*']
+        find_and_remove_prefix: ['sw_diagnostics:motor:vertical_axis:']
+      vertical_axis_operational:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: vertical_axis
+        regex: ['sw_diagnostics:motor:vertical_axis.*']
+        find_and_remove_prefix: ['sw_diagnostics:motor:vertical_axis:']
+      vertical_axis_extension:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        threshold: 1 # Only forward ERROR and STALE, WARN gets suppressed
+        path: motor/vertical_axis_extension
+        regex: 'sw_diagnostics:motor:vertical_axis.*'
+        find_and_remove_prefix: 'sw_diagnostics:motor:vertical_axis:'

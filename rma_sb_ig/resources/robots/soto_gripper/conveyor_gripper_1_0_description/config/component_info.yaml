@@ -1,0 +1,3 @@
+version: 1.0
+conveyor_belt_width: 0.050 # [m]
+conveyor_gripper_width: 0.084 # [m]

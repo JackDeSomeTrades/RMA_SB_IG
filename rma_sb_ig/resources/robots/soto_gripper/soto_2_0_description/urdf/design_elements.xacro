@@ -1,0 +1,61 @@
+<?xml version="1.0" ?>
+<robot
+  name="soto_2_0_design_elements"
+  xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:arg name="standalone" default="false"/>
+  <xacro:property name="standalone" value="$(arg standalone)"/>
+
+  <!-- Connection to SOTO -->
+  <xacro:unless value="${standalone}">
+    <joint
+      name="base_to_design_elements"
+      type="fixed">
+      <parent
+        link="base_link" />
+      <child
+        link="design_elements_link" />
+    </joint>
+  </xacro:unless>
+
+  <link
+    name="design_elements_link">
+    <inertial>
+      <origin
+        xyz="-0.0839888788296438 -4.7711093603331E-05 0.967007714134433"
+        rpy="0 0 0" />
+      <mass
+        value="36.5" />
+      <inertia
+        ixx="0.012987"
+        ixy="0.000070"
+        ixz="0.000617"
+        iyy="0.018150"
+        iyz="0.000000"
+        izz="0.011725" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://soto_2_0_description/meshes/design_elements_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.698039215686274 0.698039215686274 0.698039215686274 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://soto_2_0_description/meshes/design_elements_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>
