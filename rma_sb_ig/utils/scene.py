@@ -58,7 +58,7 @@ class EnvScene:
         """
         mesh_type = self.cfg.terrain.mesh_type
         if mesh_type in ['heightfield', 'trimesh']:
-            self.terrain = Terrain(self.cfg.terrain, self.num_envs)
+            self.terrain = Terrain(self.cfg.terrain, self.num_envs) #TODO : changer la scene ici
         if mesh_type=='plane':
             self._create_ground_plane()
         elif mesh_type=='heightfield':
@@ -102,7 +102,7 @@ class EnvScene:
         cam_target = gymapi.Vec3(lookat[0], lookat[1], lookat[2])
         self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
 
-    def _create_ground_plane(self):
+    def _create_ground_plane(self): #TODO : changer parametre du terrain
         """ Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
         """
         plane_params = gymapi.PlaneParams()
@@ -150,7 +150,7 @@ class EnvScene:
         self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows,
                                                                             self.terrain.tot_cols).to(self.device)
 
-    def _create_envs(self):
+    def _create_envs(self):#TODO : recreer un environnement
         """ Creates environments:
              1. loads the robot URDF/MJCF asset,
              2. For each environment
