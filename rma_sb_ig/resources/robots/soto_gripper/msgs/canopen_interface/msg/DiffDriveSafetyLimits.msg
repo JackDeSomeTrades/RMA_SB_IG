@@ -1,4 +1,0 @@
-float64 max_forward_speed
-float64 max_backward_speed
-float64 max_angular_speed
-float64 max_individual_wheel_speed

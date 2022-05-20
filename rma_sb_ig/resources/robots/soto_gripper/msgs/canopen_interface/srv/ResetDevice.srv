@@ -1,7 +1,0 @@
-# Request fields.
-
-# Device name e.g. gripper_base_x
-string device_name
----
-# Response fields.
-bool result

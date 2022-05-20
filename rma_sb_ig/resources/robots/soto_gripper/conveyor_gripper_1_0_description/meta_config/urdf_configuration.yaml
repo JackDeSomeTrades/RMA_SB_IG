@@ -1,2 +1,0 @@
-drivetrains:
-    ["gripper_rotate", "gripper_base_x", "gripper_y_left", "gripper_y_right"]

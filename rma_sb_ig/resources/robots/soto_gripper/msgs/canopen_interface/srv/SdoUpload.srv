@@ -1,5 +1,0 @@
-string device_name
-uint16 sdo_id
-uint8 sdo_sub_id
----
-uint32 value

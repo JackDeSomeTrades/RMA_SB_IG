@@ -1,6 +1,0 @@
-Header header
-time timestamp
-float64 left_data
-float64 right_data
-float64 commanded_linear_x
-float64 commanded_angular_z
