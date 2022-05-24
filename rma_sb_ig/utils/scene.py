@@ -11,6 +11,7 @@ from isaacgym import gymutil
 from isaacgym.torch_utils import *
 import math
 
+
 class SotoEnvScene:
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
         self.gym = gymapi.acquire_gym()
@@ -24,10 +25,9 @@ class SotoEnvScene:
         self.headless = headless
         self.num_envs = cfg.env.num_envs
 
-
-        self.device= sim_device if self.sim_params.use_gpu_pipeline else 'cpu'
+        self.device = sim_device if self.sim_params.use_gpu_pipeline else 'cpu'
         self.graphics_device_id = self.sim_device_id
-        if self.headless == True:
+        if self.headless:
             self.graphics_device_id = -1
         # configure sim
         self._adjust_sim_param()
@@ -37,9 +37,8 @@ class SotoEnvScene:
             self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
         self.create_sim()
 
-
         # point camera at middle env
-        if self.headless == False:
+        if not self.headless:
             # subscribe to keyboard shortcuts
             self.viewer = self.gym.create_viewer(
                 self.sim, gymapi.CameraProperties())
@@ -58,7 +57,7 @@ class SotoEnvScene:
         plane_params.distance = 0
         plane_params.static_friction = self.cfg.terrain.static_friction
         plane_params.dynamic_friction = self.cfg.terrain.dynamic_friction
-        plane_params.restitution = self.cfg.terrain.restitution
+        plane_params.restitution = self.cfg.terrain.restitution  # used to control the elasticity of collisions with the ground plane
         self.gym.add_ground(self.sim, plane_params)
 
         self._create_assets()
@@ -146,16 +145,15 @@ class SotoEnvScene:
         # space beetween grippers : gripper_y_left_link/gripper_y_right_link
         self.soto_link_dict = self.gym.get_asset_rigid_body_dict(self.soto_asset)
         self.index_to_get = ["vertical_axis_link", "gripper_base_link",
-                        "gripper_base_x_link", "gripper_y_left_link", "gripper_y_right_link"]
+                             "gripper_base_x_link", "gripper_y_left_link", "gripper_y_right_link"]
 
         self.soto_indexs = [self.soto_link_dict[i] for i in self.index_to_get]
-
+        print(self.soto_indexs)
         self.soto_pose = gymapi.Transform()
         self.soto_pose.p = gymapi.Vec3(*self.cfg.init_state.pos)
 
         self.box_pose = gymapi.Transform()
         self._initialize_env()
-
 
     def _initialize_env(self):
         # configure env grid
@@ -165,18 +163,11 @@ class SotoEnvScene:
         self.env_upper = gymapi.Vec3(spacing, spacing, spacing)
         print("Creating %d environments" % self.num_envs)
         self.envs = []
-        # global index list of soto_pieces
-        self.global_soto_indexs = []
-        self.box_idxs = []
-        self.l_handle = []
-        self.l_envs = []
-
 
         for i in range(self.num_envs):
             # create env
             env = self.gym.create_env(
                 self.sim, self.env_lower, self.env_upper, self.num_per_row)
-            self.envs.append(env)
             # add box
             self.box_pose.p.x = np.random.uniform(-0.1, 0.1)
             self.box_pose.p.y = np.random.uniform(-0.1, 0.1)
@@ -192,17 +183,14 @@ class SotoEnvScene:
             self.gym.set_rigid_body_color(
                 env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
 
-            # get global index of box in rigid body state tensor
+            # get box id (always the same at each iteration)
             self.box_idx = self.gym.get_actor_rigid_body_index(
                 env, self.box_handle, 0, gymapi.DOMAIN_SIM)
-            self.box_idxs.append(self.box_idx)
 
-            # add soto
+            # get soto_id in environnement(always the same aswell)
             self.soto_handle = self.gym.create_actor(
                 env, self.soto_asset, self.soto_pose, self.cfg.asset.name, self.cfg.asset.self_collisions,
                 1)
-            self.l_handle.append(self.soto_handle)
-
             # set dof properties
             self.gym.set_actor_dof_properties(
                 env, self.soto_handle, self.soto_dof_props)
@@ -214,14 +202,10 @@ class SotoEnvScene:
             # set initial position targets
             self.gym.set_actor_dof_position_targets(
                 env, self.soto_handle, self.default_dof_pos)
-
+            self.envs.append(env)
             # get global index of pieces in rigid body state tensor
-            self.l_envs.append(env)
             self.gripper_idx = self.gym.find_actor_rigid_body_index(
                 env, self.soto_handle, "gripper_base_link", gymapi.DOMAIN_SIM)
-            global_index = [self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, i, gymapi.DOMAIN_SIM) for i in self.index_to_get]
-            self.global_soto_indexs.append(global_index)
 
     def _define_viewer(self):
         self.cam_pos = gymapi.Vec3(4, 3, 2)
@@ -234,38 +218,7 @@ class SotoEnvScene:
         length = random.uniform(l_limit[0], l_limit[1])
         width = random.uniform(w_limit[0], w_limit[1])
         height = random.uniform(h_limit[0], h_limit[1])
-        return (length, width, height)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return length, width, height
 
 
 class EnvScene:
@@ -367,14 +320,14 @@ class EnvScene:
         cam_target = gymapi.Vec3(lookat[0], lookat[1], lookat[2])
         self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
 
-    def _create_ground_plane(self):  # TODO : changer parametre du terrain
+    def _create_ground_plane(self):
         """ Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
         """
         plane_params = gymapi.PlaneParams()
         plane_params.normal = gymapi.Vec3(0.0, 0.0, 1.0)
         plane_params.static_friction = self.cfg.terrain.static_friction
         plane_params.dynamic_friction = self.cfg.terrain.dynamic_friction
-        plane_params.restitution = self.cfg.terrain.restitution
+        plane_params.restitution = self.cfg.terrain.restitution  # used to control the elasticity of collisions with the ground plane
         self.gym.add_ground(self.sim, plane_params)
 
     def _create_heightfield(self):
@@ -471,7 +424,7 @@ class EnvScene:
                 [s for s in body_names if name in s])
 
         base_init_state_list = self.cfg.init_state.pos + self.cfg.init_state.rot + \
-            self.cfg.init_state.lin_vel + self.cfg.init_state.ang_vel
+                               self.cfg.init_state.lin_vel + self.cfg.init_state.ang_vel
         self.base_init_state = to_torch(
             base_init_state_list, device=self.device, requires_grad=False)
         start_pose = gymapi.Transform()
@@ -577,7 +530,7 @@ class EnvScene:
             self.terrain_levels = torch.randint(
                 0, max_init_level + 1, (self.num_envs,), device=self.device)
             self.terrain_types = torch.div(torch.arange(self.num_envs, device=self.device), (
-                self.num_envs / self.cfg.terrain.num_cols), rounding_mode='floor').to(torch.long)
+                    self.num_envs / self.cfg.terrain.num_cols), rounding_mode='floor').to(torch.long)
             self.max_terrain_level = self.cfg.terrain.num_rows
             self.terrain_origins = torch.from_numpy(
                 self.terrain.env_origins).to(self.device).to(torch.float)
@@ -649,9 +602,9 @@ class EnvScene:
                 m = (self.dof_pos_limits[i, 0] + self.dof_pos_limits[i, 1]) / 2
                 r = self.dof_pos_limits[i, 1] - self.dof_pos_limits[i, 0]
                 self.dof_pos_limits[i, 0] = m - 0.5 * \
-                    r * self.cfg.rewards.soft_dof_pos_limit
+                                            r * self.cfg.rewards.soft_dof_pos_limit
                 self.dof_pos_limits[i, 1] = m + 0.5 * \
-                    r * self.cfg.rewards.soft_dof_pos_limit
+                                            r * self.cfg.rewards.soft_dof_pos_limit
 
             if self.cfg.domain_rand.randomize_motor_strength:
                 self.torque_limits[env_id][i] = props["effort"][i].item() * np.random.uniform(
@@ -729,15 +682,15 @@ class EnvScene:
                 1, self.num_height_points), self.height_points) + (self.root_states[:, :3]).unsqueeze(1)
 
         points += self.terrain.cfg.border_size
-        points = (points/self.terrain.cfg.horizontal_scale).long()
+        points = (points / self.terrain.cfg.horizontal_scale).long()
         px = points[:, :, 0].view(-1)
         py = points[:, :, 1].view(-1)
-        px = torch.clip(px, 0, self.height_samples.shape[0]-2)
-        py = torch.clip(py, 0, self.height_samples.shape[1]-2)
+        px = torch.clip(px, 0, self.height_samples.shape[0] - 2)
+        py = torch.clip(py, 0, self.height_samples.shape[1] - 2)
 
         heights1 = self.height_samples[px, py]
-        heights2 = self.height_samples[px+1, py]
-        heights3 = self.height_samples[px, py+1]
+        heights2 = self.height_samples[px + 1, py]
+        heights3 = self.height_samples[px, py + 1]
         heights = torch.min(heights1, heights2)
         heights = torch.min(heights, heights3)
 
@@ -759,13 +712,14 @@ class EnvScene:
         move_up = distance > self.terrain.env_length / 2
         # robots that walked less than half of their required distance go to simpler terrains
         move_down = (distance < torch.norm(
-            self.commands[env_ids, :2], dim=1)*self.max_episode_length_s*0.5) * ~move_up
+            self.commands[env_ids, :2], dim=1) * self.max_episode_length_s * 0.5) * ~move_up
         self.terrain_levels[env_ids] += 1 * move_up - 1 * move_down
         # Robots that solve the last level are sent to a random one
         self.terrain_levels[env_ids] = torch.where(self.terrain_levels[env_ids] >= self.max_terrain_level,
                                                    torch.randint_like(
                                                        self.terrain_levels[env_ids], self.max_terrain_level),
-                                                   torch.clip(self.terrain_levels[env_ids], 0))  # (the minumum level is zero)
+                                                   torch.clip(self.terrain_levels[env_ids],
+                                                              0))  # (the minumum level is zero)
         self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids],
                                                          self.terrain_types[env_ids]]
 
