@@ -106,6 +106,8 @@ class SotoEnvScene:
         asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
         asset_options.default_dof_drive_mode = self.cfg.asset.default_dof_drive_mode
         asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints
+        asset_options.override_com = self.cfg.asset.override_com
+        asset_options.override_inertia = self.cfg.asset.override_inertia
 
         self.soto_asset = self.gym.load_asset(
             self.sim, asset_root, asset_file, asset_options)
@@ -163,7 +165,6 @@ class SotoEnvScene:
         self.env_upper = gymapi.Vec3(spacing, spacing, spacing)
         print("Creating %d environments" % self.num_envs)
         self.envs = []
-
         for i in range(self.num_envs):
             # create env
             env = self.gym.create_env(
@@ -176,7 +177,7 @@ class SotoEnvScene:
                 gymapi.Vec3(0, 0, 1), np.random.uniform(-0.2, 0.2))
 
             self.box_handle = self.gym.create_actor(
-                env, self.l_boxes_asset[i], self.box_pose, "box", self.cfg.asset.self_collisions,
+                env, self.l_boxes_asset[i], self.box_pose, "box", i,
                 0)
             color = gymapi.Vec3(np.random.uniform(
                 0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
@@ -189,7 +190,7 @@ class SotoEnvScene:
 
             # get soto_id in environnement(always the same aswell)
             self.soto_handle = self.gym.create_actor(
-                env, self.soto_asset, self.soto_pose, self.cfg.asset.name, self.cfg.asset.self_collisions,
+                env, self.soto_asset, self.soto_pose, self.cfg.asset.name, i,
                 1)
             # set dof properties
             self.gym.set_actor_dof_properties(
@@ -206,7 +207,6 @@ class SotoEnvScene:
             # get global index of pieces in rigid body state tensor
             self.gripper_idx = self.gym.find_actor_rigid_body_index(
                 env, self.soto_handle, "gripper_base_link", gymapi.DOMAIN_SIM)
-
     def _define_viewer(self):
         self.cam_pos = gymapi.Vec3(4, 3, 2)
         self.cam_target = gymapi.Vec3(-4, -3, 0)

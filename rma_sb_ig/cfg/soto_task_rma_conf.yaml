@@ -62,6 +62,10 @@ task_config:
     default_dof_drive_mode: 3 # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
     replace_cylinder_with_capsule: True
     flip_visual_attachments: False # imp: this is the flag that was giving us issues. 
+    override_inertia : True #overide inertia properties (might be wrong)
+    override_com : True #overide inertia properties (might be wrong)
+
+
 
 #   domain_rand:
 #     randomize_friction: False
