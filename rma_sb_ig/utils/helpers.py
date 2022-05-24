@@ -38,10 +38,10 @@ def parse_replay_config(args, cfg):
 
 def parse_config(cfg):
     config = cfg['task_config']
-    args = get_args()  # needs to be done only to follow gymutils implements it this way. Future work: to redo this.
+    # needs to be done only to follow gymutils implements it this way. Future work: to redo this.
+    args = get_args()
     sim_params = parse_sim_params(args, config)
     config = box.Box(config)
-
     return config, sim_params, args
 
 
@@ -67,7 +67,8 @@ def get_run_name(cfg, args):
         max_id = max(idx_)
         conf_keys = list(cfg.keys())
         alg_type = [algs.lower() for algs in alg_type]
-        alg_list = [conf_key for conf_key in conf_keys if conf_key.lower() in alg_type]
+        alg_list = [
+            conf_key for conf_key in conf_keys if conf_key.lower() in alg_type]
         # alg_lst = [value for value in alg_type if value in conf_keys]  # should generally return a list of 1 element.
         run_comment = str()
         if args.run_comment is not None:
@@ -77,7 +78,8 @@ def get_run_name(cfg, args):
         else:
             run_comment = '_'
 
-        run_name = alg_list[0].upper()+'_'+str((max_id+1)) + '_' + run_comment + args.robot_name
+        run_name = alg_list[0].upper()+'_'+str((max_id+1)) + \
+            '_' + run_comment + args.robot_name
 
     return run_name
 
@@ -109,16 +111,26 @@ def get_config(cfg_fname):
 
 def get_args():
     custom_parameters = [
-        {"name": "--resume", "action": "store_true", "default": False, "help": "Resume training from a checkpoint"},
-        {"name": "--replay_cfg", "type": str, "default": "a1_task_rma", "help": "Task config for replaying the trained policy"},
-        {"name": "--experiment_name", "type": str, "help": "Name of the experiment to run or load. Overrides config file if provided."},
-        {"name": "--run_name", "type": str, "help": "Name of the run. Overrides config file if provided."},
-        {"name": "--load_run", "type": str, "help": "Name of the run to load when resume=True. If -1: will load the last run. Overrides config file if provided."},
-        {"name": "--checkpoint", "type": int, "help": "Saved model checkpoint number. If -1: will load the last checkpoint. Overrides config file if provided."},
-        {"name": "--headless", "action": "store_true", "default": False, "help": "Force display off at all times"},
-        {"name": "--horovod", "action": "store_true", "default": False, "help": "Use horovod for multi-gpu training"},
-        {"name": "--rl_device", "type": str, "default": "cuda:0", "help": 'Device used by the RL algorithm, (cpu, gpu, cuda:0, cuda:1 etc..)'},
-        {"name": "--max_iterations", "type": int, "help": "Maximum number of training iterations. Overrides config file if provided."},
+        {"name": "--resume", "action": "store_true", "default": False,
+            "help": "Resume training from a checkpoint"},
+        {"name": "--replay_cfg", "type": str, "default": "a1_task_rma",
+            "help": "Task config for replaying the trained policy"},
+        {"name": "--experiment_name", "type": str,
+            "help": "Name of the experiment to run or load. Overrides config file if provided."},
+        {"name": "--run_name", "type": str,
+            "help": "Name of the run. Overrides config file if provided."},
+        {"name": "--load_run", "type": str,
+            "help": "Name of the run to load when resume=True. If -1: will load the last run. Overrides config file if provided."},
+        {"name": "--checkpoint", "type": int,
+            "help": "Saved model checkpoint number. If -1: will load the last checkpoint. Overrides config file if provided."},
+        {"name": "--headless", "action": "store_true",
+            "default": False, "help": "Force display off at all times"},
+        {"name": "--horovod", "action": "store_true", "default": False,
+            "help": "Use horovod for multi-gpu training"},
+        {"name": "--rl_device", "type": str, "default": "cuda:0",
+            "help": 'Device used by the RL algorithm, (cpu, gpu, cuda:0, cuda:1 etc..)'},
+        {"name": "--max_iterations", "type": int,
+            "help": "Maximum number of training iterations. Overrides config file if provided."},
     ]
     # parse arguments
     args = parse_arguments(
@@ -150,7 +162,8 @@ def parse_sim_params(args, cfg):
     # if sim options are provided in cfg, parse them and update/override above:
     if "sim" in cfg:
         if type(cfg["sim"]["physx"]["max_gpu_contact_pairs"]) == str:
-            cfg["sim"]["physx"].update({"max_gpu_contact_pairs": int(eval(cfg["sim"]["physx"]["max_gpu_contact_pairs"]))})
+            cfg["sim"]["physx"].update({"max_gpu_contact_pairs": int(
+                eval(cfg["sim"]["physx"]["max_gpu_contact_pairs"]))})
         gymutil.parse_sim_config(cfg["sim"], sim_params)
 
     # Override num_threads if passed on the command line
@@ -185,6 +198,7 @@ def set_sim_params_up_axis(sim_params: gymapi.SimParams, axis: str) -> int:
     Returns:
         axis index for up axis.
     """
+
     if axis == 'z':
         sim_params.up_axis = gymapi.UP_AXIS_Z
         sim_params.gravity.x = 0
@@ -197,21 +211,30 @@ def set_sim_params_up_axis(sim_params: gymapi.SimParams, axis: str) -> int:
 def parse_arguments(description="Isaac Gym Example", headless=False, no_graphics=False, custom_parameters=[]):
     parser = argparse.ArgumentParser(description=description)
     if headless:
-        parser.add_argument('--headless', action='store_true', help='Run headless without creating a viewer window')
+        parser.add_argument('--headless', action='store_true',
+                            help='Run headless without creating a viewer window')
     if no_graphics:
         parser.add_argument('--nographics', action='store_true',
                             help='Disable graphics context creation, no viewer window is created, and no headless rendering is available')
-    parser.add_argument('--sim_device', type=str, default="cuda:0", help='Physics Device in PyTorch-like syntax')
-    parser.add_argument('--pipeline', type=str, default="gpu", help='Tensor API pipeline (cpu/gpu)')
-    parser.add_argument('--graphics_device_id', type=int, default=0, help='Graphics Device ID')
+    parser.add_argument('--sim_device', type=str, default="cuda:0",
+                        help='Physics Device in PyTorch-like syntax')
+    parser.add_argument('--pipeline', type=str, default="gpu",
+                        help='Tensor API pipeline (cpu/gpu)')
+    parser.add_argument('--graphics_device_id', type=int,
+                        default=0, help='Graphics Device ID')
 
     physics_group = parser.add_mutually_exclusive_group()
-    physics_group.add_argument('--flex', action='store_true', help='Use FleX for physics')
-    physics_group.add_argument('--physx', action='store_true', help='Use PhysX for physics')
+    physics_group.add_argument(
+        '--flex', action='store_true', help='Use FleX for physics')
+    physics_group.add_argument(
+        '--physx', action='store_true', help='Use PhysX for physics')
 
-    parser.add_argument('--num_threads', type=int, default=0, help='Number of cores used by PhysX')
-    parser.add_argument('--subscenes', type=int, default=0, help='Number of PhysX subscenes to simulate in parallel')
-    parser.add_argument('--slices', type=int, help='Number of client threads that process env slices')
+    parser.add_argument('--num_threads', type=int, default=0,
+                        help='Number of cores used by PhysX')
+    parser.add_argument('--subscenes', type=int, default=0,
+                        help='Number of PhysX subscenes to simulate in parallel')
+    parser.add_argument('--slices', type=int,
+                        help='Number of client threads that process env slices')
 
     for argument in custom_parameters:
         if ("name" in argument) and ("type" in argument or "action" in argument):
@@ -221,30 +244,37 @@ def parse_arguments(description="Isaac Gym Example", headless=False, no_graphics
 
             if "type" in argument:
                 if "default" in argument:
-                    parser.add_argument(argument["name"], type=argument["type"], default=argument["default"], help=help_str)
+                    parser.add_argument(
+                        argument["name"], type=argument["type"], default=argument["default"], help=help_str)
                 else:
-                    parser.add_argument(argument["name"], type=argument["type"], help=help_str)
+                    parser.add_argument(
+                        argument["name"], type=argument["type"], help=help_str)
             elif "action" in argument:
-                parser.add_argument(argument["name"], action=argument["action"], help=help_str)
+                parser.add_argument(
+                    argument["name"], action=argument["action"], help=help_str)
 
         else:
             print()
-            print("ERROR: command line argument name, type/action must be defined, argument not added to parser")
+            print(
+                "ERROR: command line argument name, type/action must be defined, argument not added to parser")
             print("supported keys: name, type, default, action, help")
             print()
 
     args, _ = parser.parse_known_args()
 
-    args.sim_device_type, args.compute_device_id = gymutil.parse_device_str(args.sim_device)
+    args.sim_device_type, args.compute_device_id = gymutil.parse_device_str(
+        args.sim_device)
     pipeline = args.pipeline.lower()
 
-    assert (pipeline == 'cpu' or pipeline in ('gpu', 'cuda')), f"Invalid pipeline '{args.pipeline}'. Should be either cpu or gpu."
+    assert (pipeline == 'cpu' or pipeline in ('gpu', 'cuda')
+            ), f"Invalid pipeline '{args.pipeline}'. Should be either cpu or gpu."
     args.use_gpu_pipeline = (pipeline in ('gpu', 'cuda'))
 
     if args.sim_device_type != 'cuda' and args.flex:
         print("Can't use Flex with CPU. Changing sim device to 'cuda:0'")
         args.sim_device = 'cuda:0'
-        args.sim_device_type, args.compute_device_id = gymutil.parse_device_str(args.sim_device)
+        args.sim_device_type, args.compute_device_id = gymutil.parse_device_str(
+            args.sim_device)
 
     if (args.sim_device_type != 'cuda' and pipeline == 'gpu'):
         print("Can't use GPU pipeline with CPU Physics. Changing pipeline to 'CPU'.")

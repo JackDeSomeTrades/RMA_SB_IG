@@ -9,20 +9,19 @@ import gym.spaces as gymspace
 import math
 
 from rma_sb_ig.utils.helpers import *
-from rma_sb_ig.envs.forward_task import ForwardTask
+from rma_sb_ig.envs.soto_forward_task import SotoForwardTask
 
 
-
-class SotoRobotTask():
+class SotoRobotTask(SotoForwardTask):
     def __init__(self, *args):
-        #super(SotoRobotTask, self).__init__(*args)
 
+        super(SotoRobotTask, self).__init__(*args)
+        """
         self.gym = gymapi.acquire_gym()
 
         custom_parameters = [
-            {"name": "--controller", "type": str, "default": "ik",
-             "help": "Controller to use for Franka. Options are {ik, osc}"},
-            {"name": "--num_envs", "type": int, "default": 50, "help": "Number of environments to create"},
+            {"name": "--num_envs", "type": int, "default": 1,
+                "help": "Number of environments to create"},
         ]
 
         self.args = gymutil.parse_arguments(
@@ -56,50 +55,58 @@ class SotoRobotTask():
             raise Exception("This robot can only be used with PhysX")
 
         # create sim
-        self.sim = self.gym.create_sim(self.args.compute_device_id, self.args.graphics_device_id, self.args.physics_engine, sim_params)
+        self.sim = self.gym.create_sim(
+            self.args.compute_device_id, self.args.graphics_device_id, self.args.physics_engine, sim_params)
         if self.sim is None:
             raise Exception("Failed to create sim")
 
         # create viewer
-        self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
+        self.viewer = self.gym.create_viewer(
+            self.sim, gymapi.CameraProperties())
         if self.viewer is None:
             raise Exception("Failed to create viewer")
 
         asset_root = "resources/robots/"
 
-        box_limits = ([0.1,0.5],
-                  [0.1,0.5],
-                  [0.1,0.4])
+        box_limits = ([0.1, 0.5],
+                      [0.1, 0.5],
+                      [0.1, 0.4])
 
         self.asset_options = gymapi.AssetOptions()
-        l_boxes_asset = [self.gym.create_box(self.sim, *self._get_random_boxes(*box_limits), self.asset_options) for i in range(self.num_envs)]
-        
+        l_boxes_asset = [self.gym.create_box(self.sim, *self._get_random_boxes(
+            *box_limits), self.asset_options) for i in range(self.num_envs)]
+
         # load soto asset
         soto_asset_file = "soto_gripper/soto_gripper.urdf"
         self.asset_options.armature = 0.01
         self.asset_options.fix_base_link = True
         self.asset_options.disable_gravity = False
         self.asset_options.flip_visual_attachments = False
-        self.soto_asset = self.gym.load_asset(self.sim, asset_root, soto_asset_file, self.asset_options)
+        self.soto_asset = self.gym.load_asset(
+            self.sim, asset_root, soto_asset_file, self.asset_options)
 
         # configure soto dofs
-        self.soto_dof_props = self.gym.get_asset_dof_properties(self.soto_asset)
+        self.soto_dof_props = self.gym.get_asset_dof_properties(
+            self.soto_asset)
         self.soto_lower_limits = self.soto_dof_props["lower"]
         self.soto_upper_limits = self.soto_dof_props["upper"]
-        self.soto_mids = 0.5 * (self.soto_upper_limits + self.soto_lower_limits)
+        self.soto_mids = 0.5 * \
+            (self.soto_upper_limits + self.soto_lower_limits)
 
         # default dof states
         self.soto_num_dofs = self.gym.get_asset_dof_count(self.soto_asset)
-        #self.default_dof_pos = np.zeros(self.soto_num_dofs, dtype=np.float32) #way to initialize dofs
+        # self.default_dof_pos = np.zeros(self.soto_num_dofs, dtype=np.float32) #way to initialize dofs
         self.default_dof_pos = self.soto_mids
 
-        #remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
+        # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
 
-        self.default_dof_state = np.zeros(self.soto_num_dofs, gymapi.DofState.dtype)
+        self.default_dof_state = np.zeros(
+            self.soto_num_dofs, gymapi.DofState.dtype)
         self.default_dof_state["pos"] = self.default_dof_pos
 
         # send to torch
-        self.default_dof_pos_tensor = to_torch(self.default_dof_pos, device=device)
+        self.default_dof_pos_tensor = to_torch(
+            self.default_dof_pos, device=device)
 
         # get link index of soto pieces, which we will use as effectors
         # vertical movment : vertical axis link
@@ -107,8 +114,10 @@ class SotoRobotTask():
         # lateral translation : gripper_base_x_link
         # space beetween grippers : gripper_y_left_link/gripper_y_right_link
 
-        self.soto_link_dict = self.gym.get_asset_rigid_body_dict(self.soto_asset)
-        index_to_get = ["vertical_axis_link","gripper_base_link","gripper_base_x_link","gripper_y_left_link","gripper_y_right_link"]
+        self.soto_link_dict = self.gym.get_asset_rigid_body_dict(
+            self.soto_asset)
+        index_to_get = ["vertical_axis_link", "gripper_base_link",
+                        "gripper_base_x_link", "gripper_y_left_link", "gripper_y_right_link"]
 
         self.soto_indexs = [self.soto_link_dict[i] for i in index_to_get]
         # self.soto_vert_ax_index = self.soto_link_dict["vertical_axis_link"]
@@ -132,7 +141,7 @@ class SotoRobotTask():
 
         self.envs = []
 
-        #global index list of soto_pieces
+        # global index list of soto_pieces
 
         self.global_soto_indexs = []
         self.box_idxs = []
@@ -142,8 +151,8 @@ class SotoRobotTask():
         # self.gripper_left = []
         # self.gripper_right = []
 
-        #self.init_pos_list = [] #l_pos of a piece
-        #self.init_rot_list = [] #l_rot of a piece
+        # self.init_pos_list = [] #l_pos of a piece
+        # self.init_rot_list = [] #l_rot of a piece
         self.l_handle = []
         # add ground plane
         self.plane_params = gymapi.PlaneParams()
@@ -155,35 +164,43 @@ class SotoRobotTask():
 
         for i in range(self.num_envs):
             # create env
-            env = self.gym.create_env(self.sim, self.env_lower, self.env_upper, self.num_per_row)
+            env = self.gym.create_env(
+                self.sim, self.env_lower, self.env_upper, self.num_per_row)
             self.envs.append(env)
             # add box
             self.box_pose.p.x = np.random.uniform(-0.1, 0.1)
             self.box_pose.p.y = np.random.uniform(-0.1, 0.1)
             self.box_pose.p.z = 0.5
-            self.box_pose.r = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 0, 1), np.random.uniform(-0.2, 0.2))
+            self.box_pose.r = gymapi.Quat.from_axis_angle(
+                gymapi.Vec3(0, 0, 1), np.random.uniform(-0.2, 0.2))
 
-
-            self.box_handle = self.gym.create_actor(env, l_boxes_asset[i], self.box_pose, "box", i, 0)
-            color = gymapi.Vec3(np.random.uniform(0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
-            self.gym.set_rigid_body_color(env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
-
+            self.box_handle = self.gym.create_actor(
+                env, l_boxes_asset[i], self.box_pose, "box", i, 0)
+            color = gymapi.Vec3(np.random.uniform(
+                0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
+            self.gym.set_rigid_body_color(
+                env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
 
             # get global index of box in rigid body state tensor
-            self.box_idx = self.gym.get_actor_rigid_body_index(env, self.box_handle, 0, gymapi.DOMAIN_SIM)
+            self.box_idx = self.gym.get_actor_rigid_body_index(
+                env, self.box_handle, 0, gymapi.DOMAIN_SIM)
             self.box_idxs.append(self.box_idx)
 
             # add soto
-            self.soto_handle = self.gym.create_actor(env, self.soto_asset, self.soto_pose, "soto", i, 1)
+            self.soto_handle = self.gym.create_actor(
+                env, self.soto_asset, self.soto_pose, "soto", i, 1)
             self.l_handle.append(self.soto_handle)
             # set dof properties
-            self.gym.set_actor_dof_properties(env, self.soto_handle, self.soto_dof_props)
+            self.gym.set_actor_dof_properties(
+                env, self.soto_handle, self.soto_dof_props)
 
             # set initial dof states
-            self.gym.set_actor_dof_states(env, self.soto_handle, self.default_dof_state, gymapi.STATE_ALL)
+            self.gym.set_actor_dof_states(
+                env, self.soto_handle, self.default_dof_state, gymapi.STATE_ALL)
 
             # set initial position targets
-            self.gym.set_actor_dof_position_targets(env, self.soto_handle, self.default_dof_pos)
+            self.gym.set_actor_dof_position_targets(
+                env, self.soto_handle, self.default_dof_pos)
 
             # # get inital gripper pose
             # self.gripper_handle = self.gym.find_actor_rigid_body_handle(env, self.soto_handle, "gripper_base_link")
@@ -194,38 +211,44 @@ class SotoRobotTask():
             # self.init_rot_list.append([self.gripper_pose.r.x, self.gripper_pose.r.y, self.gripper_pose.r.z, self.gripper_pose.r.w])
 
             # get global index of pieces in rigid body state tensor
-            self.gripper_idx = self.gym.find_actor_rigid_body_index(env, self.soto_handle, "gripper_base_link", gymapi.DOMAIN_SIM)
-            global_index = [self.gym.find_actor_rigid_body_index(env, self.soto_handle, i,gymapi.DOMAIN_SIM) for i in index_to_get]
+            self.gripper_idx = self.gym.find_actor_rigid_body_index(
+                env, self.soto_handle, "gripper_base_link", gymapi.DOMAIN_SIM)
+            global_index = [self.gym.find_actor_rigid_body_index(
+                env, self.soto_handle, i, gymapi.DOMAIN_SIM) for i in index_to_get]
             self.global_soto_indexs.append(global_index)
 
         # point camera at middle env
         self.cam_pos = gymapi.Vec3(4, 3, 2)
         self.cam_target = gymapi.Vec3(-4, -3, 0)
         self.middle_env = self.envs[self.num_envs // 2 + self.num_per_row // 2]
-        self.gym.viewer_camera_look_at(self.viewer, self.middle_env, self.cam_pos, self.cam_target)
+        self.gym.viewer_camera_look_at(
+            self.viewer, self.middle_env, self.cam_pos, self.cam_target)
         x = 0
-        print(self.l_handle)
         while not self.gym.query_viewer_has_closed(self.viewer):
-            x+= 1
+            x += 1
             # update viewer
             # set initial dof states
             k = np.abs(np.sin(x/100))
-            self.soto_current = k*self.soto_upper_limits + (1-k)*self.soto_lower_limits
+            self.soto_current = k*self.soto_upper_limits + \
+                (1-k)*self.soto_lower_limits
             self.default_dof_pos = self.soto_current
 
             # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
             self.default_dof_state["pos"] = self.default_dof_pos
 
             # send to torch
-            self.default_dof_pos_tensor = to_torch(self.default_dof_pos, device=device)
+            self.default_dof_pos_tensor = to_torch(
+                self.default_dof_pos, device=device)
 
             # set initial position targets
-            for soto_handle in self.l_handle :
+            for soto_handle in self.l_handle:
                 # set dof states
-                self.gym.set_actor_dof_states(env, soto_handle, self.default_dof_state, gymapi.STATE_ALL)
+                self.gym.set_actor_dof_states(
+                    env, soto_handle, self.default_dof_state, gymapi.STATE_ALL)
 
                 # set position targets
-                self.gym.set_actor_dof_position_targets(env, soto_handle, self.default_dof_pos)
+                self.gym.set_actor_dof_position_targets(
+                    env, soto_handle, self.default_dof_pos)
 
             self.gym.step_graphics(self.sim)
             self.gym.draw_viewer(self.viewer, self.sim, False)
@@ -233,6 +256,7 @@ class SotoRobotTask():
 
         # cleanup
         self.gym.destroy_viewer(self.viewer)
+    """
 
     def _init_observation_space(self):
         """
@@ -251,20 +275,9 @@ class SotoRobotTask():
                         Local terrain height - 1
         :return: obs_space
         """
-        limits_low = np.array(
-            self.lower_bounds_joints +
-            [0] * 12 +    # minimum values of joint velocities
-            [-math.inf] +
-            [-math.inf] +
-            [0] * 4 +
-            self.lower_bounds_joints +
-            [0] +
-            [-math.inf] +
-            [-math.inf] +
-            [motor_strength * self.cfg.domain_rand.motor_strength_range[0] for motor_strength in self.motor_strength] +
-            [self.cfg.domain_rand.friction_range[0]] +
-            [0]
-        )
+        # TODO : Define that
+        limits_low = self.soto_lower_limits
+
         limits_high = np.array(
             self.upper_bounds_joints +
             self.upper_bound_joint_velocities +
@@ -279,7 +292,8 @@ class SotoRobotTask():
             [self.cfg.domain_rand.friction_range[1]] +
             [math.inf]
         )
-        obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float32)
+        obs_space = gymspace.Box(
+            limits_low, limits_high, dtype=np.float32)
         return obs_space
 
     def _init_action_space(self):
@@ -290,8 +304,8 @@ class SotoRobotTask():
 
         :return: act_space -> gym.space.Box
         """
-        lb = np.array(self.lower_bounds_joints)
-        ub = np.array(self.upper_bounds_joints)
+        lb = np.array(self.soto_lower_limits)
+        ub = np.array(self.soto_upper_limits)
         act_space = gymspace.Box(lb, ub, dtype=np.float32)
 
         return act_space
@@ -311,14 +325,18 @@ class SotoRobotTask():
         noise_scales = self.cfg.noise.noise_scales
         noise_level = self.cfg.noise.noise_level
 
-        noise_vec[:12] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
-        noise_vec[12:24] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
-        noise_vec[24:26] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
+        noise_vec[:12] = noise_scales.dof_pos * \
+            noise_level * self.obs_scales.dof_pos
+        noise_vec[12:24] = noise_scales.dof_vel * \
+            noise_level * self.obs_scales.dof_vel
+        noise_vec[24:26] = noise_scales.ang_vel * \
+            noise_level * self.obs_scales.ang_vel
         noise_vec[26:30] = 0.
         noise_vec[30:42] = 0.  # Previous action.
         noise_vec[42:45] = 0.  # Mass and COM
         noise_vec[45:57] = noise_scales.motor_strength * noise_level
-        noise_vec[58] = noise_scales.height_measurements * noise_level * self.obs_scales.height_measurements
+        noise_vec[58] = noise_scales.height_measurements * \
+            noise_level * self.obs_scales.height_measurements
 
         return noise_vec
 
@@ -350,7 +368,8 @@ class SotoRobotTask():
 
         # add noise if needed
         if self.add_noise:
-            self.obs_buf += (2 * torch.rand_like(self.obs_buf) - 1) * self.noise_scale_vec
+            self.obs_buf += (2 * torch.rand_like(self.obs_buf) -
+                             1) * self.noise_scale_vec
 
     def compute_heading_deviation(self):
         commands_xy = self.commands[:, :2]
@@ -360,11 +379,14 @@ class SotoRobotTask():
         base_xy_velocity = self.base_lin_vel[:, :3]
         forward_orientation = torch.zeros_like(base_xy_velocity)
         forward_orientation[:, 0] = 1.0
-        forward_orientation_quat = quat_rotate(self.base_quat, forward_orientation)
+        forward_orientation_quat = quat_rotate(
+            self.base_quat, forward_orientation)
         forward_orientation_quat = normalize(forward_orientation_quat)[:, :2]
 
-        self.heading_deviation = torch.acos((command_normalized * forward_orientation_quat).sum(dim=1))
-        self.heading_deviation = (torch.sign(forward_orientation_quat[:, 1]) * self.heading_deviation).reshape((-1, 1))
+        self.heading_deviation = torch.acos(
+            (command_normalized * forward_orientation_quat).sum(dim=1))
+        self.heading_deviation = (torch.sign(
+            forward_orientation_quat[:, 1]) * self.heading_deviation).reshape((-1, 1))
 
         return self.heading_deviation
 
@@ -377,7 +399,8 @@ class SotoRobotTask():
         # max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
         # reward = torch.abs(base_x_velocity - max_fwd_vel_tensor)
         diff = base_x_velocity - forward[:, 0]
-        reward = torch.linalg.norm(diff.unsqueeze(-1), dim=1, ord=1)   # L1 norm
+        reward = torch.linalg.norm(
+            diff.unsqueeze(-1), dim=1, ord=1)   # L1 norm
 
         return reward
 
@@ -395,7 +418,8 @@ class SotoRobotTask():
 
     def _reward_lateral_movement_rotation(self):
         # penalises lateral motion (v_y) and limiting angular velocity yaw
-        reward = self.base_lin_vel[:, 1].pow(2).unsqueeze(-1).sum(dim=1) + self.base_ang_vel[:, 2].pow(2).unsqueeze(-1).sum(dim=1)   #TODO check with 1
+        reward = self.base_lin_vel[:, 1].pow(2).unsqueeze(-1).sum(
+            dim=1) + self.base_ang_vel[:, 2].pow(2).unsqueeze(-1).sum(dim=1)  # TODO check with 1
         # print(f"lateral reward * {self.cfg.rewards.scales.lateral_movement_rotation}", reward)
         return reward
 
@@ -408,7 +432,9 @@ class SotoRobotTask():
     def _reward_work(self):
         diff_joint_pos = self.actions - self.last_actions
         # torque_transpose = torch.transpose(self.torques, 0, 1)
-        reward = torch.abs(torch.sum(torch.inner(self.torques, diff_joint_pos), dim=1))     # this is the L1 norm
+        # this is the L1 norm
+        reward = torch.abs(torch.sum(torch.inner(
+            self.torques, diff_joint_pos), dim=1))
         return reward
 
     def _reward_ground_impact(self):
@@ -447,7 +473,8 @@ class SotoRobotTask():
 
     def _reward_base_height(self):
         # Make sure the robot body maintains a minimum distance from the ground based on the z center of mass.
-        base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
+        base_height = torch.mean(self.root_states[:, 2].unsqueeze(
+            1) - self.measured_heights, dim=1)
         return torch.square(base_height - self.cfg.rewards.base_height_target)
 
     def _reward_torques(self):
@@ -477,26 +504,32 @@ class SotoRobotTask():
 
     def _reward_dof_pos_limits(self):
         # Penalize dof positions too close to the limit
-        out_of_limits = -(self.dof_pos - self.dof_pos_limits[:, 0]).clip(max=0.)  # lower limit
-        out_of_limits += (self.dof_pos - self.dof_pos_limits[:, 1]).clip(min=0.)
+        out_of_limits = - \
+            (self.dof_pos -
+             self.dof_pos_limits[:, 0]).clip(max=0.)  # lower limit
+        out_of_limits += (self.dof_pos -
+                          self.dof_pos_limits[:, 1]).clip(min=0.)
         return torch.sum(out_of_limits, dim=1)
 
     def _reward_dof_vel_limits(self):
         # Penalize dof velocities too close to the limit
         # clip to max error = 1 rad/s per joint to avoid huge penalties
         return torch.sum(
-            (torch.abs(self.dof_vel) - self.dof_vel_limits * self.cfg.rewards.soft_dof_vel_limit).clip(min=0., max=1.),
+            (torch.abs(self.dof_vel) - self.dof_vel_limits *
+             self.cfg.rewards.soft_dof_vel_limit).clip(min=0., max=1.),
             dim=1)
 
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
-        lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
+        lin_vel_error = torch.sum(torch.square(
+            self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
         reward = torch.exp(-lin_vel_error / self.cfg.rewards.tracking_sigma)
         return reward
 
     def _reward_tracking_ang_vel(self):
         # Tracking of angular velocity commands (yaw)
-        ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
+        ang_vel_error = torch.square(
+            self.commands[:, 2] - self.base_ang_vel[:, 2])
         return torch.exp(-ang_vel_error / self.cfg.rewards.tracking_sigma)
 
     def _reward_feet_air_time(self):
@@ -509,19 +542,20 @@ class SotoRobotTask():
         self.feet_air_time += self.dt
         rew_airTime = torch.sum((self.feet_air_time - 0.5) * first_contact,
                                 dim=1)  # reward only on first contact with the ground
-        rew_airTime *= torch.norm(self.commands[:, :2], dim=1) > 0.1  # no reward for zero command
+        # no reward for zero command
+        rew_airTime *= torch.norm(self.commands[:, :2], dim=1) > 0.1
         self.feet_air_time *= ~contact_filt
         return rew_airTime
 
     def _reward_feet_stumble(self):
         # Penalize feet hitting vertical surfaces
-        return torch.any(torch.norm(self.contact_forces[:, self.feet_indices, :2], dim=2) > \
+        return torch.any(torch.norm(self.contact_forces[:, self.feet_indices, :2], dim=2) >
                          5 * torch.abs(self.contact_forces[:, self.feet_indices, 2]), dim=1)
 
     def _reward_stand_still(self):
         # Penalize motion at zero commands
         return torch.sum(torch.abs(self.dof_pos - self.default_dof_pos), dim=1) * (
-                    torch.norm(self.commands[:, :2], dim=1) < 0.1)
+            torch.norm(self.commands[:, :2], dim=1) < 0.1)
 
     # ---------------Reward functions end here ---------------------- #
 
@@ -535,7 +569,8 @@ class SotoRobotTask():
 
         foot_status = torch.ones(self.cfg.env.num_envs, 4, device=self.device)
         feet_forces = self.contact_forces[:, self.feet_indices, 2]
-        feet_switches = torch.where(feet_forces == 0., torch.tensor(0.0, device=self.device), foot_status)
+        feet_switches = torch.where(feet_forces == 0., torch.tensor(
+            0.0, device=self.device), foot_status)
 
         return feet_switches
 
@@ -548,8 +583,8 @@ class SotoRobotTask():
 
         return local_terrain_height
 
-    def _get_random_boxes(self,l_limit,w_limit,h_limit):
-        length = random.uniform(l_limit[0],l_limit[1])
-        width = random.uniform(w_limit[0],w_limit[1])
-        height = random.uniform(h_limit[0],h_limit[1])
+    def _get_random_boxes(self, l_limit, w_limit, h_limit):
+        length = random.uniform(l_limit[0], l_limit[1])
+        width = random.uniform(w_limit[0], w_limit[1])
+        height = random.uniform(h_limit[0], h_limit[1])
         return (length, width, height)

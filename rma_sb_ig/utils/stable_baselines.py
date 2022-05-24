@@ -37,7 +37,8 @@ class SaveHistoryCallback(EventCallback):
         zt = self.model.policy.features_extractor.zt.clone().detach().cpu()
         current_state = self.model.env.X_t.clone().detach().cpu()
         current_actions = self.model.env.actions.clone().detach().cpu()
-        self.datadict[self.n_calls] = {'state': current_state, 'env_encoding': zt, 'actions': current_actions}
+        self.datadict[self.n_calls] = {
+            'state': current_state, 'env_encoding': zt, 'actions': current_actions}
 
         return True
 
@@ -90,6 +91,7 @@ class RMAV0SixTaskVecEnvStableBaselineGym(V0SixLeggedRobotTask, StableBaselinesV
     def __init__(self, *args, **kwargs):
         V0SixLeggedRobotTask.__init__(self, *args, **kwargs)
 
-class RMASotoTaskVecEnvStableBaseLineGym(SotoRobotTask, StableBaselinesVecEnvAdapter) :
-    def __init__(self,*args,**kwargs):
-        SotoRobotTask.__init__(self,*args,**kwargs)
+
+class RMASotoTaskVecEnvStableBaseLineGym(SotoRobotTask, StableBaselinesVecEnvAdapter):
+    def __init__(self, *args, **kwargs):  # args : tuple / kwargs : dictionnary
+        SotoRobotTask.__init__(self, *args, **kwargs)
