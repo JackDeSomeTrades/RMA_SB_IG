@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 import warnings
 from isaacgym import gymutil
 from isaacgym.torch_utils import *
-
+import math
 
 class SotoEnvScene:
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
@@ -18,29 +18,27 @@ class SotoEnvScene:
         self.sim_params = sim_params
         self.physics_engine = physics_engine
         self.sim_device = sim_device
-
-        sim_device_type, self.sim_device_id = gymutil.parse_device_str(
+        self.is_test_mode = self.cfg.sim_param.test
+        sim_device, self.sim_device_id = gymutil.parse_device_str(
             self.sim_device)
         self.headless = headless
         self.num_envs = cfg.env.num_envs
 
-        self.device = sim_device if self.sim_params.use_gpu_pipeline else 'cpu'
-        print("device is " + self.device)
-        # graphics device for rendering, -1 for no rendering
+
+        self.device= sim_device if self.sim_params.use_gpu_pipeline else 'cpu'
         self.graphics_device_id = self.sim_device_id
         if self.headless == True:
             self.graphics_device_id = -1
-
-        ####################     create envs, sim and viewer     ##################
-
         # configure sim
         self._adjust_sim_param()
+
+        # create sim
         self.sim = self.gym.create_sim(
             self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
         self.create_sim()
-        self.gym.prepare_sim(self.sim)
 
-        # if running with a viewer, set up keyboard shortcuts and camera
+
+        # point camera at middle env
         if self.headless == False:
             # subscribe to keyboard shortcuts
             self.viewer = self.gym.create_viewer(
@@ -50,39 +48,6 @@ class SotoEnvScene:
             self.gym.subscribe_viewer_keyboard_event(
                 self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
         self._define_viewer()
-        x = 0
-        while not self.gym.query_viewer_has_closed(self.viewer):
-            x += 1
-            # update viewer
-            # set initial dof states
-            k = np.abs(np.sin(x / 100))
-            self.soto_current = k * self.soto_upper_limits + \
-                                (1 - k) * self.soto_lower_limits
-            self.default_dof_pos = self.soto_current
-
-            # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
-            self.default_dof_state["pos"] = self.default_dof_pos
-
-            # send to torch
-            self.default_dof_pos_tensor = to_torch(
-                self.default_dof_pos, device=self.device)
-
-            # set initial position targets
-            for env,soto_handle in zip(self.envs,self.l_handle):
-                # set dof states
-                self.gym.set_actor_dof_states(
-                    env, soto_handle, self.default_dof_state, gymapi.STATE_ALL)
-
-                # set position targets
-                self.gym.set_actor_dof_position_targets(
-                    env, soto_handle, self.default_dof_pos)
-
-            self.gym.step_graphics(self.sim)
-            self.gym.draw_viewer(self.viewer, self.sim, False)
-            self.gym.sync_frame_time(self.sim)
-
-        # cleanup
-        self.gym.destroy_viewer(self.viewer)
 
     def create_sim(self):
         """ Creates simulation, terrain and evironments
@@ -93,10 +58,10 @@ class SotoEnvScene:
         plane_params.distance = 0
         plane_params.static_friction = self.cfg.terrain.static_friction
         plane_params.dynamic_friction = self.cfg.terrain.dynamic_friction
-        #plane_params.restitution = self.cfg.terrain.restitution #TODO : understand
+        plane_params.restitution = self.cfg.terrain.restitution
         self.gym.add_ground(self.sim, plane_params)
 
-        self._create_envs()
+        self._create_assets()
 
     def _adjust_sim_param(self):
         self.sim_params.up_axis = gymapi.UP_AXIS_Z
@@ -117,57 +82,52 @@ class SotoEnvScene:
         else:
             raise Exception("This robot can only be used with PhysX")
 
-    def _create_envs(self):
+    def _create_assets(self):
 
+        asset_path = self.cfg.asset.file.format(ROOT_DIR=get_project_root())
+        asset_root = os.path.dirname(asset_path)
 
         box_limits = (self.cfg.box.lim_x,
                       self.cfg.box.lim_y,
                       self.cfg.box.lim_z)
 
         asset_options = gymapi.AssetOptions()
-        l_boxes_asset = [self.gym.create_box(self.sim, *self._get_random_boxes(
+
+        self.l_boxes_asset = [self.gym.create_box(self.sim, *self._get_random_boxes(
             *box_limits), asset_options) for i in range(self.num_envs)]
 
         # load soto asset
-        asset_path = self.cfg.asset.file.format(ROOT_DIR=get_project_root())
-        asset_root = os.path.dirname(asset_path)
+
         asset_file = os.path.basename(asset_path)
 
         asset_options.armature = self.cfg.asset.armature
         asset_options.fix_base_link = self.cfg.asset.fix_base_link
         asset_options.disable_gravity = self.cfg.asset.disable_gravity
         asset_options.flip_visual_attachments = self.cfg.asset.flip_visual_attachments
-        #asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule #TODO : understand
-        #asset_options.default_dof_drive_mode = self.cfg.asset.default_dof_drive_mode #TODO : understand
-        #asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints #TODO : understand
-        # asset_options.density = self.cfg.asset.density
-        # asset_options.angular_damping = self.cfg.asset.angular_damping
-        # asset_options.linear_damping = self.cfg.asset.linear_damping
-        # asset_options.max_angular_velocity = self.cfg.asset.max_angular_velocity
-        # asset_options.max_linear_velocity = self.cfg.asset.max_linear_velocity
-        # asset_options.armature = self.cfg.asset.armature
-        # asset_options.thickness = self.cfg.asset.thickness
-        soto_asset = self.gym.load_asset(
+        asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
+        asset_options.default_dof_drive_mode = self.cfg.asset.default_dof_drive_mode
+        asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints
+
+        self.soto_asset = self.gym.load_asset(
             self.sim, asset_root, asset_file, asset_options)
 
         # # configure soto dofs
 
         # # self.default_dof_pos = np.zeros(self.soto_num_dofs, dtype=np.float32) #way to initialize dofs
-        self.num_dofs = self.gym.get_asset_dof_count(soto_asset)
-        # self.num_bodies = self.gym.get_asset_rigid_body_count(soto_asset) #TODO : add later
-        # dof_props_asset = self.gym.get_asset_dof_properties(soto_asset) #TODO : add later
-        # rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties( #TODO : add later
-        #     soto_asset)
+        self.num_dofs = self.gym.get_asset_dof_count(self.soto_asset)
+        self.num_bodies = self.gym.get_asset_rigid_body_count(self.soto_asset)
+        dof_props_asset = self.gym.get_asset_dof_properties(self.soto_asset)
+        rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(
+            self.soto_asset)
 
         self.soto_dof_props = self.gym.get_asset_dof_properties(
-            soto_asset)
+            self.soto_asset)
         self.soto_lower_limits = self.soto_dof_props["lower"]
         self.soto_upper_limits = self.soto_dof_props["upper"]
         self.soto_motor_strength = self.soto_dof_props["effort"]
         self.soto_joint_velocity = self.soto_dof_props["velocity"]
         self.soto_mids = 0.5 * \
-            (self.soto_upper_limits + self.soto_lower_limits)
-
+                         (self.soto_upper_limits + self.soto_lower_limits)
 
         self.default_dof_pos = self.soto_mids
         # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
@@ -178,39 +138,39 @@ class SotoEnvScene:
 
         # send to torch
         self.default_dof_pos_tensor = to_torch(
-            self.default_dof_pos, device= self.device)
+            self.default_dof_pos, device=self.device)
         ## get link index of soto pieces, which we will use as effectors
         # vertical movment : vertical axis link
         # Z rotate mov = gripper_base_link
         # lateral translation : gripper_base_x_link
         # space beetween grippers : gripper_y_left_link/gripper_y_right_link
-        self.soto_link_dict = self.gym.get_asset_rigid_body_dict(soto_asset)
-        index_to_get = ["vertical_axis_link", "gripper_base_link",
+        self.soto_link_dict = self.gym.get_asset_rigid_body_dict(self.soto_asset)
+        self.index_to_get = ["vertical_axis_link", "gripper_base_link",
                         "gripper_base_x_link", "gripper_y_left_link", "gripper_y_right_link"]
 
-        self.soto_indexs = [self.soto_link_dict[i] for i in index_to_get]
+        self.soto_indexs = [self.soto_link_dict[i] for i in self.index_to_get]
 
+        self.soto_pose = gymapi.Transform()
+        self.soto_pose.p = gymapi.Vec3(*self.cfg.init_state.pos)
+
+        self.box_pose = gymapi.Transform()
+        self._initialize_env()
+
+
+    def _initialize_env(self):
         # configure env grid
         self.num_per_row = int(np.sqrt(self.num_envs))
         spacing = self.cfg.terrain.border_size
-
         self.env_lower = gymapi.Vec3(-spacing, -spacing, 0.0)
         self.env_upper = gymapi.Vec3(spacing, spacing, spacing)
         print("Creating %d environments" % self.num_envs)
-
-        self.soto_pose = gymapi.Transform()
-        pos = self.cfg.init_state.pos
-        self.soto_pose.p = gymapi.Vec3(0,0,0) #TODO : try to replace with *pos
-
-        self.box_pose = gymapi.Transform()
-
         self.envs = []
-
         # global index list of soto_pieces
         self.global_soto_indexs = []
         self.box_idxs = []
-
         self.l_handle = []
+        self.l_envs = []
+
 
         for i in range(self.num_envs):
             # create env
@@ -225,7 +185,8 @@ class SotoEnvScene:
                 gymapi.Vec3(0, 0, 1), np.random.uniform(-0.2, 0.2))
 
             self.box_handle = self.gym.create_actor(
-                env, l_boxes_asset[i], self.box_pose, "box", i, 0) #TODO : try to replace with self.cfg.asset.self_collision
+                env, self.l_boxes_asset[i], self.box_pose, "box", self.cfg.asset.self_collisions,
+                0)
             color = gymapi.Vec3(np.random.uniform(
                 0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
             self.gym.set_rigid_body_color(
@@ -235,9 +196,11 @@ class SotoEnvScene:
             self.box_idx = self.gym.get_actor_rigid_body_index(
                 env, self.box_handle, 0, gymapi.DOMAIN_SIM)
             self.box_idxs.append(self.box_idx)
+
             # add soto
             self.soto_handle = self.gym.create_actor(
-                env, soto_asset, self.soto_pose, self.cfg.asset.name, i, 1) #TODO : try to replace i with self.cfg.asset.self_collision
+                env, self.soto_asset, self.soto_pose, self.cfg.asset.name, self.cfg.asset.self_collisions,
+                1)
             self.l_handle.append(self.soto_handle)
 
             # set dof properties
@@ -252,19 +215,12 @@ class SotoEnvScene:
             self.gym.set_actor_dof_position_targets(
                 env, self.soto_handle, self.default_dof_pos)
 
-            ## get inital gripper pose
-            # self.gripper_handle = self.gym.find_actor_rigid_body_handle(env, self.soto_handle, "gripper_base_link")
-            #
-            # self.gripper_pose = self.gym.get_rigid_transform(env, self.gripper_handle)
-            #
-            # self.init_pos_list.append([self.gripper_pose.p.x, self.gripper_pose.p.y, self.gripper_pose.p.z])
-            # self.init_rot_list.append([self.gripper_pose.r.x, self.gripper_pose.r.y, self.gripper_pose.r.z, self.gripper_pose.r.w])
-
             # get global index of pieces in rigid body state tensor
+            self.l_envs.append(env)
             self.gripper_idx = self.gym.find_actor_rigid_body_index(
                 env, self.soto_handle, "gripper_base_link", gymapi.DOMAIN_SIM)
             global_index = [self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, i, gymapi.DOMAIN_SIM) for i in index_to_get]
+                env, self.soto_handle, i, gymapi.DOMAIN_SIM) for i in self.index_to_get]
             self.global_soto_indexs.append(global_index)
 
     def _define_viewer(self):
@@ -279,6 +235,37 @@ class SotoEnvScene:
         width = random.uniform(w_limit[0], w_limit[1])
         height = random.uniform(h_limit[0], h_limit[1])
         return (length, width, height)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class EnvScene:
@@ -301,7 +288,7 @@ class EnvScene:
         else:
             self.device = 'cpu'
 
-        # graphics device for rendering, -1 for no rendering
+        # graphicsself.devicefor rendering, -1 for no rendering
         self.graphics_device_id = self.sim_device_id
 
         if self.headless == True:
