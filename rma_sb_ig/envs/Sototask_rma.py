@@ -15,12 +15,12 @@ from rma_sb_ig.envs.soto_forward_task import SotoForwardTask
 class SotoRobotTask(SotoForwardTask):
     def __init__(self, *args):
 
-        super(SotoRobotTask, self).__init__(*args)
-        """
+        #super(SotoRobotTask, self).__init__(*args)
+
         self.gym = gymapi.acquire_gym()
 
         custom_parameters = [
-            {"name": "--num_envs", "type": int, "default": 1,
+            {"name": "--num_envs", "type": int, "default": 10,
                 "help": "Number of environments to create"},
         ]
 
@@ -65,6 +65,13 @@ class SotoRobotTask(SotoForwardTask):
             self.sim, gymapi.CameraProperties())
         if self.viewer is None:
             raise Exception("Failed to create viewer")
+
+        self.plane_params = gymapi.PlaneParams()
+        self.plane_params.normal = gymapi.Vec3(0, 0, 1)
+        self.plane_params.distance = 0
+        self.plane_params.dynamic_friction = 1.0
+        self.plane_params.static_friction = 1.0
+        self.gym.add_ground(self.sim, self.plane_params)
 
         asset_root = "resources/robots/"
 
@@ -155,13 +162,7 @@ class SotoRobotTask(SotoForwardTask):
         # self.init_rot_list = [] #l_rot of a piece
         self.l_handle = []
         # add ground plane
-        self.plane_params = gymapi.PlaneParams()
-        self.plane_params.normal = gymapi.Vec3(0, 0, 1)
-        self.plane_params.distance = 0
-        self.plane_params.dynamic_friction = 1.0
-        self.plane_params.static_friction = 1.0
-        self.gym.add_ground(self.sim, self.plane_params)
-
+        print("device is " + device)
         for i in range(self.num_envs):
             # create env
             env = self.gym.create_env(
@@ -254,9 +255,9 @@ class SotoRobotTask(SotoForwardTask):
             self.gym.draw_viewer(self.viewer, self.sim, False)
             self.gym.sync_frame_time(self.sim)
 
-        # cleanup
+        #cleanup
         self.gym.destroy_viewer(self.viewer)
-    """
+
 
     def _init_observation_space(self):
         """
