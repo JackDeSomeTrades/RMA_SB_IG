@@ -6,7 +6,7 @@ task_config:
     lim_y : [0.1,0.5]
     lim_z : [0.1,0.3]
   env:
-    num_envs: 1024
+    num_envs: 2
     num_observations: 10
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 10
@@ -15,7 +15,7 @@ task_config:
     episode_length_s : 60
     # episode length in seconds
   sim_param :
-    dt : 0.01
+    dt : 0.02
     use_gpu : True
     substep : 2
     solver_type : 1
@@ -32,7 +32,7 @@ task_config:
     mesh_type: 'none' # "heightfield" # none, plane, heightfield or trimesh
     horizontal_scale: 0.1 # [m]
     vertical_scale: 0.005 # [m]
-    border_size: 2 # [m]
+    border_size: 1.5 # [m]
     static_friction: 1.0
     dynamic_friction: 1.0
     restitution: 0.
@@ -40,7 +40,7 @@ task_config:
     num_cols: 20 # number of terrain cols (types)
 
   init_state:
-    rot: [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
+    rot: [0.0, 0.0, 0.0, 0.0] # x,y,z,w [quat]
     lin_vel: [0.0, 0.0, 0.0]  # x,y,z [m/s]
     ang_vel: [0.0, 0.0, 0.0]  # x,y,z [rad/s]
     pos: [0.0, 0.0, 0.0]  # x,y,z [m]
@@ -55,6 +55,7 @@ task_config:
     terminate_after_contacts_on: ["base_link"]
     self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
     disable_gravity: False
+    armature : 0.01
     collapse_fixed_joints: True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
     fix_base_link: True # so the base shouldn't be allowed to move no matter what 
     default_dof_drive_mode: 3 # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
