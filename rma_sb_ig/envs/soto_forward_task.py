@@ -61,14 +61,14 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
                 self.default_dof_pos, device=self.device)
 
             # set initial position targets
-            for soto_handle, env in zip(self.l_handle, self.l_envs):
+            for env in self.envs :
                 # set dof states
                 self.gym.set_actor_dof_states(
-                    env, soto_handle, self.default_dof_state, gymapi.STATE_ALL)
+                    env, self.soto_handle, self.default_dof_state, gymapi.STATE_ALL)
 
                 # set position targets
                 self.gym.set_actor_dof_position_targets(
-                    env, soto_handle, self.default_dof_pos)
+                    env, self.soto_handle, self.default_dof_pos)
 
             self.gym.step_graphics(self.sim)
             self.gym.draw_viewer(self.viewer, self.sim, False)
