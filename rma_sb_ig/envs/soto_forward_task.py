@@ -36,6 +36,48 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
                               headless=args.headless, sim_params=sim_params)
 
         self.init_done = True
+        if self.is_test_mode :
+            self._process_test()
+        else :
+            self.gym.destroy_viewer(self.viewer)
+
+    def _process_test(self):
+        # self.gym.prepare_sim(self.sim) #TODO : ATTENTION FAIT TOUT PLANTER
+        x = 0
+        while not self.gym.query_viewer_has_closed(self.viewer):
+            x += 1
+            # update viewer
+            # set initial dof states
+            k = np.abs(np.sin(x / 100))
+            self.soto_current = k * self.soto_upper_limits + \
+                                (1 - k) * self.soto_lower_limits
+            self.default_dof_pos = self.soto_current
+
+            # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
+            self.default_dof_state["pos"] = self.default_dof_pos
+
+            # send to torch
+            self.default_dof_pos_tensor = to_torch(
+                self.default_dof_pos, device=self.device)
+
+            # set initial position targets
+            for soto_handle, env in zip(self.l_handle, self.l_envs):
+                # set dof states
+                self.gym.set_actor_dof_states(
+                    env, soto_handle, self.default_dof_state, gymapi.STATE_ALL)
+
+                # set position targets
+                self.gym.set_actor_dof_position_targets(
+                    env, soto_handle, self.default_dof_pos)
+
+            self.gym.step_graphics(self.sim)
+            self.gym.draw_viewer(self.viewer, self.sim, False)
+            self.gym.sync_frame_time(self.sim)
+
+        # cleanup
+        self.gym.destroy_viewer(self.viewer)
+
+
 
     def step(self, actions):
         pass
