@@ -6,7 +6,7 @@ task_config:
     lim_y : [0.1,0.5]
     lim_z : [0.1,0.3]
   env:
-    num_envs: 100
+    num_envs: 2
     num_observations: 10
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 10
@@ -65,6 +65,12 @@ task_config:
     override_inertia : True #overide inertia properties (might be wrong)
     override_com : True #overide inertia properties (might be wrong)
 
+  distance_sensor :
+    fov : 0.17
+    near_plane : 0.0
+    far_plane : 3.0
+    use_collision_geometry : True
+    enable_tensors : True
 
 
 #   domain_rand:
