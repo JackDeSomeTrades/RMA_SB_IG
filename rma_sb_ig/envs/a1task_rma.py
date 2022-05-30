@@ -93,14 +93,18 @@ class A1LeggedRobotTask(ForwardTask):
         noise_scales = self.cfg.noise.noise_scales
         noise_level = self.cfg.noise.noise_level
 
-        noise_vec[:12] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
-        noise_vec[12:24] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
-        noise_vec[24:26] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
+        noise_vec[:12] = noise_scales.dof_pos * \
+            noise_level * self.obs_scales.dof_pos
+        noise_vec[12:24] = noise_scales.dof_vel * \
+            noise_level * self.obs_scales.dof_vel
+        noise_vec[24:26] = noise_scales.ang_vel * \
+            noise_level * self.obs_scales.ang_vel
         noise_vec[26:30] = 0.
         noise_vec[30:42] = 0.  # Previous action.
         noise_vec[42:45] = 0.  # Mass and COM
         noise_vec[45:57] = noise_scales.motor_strength * noise_level
-        noise_vec[58] = noise_scales.height_measurements * noise_level * self.obs_scales.height_measurements
+        noise_vec[58] = noise_scales.height_measurements * \
+            noise_level * self.obs_scales.height_measurements
 
         return noise_vec
 
@@ -132,23 +136,8 @@ class A1LeggedRobotTask(ForwardTask):
 
         # add noise if needed
         if self.add_noise:
-            self.obs_buf += (2 * torch.rand_like(self.obs_buf) - 1) * self.noise_scale_vec
-
-    def compute_heading_deviation(self):
-        commands_xy = self.commands[:, :2]
-        command_normalized = torch.nan_to_num(
-            (commands_xy.T / torch.norm(commands_xy, dim=1, p=2)).T
-        )
-        base_xy_velocity = self.base_lin_vel[:, :3]
-        forward_orientation = torch.zeros_like(base_xy_velocity)
-        forward_orientation[:, 0] = 1.0
-        forward_orientation_quat = quat_rotate(self.base_quat, forward_orientation)
-        forward_orientation_quat = normalize(forward_orientation_quat)[:, :2]
-
-        self.heading_deviation = torch.acos((command_normalized * forward_orientation_quat).sum(dim=1))
-        self.heading_deviation = (torch.sign(forward_orientation_quat[:, 1]) * self.heading_deviation).reshape((-1, 1))
-
-        return self.heading_deviation
+            self.obs_buf += (2 * torch.rand_like(self.obs_buf) -
+                             1) * self.noise_scale_vec
 
     # -------------- Reward functions begin below: --------------------------------#
 
@@ -159,7 +148,8 @@ class A1LeggedRobotTask(ForwardTask):
         # max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
         # reward = torch.abs(base_x_velocity - max_fwd_vel_tensor)
         diff = base_x_velocity - forward[:, 0]
-        reward = torch.linalg.norm(diff.unsqueeze(-1), dim=1, ord=1)   # L1 norm
+        reward = torch.linalg.norm(
+            diff.unsqueeze(-1), dim=1, ord=1)   # L1 norm
 
         return reward
 
@@ -177,7 +167,8 @@ class A1LeggedRobotTask(ForwardTask):
 
     def _reward_lateral_movement_rotation(self):
         # penalises lateral motion (v_y) and limiting angular velocity yaw
-        reward = self.base_lin_vel[:, 1].pow(2).unsqueeze(-1).sum(dim=1) + self.base_ang_vel[:, 2].pow(2).unsqueeze(-1).sum(dim=1)   #TODO check with 1
+        reward = self.base_lin_vel[:, 1].pow(2).unsqueeze(-1).sum(
+            dim=1) + self.base_ang_vel[:, 2].pow(2).unsqueeze(-1).sum(dim=1)  # TODO check with 1
         # print(f"lateral reward * {self.cfg.rewards.scales.lateral_movement_rotation}", reward)
         return reward
 
@@ -190,7 +181,9 @@ class A1LeggedRobotTask(ForwardTask):
     def _reward_work(self):
         diff_joint_pos = self.actions - self.last_actions
         # torque_transpose = torch.transpose(self.torques, 0, 1)
-        reward = torch.abs(torch.sum(torch.inner(self.torques, diff_joint_pos), dim=1))     # this is the L1 norm
+        # this is the L1 norm
+        reward = torch.abs(torch.sum(torch.inner(
+            self.torques, diff_joint_pos), dim=1))
         return reward
 
     def _reward_ground_impact(self):
@@ -229,7 +222,8 @@ class A1LeggedRobotTask(ForwardTask):
 
     def _reward_base_height(self):
         # Make sure the robot body maintains a minimum distance from the ground based on the z center of mass.
-        base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
+        base_height = torch.mean(self.root_states[:, 2].unsqueeze(
+            1) - self.measured_heights, dim=1)
         return torch.square(base_height - self.cfg.rewards.base_height_target)
 
     def _reward_torques(self):
@@ -259,26 +253,32 @@ class A1LeggedRobotTask(ForwardTask):
 
     def _reward_dof_pos_limits(self):
         # Penalize dof positions too close to the limit
-        out_of_limits = -(self.dof_pos - self.dof_pos_limits[:, 0]).clip(max=0.)  # lower limit
-        out_of_limits += (self.dof_pos - self.dof_pos_limits[:, 1]).clip(min=0.)
+        out_of_limits = - \
+            (self.dof_pos -
+             self.dof_pos_limits[:, 0]).clip(max=0.)  # lower limit
+        out_of_limits += (self.dof_pos -
+                          self.dof_pos_limits[:, 1]).clip(min=0.)
         return torch.sum(out_of_limits, dim=1)
 
     def _reward_dof_vel_limits(self):
         # Penalize dof velocities too close to the limit
         # clip to max error = 1 rad/s per joint to avoid huge penalties
         return torch.sum(
-            (torch.abs(self.dof_vel) - self.dof_vel_limits * self.cfg.rewards.soft_dof_vel_limit).clip(min=0., max=1.),
+            (torch.abs(self.dof_vel) - self.dof_vel_limits *
+             self.cfg.rewards.soft_dof_vel_limit).clip(min=0., max=1.),
             dim=1)
 
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
-        lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
+        lin_vel_error = torch.sum(torch.square(
+            self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
         reward = torch.exp(-lin_vel_error / self.cfg.rewards.tracking_sigma)
         return reward
 
     def _reward_tracking_ang_vel(self):
         # Tracking of angular velocity commands (yaw)
-        ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
+        ang_vel_error = torch.square(
+            self.commands[:, 2] - self.base_ang_vel[:, 2])
         return torch.exp(-ang_vel_error / self.cfg.rewards.tracking_sigma)
 
     def _reward_feet_air_time(self):
@@ -291,19 +291,20 @@ class A1LeggedRobotTask(ForwardTask):
         self.feet_air_time += self.dt
         rew_airTime = torch.sum((self.feet_air_time - 0.5) * first_contact,
                                 dim=1)  # reward only on first contact with the ground
-        rew_airTime *= torch.norm(self.commands[:, :2], dim=1) > 0.1  # no reward for zero command
+        # no reward for zero command
+        rew_airTime *= torch.norm(self.commands[:, :2], dim=1) > 0.1
         self.feet_air_time *= ~contact_filt
         return rew_airTime
 
     def _reward_feet_stumble(self):
         # Penalize feet hitting vertical surfaces
-        return torch.any(torch.norm(self.contact_forces[:, self.feet_indices, :2], dim=2) > \
+        return torch.any(torch.norm(self.contact_forces[:, self.feet_indices, :2], dim=2) >
                          5 * torch.abs(self.contact_forces[:, self.feet_indices, 2]), dim=1)
 
     def _reward_stand_still(self):
         # Penalize motion at zero commands
         return torch.sum(torch.abs(self.dof_pos - self.default_dof_pos), dim=1) * (
-                    torch.norm(self.commands[:, :2], dim=1) < 0.1)
+            torch.norm(self.commands[:, :2], dim=1) < 0.1)
 
     # ---------------Reward functions end here ---------------------- #
 
@@ -317,7 +318,8 @@ class A1LeggedRobotTask(ForwardTask):
 
         foot_status = torch.ones(self.cfg.env.num_envs, 4, device=self.device)
         feet_forces = self.contact_forces[:, self.feet_indices, 2]
-        feet_switches = torch.where(feet_forces == 0., torch.tensor(0.0, device=self.device), foot_status)
+        feet_switches = torch.where(feet_forces == 0., torch.tensor(
+            0.0, device=self.device), foot_status)
 
         return feet_switches
 
@@ -329,4 +331,3 @@ class A1LeggedRobotTask(ForwardTask):
         local_terrain_height = torch.max(local_terrain_height, dim=-1)[0]
 
         return local_terrain_height
-

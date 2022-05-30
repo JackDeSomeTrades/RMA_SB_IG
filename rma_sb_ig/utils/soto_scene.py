@@ -46,7 +46,7 @@ class SotoEnvScene:
                 self.viewer, gymapi.KEY_ESCAPE, "QUIT")
             self.gym.subscribe_viewer_keyboard_event(
                 self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
-        self._define_viewer()
+            self._define_viewer()
 
     def create_sim(self):
         """ Creates simulation, terrain and evironments
@@ -57,7 +57,8 @@ class SotoEnvScene:
         plane_params.distance = 0
         plane_params.static_friction = self.cfg.terrain.static_friction
         plane_params.dynamic_friction = self.cfg.terrain.dynamic_friction
-        plane_params.restitution = self.cfg.terrain.restitution  # used to control the elasticity of collisions with the ground plane
+        # used to control the elasticity of collisions with the ground plane
+        plane_params.restitution = self.cfg.terrain.restitution
         self.gym.add_ground(self.sim, plane_params)
 
         self._create_assets()
@@ -117,18 +118,21 @@ class SotoEnvScene:
         # # self.default_dof_pos = np.zeros(self.soto_num_dofs, dtype=np.float32) #way to initialize dofs
         self.num_dofs = self.gym.get_asset_dof_count(self.soto_asset)
         self.num_bodies = self.gym.get_asset_rigid_body_count(self.soto_asset)
-        dof_props_asset = self.gym.get_asset_dof_properties(self.soto_asset)
-        rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(
-            self.soto_asset)
+        # dof_props_asset = self.gym.get_asset_dof_properties(self.soto_asset)
+        # rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(
+        #     self.soto_asset)
 
         self.soto_dof_props = self.gym.get_asset_dof_properties(
             self.soto_asset)
-        self.soto_lower_limits = self.soto_dof_props["lower"]
-        self.soto_upper_limits = self.soto_dof_props["upper"]
-        self.soto_motor_strength = self.soto_dof_props["effort"]
-        self.soto_joint_velocity = self.soto_dof_props["velocity"]
+
+        self.lower_bounds_joints = self.soto_dof_props["lower"]
+        self.upper_bounds_joints = self.soto_dof_props["upper"]
+        print(self.lower_bounds_joints)
+        print(self.upper_bounds_joints)
+        self.motor_strength = self.soto_dof_props["effort"]
+        self.joint_velocity = self.soto_dof_props["velocity"]
         self.soto_mids = 0.5 * \
-                         (self.soto_upper_limits + self.soto_lower_limits)
+            (self.upper_bounds_joints + self.lower_bounds_joints)
 
         self.default_dof_pos = self.soto_mids
         # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
@@ -136,21 +140,22 @@ class SotoEnvScene:
         self.default_dof_state = np.zeros(
             self.num_dofs, gymapi.DofState.dtype)
         self.default_dof_state["pos"] = self.default_dof_pos
-        #properties of distance_sensor
+        # properties of distance_sensor
         self._define_distance_sensor()
 
         # send to torch
         self.default_dof_pos_tensor = to_torch(
             self.default_dof_pos, device=self.device)
-        ## get link index of soto pieces, which we will use as effectors
+        # get link index of soto pieces, which we will use as effectors
         # vertical movment : vertical axis link
         # Z rotate mov = gripper_base_link
         # lateral translation : gripper_base_x_link
         # space beetween grippers : gripper_y_left_link/gripper_y_right_link
-        self.soto_link_dict = self.gym.get_asset_rigid_body_dict(self.soto_asset)
-        self.index_to_get = ['gripper_y_right_link','gripper_y_left_link']
+        self.soto_link_dict = self.gym.get_asset_rigid_body_dict(
+            self.soto_asset)
+        self.index_to_get = ['gripper_y_right_link', 'gripper_y_left_link']
+
         self.soto_indexs = [self.soto_link_dict[i] for i in self.index_to_get]
-        print(self.soto_indexs)
         self.soto_pose = gymapi.Transform()
         self.soto_pose.p = gymapi.Vec3(*self.cfg.init_state.pos)
         self.box_pose = gymapi.Transform()
@@ -210,25 +215,31 @@ class SotoEnvScene:
                 env, self.soto_handle, "gripper_y_left_to_dist_x_sensor", gymapi.DOMAIN_SIM)
             # set distance sensors
 
-            self.distance1_handle = self.gym.create_camera_sensor(env, self.distance_sensor)
-            self.distance2_handle = self.gym.create_camera_sensor(env, self.distance_sensor)
+            # self.distance1_handle = self.gym.create_camera_sensor(
+            #     env, self.distance_sensor)
+            # self.distance2_handle = self.gym.create_camera_sensor(
+            #     env, self.distance_sensor)
 
-
-            self.gym.attach_camera_to_body(self.distance1_handle, env, dist1_idx, self.local_transform, gymapi.FOLLOW_TRANSFORM)
-            self.gym.attach_camera_to_body(self.distance2_handle, env, dist2_idx, self.local_transform, gymapi.FOLLOW_TRANSFORM)
+            # self.gym.attach_camera_to_body(
+            #     self.distance1_handle, env, dist1_idx, self.local_transform, gymapi.FOLLOW_TRANSFORM)
+            # self.gym.attach_camera_to_body(
+            #     self.distance2_handle, env, dist2_idx, self.local_transform, gymapi.FOLLOW_TRANSFORM)
 
     def _define_distance_sensor(self):
         self.distance_sensor = gymapi.CameraProperties()
         self.distance_sensor.width = 1
         self.distance_sensor.height = 1
-        self.distance_sensor.horizontal_fov = self.cfg.distance_sensor.fov # field of view in radians (cone)
+        # field of view in radians (cone)
+        self.distance_sensor.horizontal_fov = self.cfg.distance_sensor.fov
         self.distance_sensor.near_plane = self.cfg.distance_sensor.near_plane
         self.distance_sensor.far_plane = self.cfg.distance_sensor.far_plane
         self.distance_sensor.use_collision_geometry = self.cfg.distance_sensor.use_collision_geometry
         self.distance_sensor.enable_tensors = self.cfg.distance_sensor.enable_tensors
 
         self.local_transform = gymapi.Transform()
-        self.local_transform.r = gymapi.Quat.from_axis_angle(gymapi.Vec3(0, 1, 0), np.radians(45.0))
+        self.local_transform.r = gymapi.Quat.from_axis_angle(
+            gymapi.Vec3(0, 1, 0), np.radians(45.0))
+
     def _define_viewer(self):
         self.cam_pos = gymapi.Vec3(4, 3, 2)
         self.cam_target = gymapi.Vec3(-4, -3, 0)
