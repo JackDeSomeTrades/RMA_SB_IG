@@ -39,8 +39,7 @@ class SotoRobotTask(SotoForwardTask):
 
         # TODO : Do not forget to add motors control when they will be available
         index = self.soto_indexs[0]
-        dist_max = self.upper_bounds_joints[index] - \
-            self.lower_bounds_joints[index]
+        dist_max = self.upper_bounds_joints[index] - self.lower_bounds_joints[index]
         limits_low = np.array(
             list(self.lower_bounds_joints) +
             [0] * self.num_dofs +    # minimum values of joint velocities
