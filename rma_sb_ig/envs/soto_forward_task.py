@@ -1,5 +1,7 @@
 from time import time
 from warnings import WarningMessage
+
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 from abc import ABC, abstractmethod
@@ -61,57 +63,75 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             self.gym.destroy_sim(self.sim)
 
     def _process_test(self):
-        # self.gym.prepare_sim(self.sim) #TODO : ATTENTION FAIT TOUT PLANTER avec set actor dof state
-        # when gym.prepared_sim is called, have to work withroot state tensors : gym.set_actor_root_state_tensor(sim, _root_tensor)
+
+        self.gym.prepare_sim(self.sim) #TODO : ATTENTION FAIT TOUT PLANTER avec set actor dof state
+        # when gym.prepared_sim is called, have to work withoot state tensors : gym.set_actor_root_state_tensor(sim, _root_tensor)
         # acquire root state tensor descriptor
-
+        env_print = 2
         step = 0
-        while step < 500:
+        distance_from_cameras = [[] for i in range(self.num_envs)]
+        for i in range(self.num_envs) :
+            distance_from_cameras[i].append([])
+            distance_from_cameras[i].append([])
+        while True:
             step += 1
-            # update viewer
-            # set initial dof states
-            # set initial position targets #TODO : work only if sim is not prepared
-            for env in self.envs:
-                # set dof states
-                self.gym.set_actor_dof_states(
-                    env, self.soto_handle, self.default_dof_state, gymapi.STATE_ALL)
+            #set initial position targets #TODO : work only if sim is not prepared
 
-                # set position targets
-                self.gym.set_actor_dof_position_targets(
-                    env, self.soto_handle, self.default_dof_pos)
-            k = np.abs(np.sin(step / 100))
+            # for env in self.envs:
+            #     # set position targets
+            #     self.gym.set_actor_dof_states(env,self.soto_handle,self.default_dof_state,gymapi.STATE_ALL)
+            #     self.gym.set_actor_dof_position_targets(
+            #         env, self.soto_handle, self.default_dof_pos)
+            # k = np.abs(np.sin(step / 1000))
+
+            # #actualise position
+            #
+            # self.soto_current = k * self.upper_bounds_joints + \
+            #     (1 - k) * self.lower_bounds_joints
+            # self.default_dof_pos = self.soto_current
+            #
+            # # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
+            # self.default_dof_state["pos"] = self.default_dof_pos
+
             # camera
-            # self.gym.render_all_camera_sensors(self.sim)
-            # depth_image1 = self.gym.get_camera_image(
-            #     self.sim, self.distance1_handle, gymapi.IMAGE_DEPTH)
-            # depth_image2 = self.gym.get_camera_image(
-            #     self.sim, self.distance2_handle, gymapi.IMAGE_DEPTH)
-            # print(depth_image1)
-            # print(depth_image2)
-            self.soto_current = k * self.upper_bounds_joints + \
-                (1 - k) * self.lower_bounds_joints
-            self.default_dof_pos = self.soto_current
+            self.gym.render_all_camera_sensors(self.sim)
+            for i in range(self.num_envs) :
+                depth_image1 = self.gym.get_camera_image(
+                    self.sim, self.envs[i], self.distance_handles[i][0], gymapi.IMAGE_DEPTH)
+                depth_image2 = self.gym.get_camera_image(
+                    self.sim, self.envs[i], self.distance_handles[i][1], gymapi.IMAGE_DEPTH)
+                if depth_image1[0][0] <= - self.cfg.distance_sensor.far_plane :
+                    depth_image1 = [[- self.cfg.distance_sensor.far_plane]]
+                if depth_image2[0][0] <= - self.cfg.distance_sensor.far_plane :
+                    depth_image2 = [[- self.cfg.distance_sensor.far_plane]]
 
-            # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
-            self.default_dof_state["pos"] = self.default_dof_pos
+                distance_from_cameras[i][0].append(depth_image1[0][0])
+                distance_from_cameras[i][1].append(depth_image2[0][0])
 
-            # send to torch
-            self.default_dof_pos_tensor = to_torch(
-                self.default_dof_pos, device=self.device)
-
+            # print()
             if not self.headless:
                 self.gym.step_graphics(self.sim)
                 self.gym.draw_viewer(self.viewer, self.sim, False)
                 if self.gym.query_viewer_has_closed(self.viewer):
                     break
-            # self.gym.sync_frame_time(self.sim) #synchronise simulation with real time
-            # self.gym.simulate(self.sim)
-            # self.gym.fetch_results(self.sim, True)
+            self.gym.sync_frame_time(self.sim) #synchronise simulation with real time
+            self.gym.simulate(self.sim)
+            self.gym.fetch_results(self.sim, True)
 
         # cleanup
         if not self.headless:
             self.gym.destroy_viewer(self.viewer)
         self.gym.destroy_sim(self.sim)
+        plt.figure(figsize=(20,20))
+        for i in range(self.num_envs) :
+            plt.subplot(2,3,i+1)
+            plt.plot([i for i in range(step)][2:],distance_from_cameras[i][0][2:],'r',label = 'right')
+            plt.plot([i for i in range(step)][2:],distance_from_cameras[i][1][2:],'g',label = 'left')
+            plt.title("distance capteurs boite environnement {}".format(i))
+            plt.legend()
+            plt.grid()
+        plt.show()
+
 
     def step(self, actions):
         pass

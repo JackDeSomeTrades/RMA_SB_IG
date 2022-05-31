@@ -93,8 +93,8 @@ class SotoEnvScene:
 
         asset_options = gymapi.AssetOptions()
 
-        self.l_boxes_asset = [self.gym.create_box(self.sim, *self._get_random_boxes(
-            *box_limits), asset_options) for i in range(self.num_envs)]
+        self.box_dimensions = [self._get_random_boxes(*box_limits) for i in range(self.num_envs)]
+        self.l_boxes_asset = [self.gym.create_box(self.sim, *dim, asset_options) for dim in self.box_dimensions]
 
         # load soto asset
 
@@ -110,9 +110,7 @@ class SotoEnvScene:
         asset_options.override_com = self.cfg.asset.override_com
         asset_options.override_inertia = self.cfg.asset.override_inertia
 
-        self.soto_asset = self.gym.load_asset(
-            self.sim, asset_root, asset_file, asset_options)
-
+        self.soto_asset = self.gym.load_asset(self.sim, asset_root,asset_file,asset_options)
         # # configure soto dofs
 
         # # self.default_dof_pos = np.zeros(self.soto_num_dofs, dtype=np.float32) #way to initialize dofs
@@ -127,8 +125,7 @@ class SotoEnvScene:
 
         self.lower_bounds_joints = self.soto_dof_props["lower"]
         self.upper_bounds_joints = self.soto_dof_props["upper"]
-        print(self.lower_bounds_joints)
-        print(self.upper_bounds_joints)
+
         self.motor_strength = self.soto_dof_props["effort"]
         self.joint_velocity = self.soto_dof_props["velocity"]
         self.soto_mids = 0.5 * \
@@ -139,13 +136,9 @@ class SotoEnvScene:
 
         self.default_dof_state = np.zeros(
             self.num_dofs, gymapi.DofState.dtype)
-        self.default_dof_state["pos"] = self.default_dof_pos
-        # properties of distance_sensor
-        self._define_distance_sensor()
 
-        # send to torch
-        self.default_dof_pos_tensor = to_torch(
-            self.default_dof_pos, device=self.device)
+        self.default_dof_state["pos"] = self.default_dof_pos
+
         # get link index of soto pieces, which we will use as effectors
         # vertical movment : vertical axis link
         # Z rotate mov = gripper_base_link
@@ -173,29 +166,17 @@ class SotoEnvScene:
             # create env
             env = self.gym.create_env(
                 self.sim, self.env_lower, self.env_upper, self.num_per_row)
-            # add box
-            self.box_pose.p.x = np.random.uniform(-0.1, 0.1)
-            self.box_pose.p.y = np.random.uniform(-0.1, 0.1)
-            self.box_pose.p.z = 0.5
-            self.box_pose.r = gymapi.Quat.from_axis_angle(
-                gymapi.Vec3(0, 0, 1), np.random.uniform(-0.2, 0.2))
 
-            self.box_handle = self.gym.create_actor(
-                env, self.l_boxes_asset[i], self.box_pose, "box", i,
-                0)
-            color = gymapi.Vec3(np.random.uniform(
-                0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
-            self.gym.set_rigid_body_color(
-                env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
-
-            # get box id (always the same at each iteration)
-            self.box_idx = self.gym.get_actor_rigid_body_index(
-                env, self.box_handle, 0, gymapi.DOMAIN_SIM)
-
-            # get soto_id in environnement(always the same aswell)
+            # get soto_id in environnement(always the same )
             self.soto_handle = self.gym.create_actor(
                 env, self.soto_asset, self.soto_pose, self.cfg.asset.name, i,
-                1)
+                1,0)
+
+            index_rotate = self.gym.find_actor_dof_index(env, self.soto_handle, "gripper_rotate", gymapi.DOMAIN_ENV)
+            index_x = self.gym.find_actor_dof_index(env, self.soto_handle, "gripper_base_x", gymapi.DOMAIN_ENV)
+
+            self.default_dof_state["pos"][index_rotate] = - np.pi
+            self.default_dof_state["pos"][index_x] = self.upper_bounds_joints[index_x]
             # set dof properties
             self.gym.set_actor_dof_properties(
                 env, self.soto_handle, self.soto_dof_props)
@@ -204,41 +185,70 @@ class SotoEnvScene:
             self.gym.set_actor_dof_states(
                 env, self.soto_handle, self.default_dof_state, gymapi.STATE_ALL)
 
-            # set initial position targets
-            self.gym.set_actor_dof_position_targets(
-                env, self.soto_handle, self.default_dof_pos)
+            # add box
+            conveyor_left = self.gym.find_actor_rigid_body_index(
+                env, self.soto_handle, "conveyor_belt_left", gymapi.DOMAIN_ENV)
+            conveyor_right = self.gym.find_actor_rigid_body_index(
+                env, self.soto_handle, "conveyor_belt_right", gymapi.DOMAIN_ENV)
+
+            body_states = self.gym.get_actor_rigid_body_states(env, self.soto_handle, gymapi.STATE_ALL)
+            #self.gym.set_actor_dof_states(env, actor_handle, dof_states, gymapi.STATE_ALL)
+
+            self.box_pose.p.x = (body_states["pose"][conveyor_right][0]["x"] + body_states["pose"][conveyor_left][0]["x"])/2 - self.box_dimensions[i][0]
+            self.box_pose.p.y = (body_states["pose"][conveyor_right][0]["y"] + body_states["pose"][conveyor_left][0]["y"])/2 + self.box_dimensions[i][1]/4
+            self.box_pose.p.z = (body_states["pose"][conveyor_right][0]["z"] + body_states["pose"][conveyor_left][0]["z"])/2 + self.box_dimensions[i][2]/2 + 0.023
+            self.box_pose.r = body_states["pose"][conveyor_right][1]
+            self.box_handle = self.gym.create_actor(
+                env, self.l_boxes_asset[i], self.box_pose, "box", i,
+                0,1)
+            color = gymapi.Vec3(np.random.uniform(
+                0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
+            self.gym.set_rigid_body_color(
+                env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
+
+            # get box id (always the same at each iteration)
+            self.box_idx = self.gym.get_actor_rigid_body_index(
+                env, self.box_handle, 0, gymapi.DOMAIN_SIM)
             self.envs.append(env)
+        self._create_distance_sensors()
+
+    def _create_distance_sensors(self):
+        self.distance_handles = [[]]
+        for i in range(self.num_envs) :
+            self.distance_handles.append([])
+
+
+            distance_sensor = gymapi.CameraProperties()
+            distance_sensor.width = self.cfg.distance_sensor.width
+            distance_sensor.height = self.cfg.distance_sensor.height
+            # field of view in radians (cone)
+            distance_sensor.horizontal_fov = self.cfg.distance_sensor.fov
+            distance_sensor.near_plane = self.cfg.distance_sensor.near_plane
+            distance_sensor.far_plane = self.cfg.distance_sensor.far_plane
+            distance_sensor.use_collision_geometry = self.cfg.distance_sensor.use_collision_geometry
+            distance_sensor.enable_tensors = self.cfg.distance_sensor.enable_tensors
+            local_transform = gymapi.Transform()
+
+            dist1 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
+            dist2 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
+
             # get index of pieces in rigid body state tensor
             dist1_idx = self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, "gripper_y_right_to_dist_x_sensor", gymapi.DOMAIN_SIM)
+                self.envs[i], self.soto_handle, "conveyor_belt_left_link", gymapi.DOMAIN_ENV)
             dist2_idx = self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, "gripper_y_left_to_dist_x_sensor", gymapi.DOMAIN_SIM)
-            # set distance sensors
+                self.envs[i], self.soto_handle, "conveyor_belt_right_link", gymapi.DOMAIN_ENV)
 
-            # self.distance1_handle = self.gym.create_camera_sensor(
-            #     env, self.distance_sensor)
-            # self.distance2_handle = self.gym.create_camera_sensor(
-            #     env, self.distance_sensor)
+            actor_handle = self.gym.get_actor_handle(self.envs[i], 0)
 
-            # self.gym.attach_camera_to_body(
-            #     self.distance1_handle, env, dist1_idx, self.local_transform, gymapi.FOLLOW_TRANSFORM)
-            # self.gym.attach_camera_to_body(
-            #     self.distance2_handle, env, dist2_idx, self.local_transform, gymapi.FOLLOW_TRANSFORM)
-
-    def _define_distance_sensor(self):
-        self.distance_sensor = gymapi.CameraProperties()
-        self.distance_sensor.width = 1
-        self.distance_sensor.height = 1
-        # field of view in radians (cone)
-        self.distance_sensor.horizontal_fov = self.cfg.distance_sensor.fov
-        self.distance_sensor.near_plane = self.cfg.distance_sensor.near_plane
-        self.distance_sensor.far_plane = self.cfg.distance_sensor.far_plane
-        self.distance_sensor.use_collision_geometry = self.cfg.distance_sensor.use_collision_geometry
-        self.distance_sensor.enable_tensors = self.cfg.distance_sensor.enable_tensors
-
-        self.local_transform = gymapi.Transform()
-        self.local_transform.r = gymapi.Quat.from_axis_angle(
-            gymapi.Vec3(0, 1, 0), np.radians(45.0))
+            body_handle1 = self.gym.get_actor_rigid_body_handle(self.envs[i], actor_handle, dist1_idx)
+            body_handle2 = self.gym.get_actor_rigid_body_handle(self.envs[i], actor_handle, dist2_idx)
+            local_transform.p = gymapi.Vec3(-0.6, 0, 0.1)
+            self.gym.attach_camera_to_body(
+                dist1, self.envs[i], body_handle1, local_transform, gymapi.FOLLOW_TRANSFORM)
+            self.distance_handles[i].append(dist1)
+            self.gym.attach_camera_to_body(
+                dist2, self.envs[i], body_handle2,local_transform, gymapi.FOLLOW_TRANSFORM)
+            self.distance_handles[i].append(dist2)
 
     def _define_viewer(self):
         self.cam_pos = gymapi.Vec3(4, 3, 2)
