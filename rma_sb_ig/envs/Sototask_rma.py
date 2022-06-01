@@ -21,9 +21,9 @@ class SotoRobotTask(SotoForwardTask):
         """
         Observation consists of :
             intrinsic
-                        dof_pos - 7
-                        dof_vel - 7
-                        previous_action - 7
+                        dof_pos - 7 + 2 cylinders
+                        dof_vel - 7 + 2 cylinders
+                        previous_action - 7 + 2 cylinders
                         distance_btw_conveyors - 1
             extrinsic
                         friction box/belt - 2
@@ -31,6 +31,8 @@ class SotoRobotTask(SotoForwardTask):
                         Mass_box - 1
                         COM_x - 1
                         COM_y - 1
+                        GC_x - 1
+                        GC_y - 1
                         width-length-height_box - 3
                         distance sensors feedback(d1,d2) - 2
                         box_angle - 1
@@ -38,18 +40,21 @@ class SotoRobotTask(SotoForwardTask):
         """
 
         # TODO : Do not forget to add motors control when they will be available
-        index = self.soto_indexs[0]
+        index = self.dof_usefull_names.index('gripper_y_left')
         dist_max = self.upper_bounds_joints[index] - self.lower_bounds_joints[index]
+        print("distance max", dist_max)
         limits_low = np.array(
-            list(self.lower_bounds_joints) +
-            [0] * self.num_dofs +    # minimum values of joint velocities
-            list(self.lower_bounds_joints) +
+            list(self.lower_bounds_joints[self.dof_usefull_id]) +
+            [0] * 9 +    # minimum values of joint velocities
+            list(self.lower_bounds_joints[self.dof_usefull_id]) +
             [0] +
 
 
             [self.cfg.domain_rand.friction_range[0]]*2 +
             [self.cfg.domain_rand.friction_range[0]] +
             [self.cfg.domain_rand.mass_box[0]] +
+            [0] +
+            [0] +
             [0] +
             [0] +
             [self.cfg.domain_rand.width_box[0]] +
@@ -61,9 +66,9 @@ class SotoRobotTask(SotoForwardTask):
         )
 
         limits_high = np.array(
-            list(self.lower_bounds_joints) +
-            [0] * self.num_dofs +    # minimum values of joint velocities
-            list(self.lower_bounds_joints) +
+            list(self.upper_bounds_joints[self.dof_usefull_id]) +
+            list(self.joint_velocity[self.dof_usefull_id]) +    # maximum values of joint velocities
+            list(self.upper_bounds_joints[self.dof_usefull_id]) +
             # distance max btw 2 conveyors +
             [dist_max] +
 
@@ -72,14 +77,17 @@ class SotoRobotTask(SotoForwardTask):
             [self.cfg.domain_rand.friction_range[1]] +
             [self.cfg.domain_rand.mass_box[1]] +
 
-            [self.cfg.domain_rand.length_box[1]-self.cfg.domain_rand.length_box[0]] +
-            [self.cfg.domain_rand.width_box[1]-self.cfg.domain_rand.width_box[0]] +
+            [self.cfg.domain_rand.length_box[1]] +
+            [self.cfg.domain_rand.width_box[1]] +
+
+            [self.cfg.domain_rand.length_box[1]] +
+            [self.cfg.domain_rand.width_box[1]] +
 
             [self.cfg.domain_rand.width_box[1]] +
             [self.cfg.domain_rand.length_box[1]] +
             [self.cfg.domain_rand.height_box[1]] +
 
-            [2.0]*2 +  # supposed length of grippers
+            [3.0]*2 +  # supposed length of grippers
             [2*np.pi]
         )
 
@@ -95,8 +103,8 @@ class SotoRobotTask(SotoForwardTask):
 
         :return: act_space -> gym.space.Box
         """
-        lb = np.array(self.lower_bounds_joints)
-        ub = np.array(self.upper_bounds_joints)
+        lb = np.array(self.lower_bounds_joints[self.dof_usefull_id])
+        ub = np.array(self.upper_bounds_joints[self.dof_usefull_id])
         act_space = gymspace.Box(lb, ub, dtype=np.float32)
 
         return act_space
@@ -132,8 +140,6 @@ class SotoRobotTask(SotoForwardTask):
         return noise_vec
 
     def compute_observations(self):
-        """Overrides the base class observation computation to bring it in line with observations proposed in the RMA
-        paper. The observation consists of two major parts - the environment variables and the state-action pair."""
         # self.compute_heading_deviation()
         feet_contact_switches = self._get_foot_status()
         local_terrain_height = self._get_local_terrain_height()
@@ -161,25 +167,6 @@ class SotoRobotTask(SotoForwardTask):
         if self.add_noise:
             self.obs_buf += (2 * torch.rand_like(self.obs_buf) -
                              1) * self.noise_scale_vec
-
-    def compute_heading_deviation(self):
-        commands_xy = self.commands[:, :2]
-        command_normalized = torch.nan_to_num(
-            (commands_xy.T / torch.norm(commands_xy, dim=1, p=2)).T
-        )
-        base_xy_velocity = self.base_lin_vel[:, :3]
-        forward_orientation = torch.zeros_like(base_xy_velocity)
-        forward_orientation[:, 0] = 1.0
-        forward_orientation_quat = quat_rotate(
-            self.base_quat, forward_orientation)
-        forward_orientation_quat = normalize(forward_orientation_quat)[:, :2]
-
-        self.heading_deviation = torch.acos(
-            (command_normalized * forward_orientation_quat).sum(dim=1))
-        self.heading_deviation = (torch.sign(
-            forward_orientation_quat[:, 1]) * self.heading_deviation).reshape((-1, 1))
-
-        return self.heading_deviation
 
     # -------------- Reward functions begin below: --------------------------------#
 

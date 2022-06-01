@@ -87,12 +87,12 @@ class SotoEnvScene:
         asset_path = self.cfg.asset.file.format(ROOT_DIR=get_project_root())
         asset_root = os.path.dirname(asset_path)
 
-        box_limits = (self.cfg.box.lim_x,
-                      self.cfg.box.lim_y,
-                      self.cfg.box.lim_z)
+        box_limits = (self.cfg.domain_rand.length_box,
+                      self.cfg.domain_rand.width_box,
+                      self.cfg.domain_rand.height_box)
 
         asset_options = gymapi.AssetOptions()
-
+        asset_options.density = 10
         self.box_dimensions = [self._get_random_boxes(*box_limits) for i in range(self.num_envs)]
         self.l_boxes_asset = [self.gym.create_box(self.sim, *dim, asset_options) for dim in self.box_dimensions]
 
@@ -109,6 +109,8 @@ class SotoEnvScene:
         asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints
         asset_options.override_com = self.cfg.asset.override_com
         asset_options.override_inertia = self.cfg.asset.override_inertia
+        asset_options.vhacd_enabled = True
+
 
         self.soto_asset = self.gym.load_asset(self.sim, asset_root,asset_file,asset_options)
         # # configure soto dofs
@@ -119,7 +121,10 @@ class SotoEnvScene:
         # dof_props_asset = self.gym.get_asset_dof_properties(self.soto_asset)
         # rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(
         #     self.soto_asset)
-
+        self.dof_usefull_names = list(
+            filter(lambda i: not 'cylinder' in i, self.gym.get_asset_dof_names(self.soto_asset)))
+        self.dof_usefull_names += ["cylinder_left_4_to_belt", "cylinder_right_4_to_belt"]
+        self.dof_usefull_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_usefull_names])
         self.soto_dof_props = self.gym.get_asset_dof_properties(
             self.soto_asset)
 
@@ -128,6 +133,7 @@ class SotoEnvScene:
 
         self.motor_strength = self.soto_dof_props["effort"]
         self.joint_velocity = self.soto_dof_props["velocity"]
+
         self.soto_mids = 0.5 * \
             (self.upper_bounds_joints + self.lower_bounds_joints)
 
@@ -193,10 +199,9 @@ class SotoEnvScene:
 
             body_states = self.gym.get_actor_rigid_body_states(env, self.soto_handle, gymapi.STATE_ALL)
             #self.gym.set_actor_dof_states(env, actor_handle, dof_states, gymapi.STATE_ALL)
-
-            self.box_pose.p.x = (body_states["pose"][conveyor_right][0]["x"] + body_states["pose"][conveyor_left][0]["x"])/2 - self.box_dimensions[i][0]
-            self.box_pose.p.y = (body_states["pose"][conveyor_right][0]["y"] + body_states["pose"][conveyor_left][0]["y"])/2 + self.box_dimensions[i][1]/4
-            self.box_pose.p.z = (body_states["pose"][conveyor_right][0]["z"] + body_states["pose"][conveyor_left][0]["z"])/2 + self.box_dimensions[i][2]/2 + 0.023
+            self.box_pose.p.x = (body_states["pose"][conveyor_right][0]["x"] + body_states["pose"][conveyor_left][0]["x"])/2 + self.box_dimensions[i][0]/2
+            self.box_pose.p.y = 0.0
+            self.box_pose.p.z = (body_states["pose"][conveyor_right][0]["z"] + body_states["pose"][conveyor_left][0]["z"])/2 + self.box_dimensions[i][2]/2 + 0.007
             self.box_pose.r = body_states["pose"][conveyor_right][1]
             self.box_handle = self.gym.create_actor(
                 env, self.l_boxes_asset[i], self.box_pose, "box", i,
@@ -205,11 +210,14 @@ class SotoEnvScene:
                 0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
             self.gym.set_rigid_body_color(
                 env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
+            box_properties = self.gym.get_actor_rigid_body_properties(env, self.box_handle)
 
             # get box id (always the same at each iteration)
             self.box_idx = self.gym.get_actor_rigid_body_index(
                 env, self.box_handle, 0, gymapi.DOMAIN_SIM)
             self.envs.append(env)
+
+
         self._create_distance_sensors()
 
     def _create_distance_sensors(self):
@@ -242,7 +250,7 @@ class SotoEnvScene:
 
             body_handle1 = self.gym.get_actor_rigid_body_handle(self.envs[i], actor_handle, dist1_idx)
             body_handle2 = self.gym.get_actor_rigid_body_handle(self.envs[i], actor_handle, dist2_idx)
-            local_transform.p = gymapi.Vec3(-0.6, 0, 0.1)
+            local_transform.p = gymapi.Vec3(-0.69, 0, 0.1)
             self.gym.attach_camera_to_body(
                 dist1, self.envs[i], body_handle1, local_transform, gymapi.FOLLOW_TRANSFORM)
             self.distance_handles[i].append(dist1)
