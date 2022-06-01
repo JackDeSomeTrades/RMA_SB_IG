@@ -36,25 +36,27 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         SotoEnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device,
                               headless=args.headless, sim_params=sim_params)
+        self.dt = self.cfg.control.decimation * self.sim_params.dt
+        self.obs_scales = self.cfg.normalization.obs_scales
+        self.reward_scales = self.cfg.rewards.scales.to_dict()
+        self.command_ranges = self.cfg.commands.ranges.to_dict()
+        if self.cfg.terrain.mesh_type not in ['heightfield', 'trimesh']:
+            self.cfg.terrain.curriculum = False
+        self.max_episode_length_s = self.cfg.env.episode_length_s
+        # in terms of timsesteps.
+        self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
+        # to count the number of times the step function is called.
+        self._elapsed_steps = None
 
-        # self.dt = self.cfg.control.decimation * self.sim_params.dt
-        # self.obs_scales = self.cfg.normalization.obs_scales
-        # self.reward_scales = self.cfg.rewards.scales.to_dict()
-        # self.command_ranges = self.cfg.commands.ranges.to_dict()
-        # if self.cfg.terrain.mesh_type not in ['heightfield', 'trimesh']:
-        #     self.cfg.terrain.curriculum = False
-        # self.max_episode_length_s = self.cfg.env.episode_length_s
-        # # in terms of timsesteps.
-        # self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
-        # # to count the number of times the step function is called.
-        # self._elapsed_steps = None
-
-        # self.cfg.domain_rand.push_interval = np.ceil(
-        #     self.cfg.domain_rand.push_interval_s / self.dt)
+        self.cfg.domain_rand.push_interval = np.ceil(
+            self.cfg.domain_rand.push_interval_s / self.dt)
 
         self.observation_space = self._init_observation_space()
         self.action_space = self._init_action_space()
         self.init_done = True
+
+        self.obs_scales = self.cfg.normalization.obs_scales
+        self.reward_scales = self.cfg.rewards.scales.to_dict()
 
         if self.is_test_mode:
             self._process_test()
@@ -67,7 +69,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.gym.prepare_sim(self.sim) #TODO : ATTENTION FAIT TOUT PLANTER avec set actor dof state
         # when gym.prepared_sim is called, have to work withoot state tensors : gym.set_actor_root_state_tensor(sim, _root_tensor)
         # acquire root state tensor descriptor
-        env_print = 2
         step = 0
         distance_from_cameras = [[] for i in range(self.num_envs)]
         for i in range(self.num_envs) :
@@ -82,16 +83,9 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             #     self.gym.set_actor_dof_states(env,self.soto_handle,self.default_dof_state,gymapi.STATE_ALL)
             #     self.gym.set_actor_dof_position_targets(
             #         env, self.soto_handle, self.default_dof_pos)
-            # k = np.abs(np.sin(step / 1000))
-
-            # #actualise position
-            #
-            # self.soto_current = k * self.upper_bounds_joints + \
-            #     (1 - k) * self.lower_bounds_joints
-            # self.default_dof_pos = self.soto_current
-            #
-            # # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
-            # self.default_dof_state["pos"] = self.default_dof_pos
+            self.gym.sync_frame_time(self.sim)  # synchronise simulation with real time
+            self.gym.simulate(self.sim)
+            self.gym.fetch_results(self.sim, True)
 
             # camera
             self.gym.render_all_camera_sensors(self.sim)
@@ -114,9 +108,8 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
                 self.gym.draw_viewer(self.viewer, self.sim, False)
                 if self.gym.query_viewer_has_closed(self.viewer):
                     break
-            self.gym.sync_frame_time(self.sim) #synchronise simulation with real time
-            self.gym.simulate(self.sim)
-            self.gym.fetch_results(self.sim, True)
+
+
 
         # cleanup
         if not self.headless:
@@ -134,7 +127,78 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
 
     def step(self, actions):
-        pass
+        """ Apply actions, simulate, call self.post_physics_step()
+
+        Args:
+            actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
+        """
+        flag = 0
+        # print("actions", actions)
+
+        if type(actions) == np.ndarray:
+            # For SB3 compatibility
+            flag = 1
+            actions = torch.tensor(actions, device=self.device)
+
+        self.actions = torch.clip(actions, self.action_space.low, self.action_space.high).to(self.device) #TODO : verifier si ça fonctionne
+        # print(self.actions)
+        # step physics and render each frame
+        self.render()
+        for _ in range(self.cfg.control.decimation):
+            self.torques_forces = self._compute_torques_forces(self.actions).view(self.torques.shape)
+
+            self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
+            self.gym.simulate(self.sim)
+            if self.device == 'cpu':
+                self.gym.fetch_results(self.sim, True)
+            self.gym.refresh_dof_state_tensor(self.sim)
+        self.post_physics_step()
+
+        # return clipped obs, clipped states (None), rewards, dones and infos
+        clip_obs = self.cfg.normalization.clip_observations
+        self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
+        if self.privileged_obs_buf is not None:
+            self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
+            return self.obs_buf, self.rew_buf, self.reset_buf, self.infos, self.privileged_obs_buf
+        if flag:
+            # For SB3 compatibility
+            # print("This is what's causing the slowdown")
+            rew_buf = self.rew_buf.detach().cpu().numpy()
+            obs_buf = self.obs_buf.detach().cpu().numpy()
+            dones = self.reset_buf.detach().cpu().numpy()
+        else:
+            rew_buf = self.rew_buf
+            obs_buf = self.obs_buf
+            dones = self.reset_buf
+
+        # print("#", "--"*50, "#")
+
+        return obs_buf, rew_buf, dones, self.infos
+
+    def _compute_torques_forces(self, actions):
+        """ Compute torques from actions.
+            Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
+            [NOTE]: torques must have the same dimension as the number of DOFs, even if some DOFs are not actuated.
+
+        Args:
+            actions (torch.Tensor): Actions
+
+        Returns:
+            [torch.Tensor]: Torques sent to the simulation
+        """
+        #pd controller
+        actions_scaled = actions
+        control_type = self.cfg.control.control_type
+        if control_type == "P":
+            torques_forces = self.p_gains*(actions_scaled + self.default_dof_pos - self.dof_pos) - self.d_gains*self.dof_vel
+        elif control_type == "V":
+            torques = self.p_gains*(actions_scaled - self.dof_vel) - self.d_gains*(self.dof_vel - self.last_dof_vel)/self.sim_params.dt
+        elif control_type == "T":
+            torques = actions_scaled
+        else:
+            raise NameError(f"Unknown controller type: {control_type}")
+        return torch.clip(torques_forces, -self.torque_limits, self.torque_limits)
+
 
     def reset(self):
         pass
