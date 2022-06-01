@@ -6,7 +6,7 @@ from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, 
 from rma_sb_ig.utils.trainers import Adaptation
 from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset, RMAPhase2FastDataset
 from rma_sb_ig.models import rma
-from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym, RMAV0TaskVecEnvStableBaselineGym, RMAV0SixTaskVecEnvStableBaselineGym, SaveHistoryCallback
+from rma_sb_ig.utils.stable_baselines import RMAA1TaskVecEnvStableBaselineGym, RMAV0TaskVecEnvStableBaselineGym, RMAV0SixTaskVecEnvStableBaselineGym, RMASotoTaskVecEnvStableBaseLineGym, SaveHistoryCallback
 
 from torch.utils.data import DataLoader
 import torch
@@ -15,16 +15,18 @@ from stable_baselines3 import PPO
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', '-c', type=str, default='a1_task_rma')
+    # -> devient args.config
+    parser.add_argument('--cfg', '-c', type=str, default='soto_task_rma')
     parser.add_argument('--savedir', '-s', type=str, default='experiments/')
     parser.add_argument('--dsetsavedir', '-k', type=str, default='output/')
     parser.add_argument('--phase', '-p', type=str, default='2')
     parser.add_argument('--run_comment', '-m', type=str, default=None)
-    parser.add_argument('--robot_name', '-r', type=str, default='a1')
+    parser.add_argument('--robot_name', '-r', type=str, default='soto')
     parser.add_argument('--timestamp', '-t', type=bool, default=False)
 
     args, _ = parser.parse_known_args()
 
+    # recupere la config du modèle -> defaut ici a1_task_rma_conf.yaml
     cfg = get_config(f'{args.cfg}_conf.yaml')
     robot_name = args.robot_name
     if robot_name == 'a1':
@@ -33,7 +35,10 @@ if __name__ == "__main__":
         vec_env = RMAV0TaskVecEnvStableBaselineGym(parse_config(cfg))
     elif robot_name == 'v0six':
         vec_env = RMAV0SixTaskVecEnvStableBaselineGym(parse_config(cfg))
-
+    elif robot_name == 'soto':
+        # parse_config already created -> take config/task_config
+        vec_env = RMASotoTaskVecEnvStableBaseLineGym(parse_config(cfg))
+    """
     # begin RL here
     # ----------- Configs -----------------#
     rl_config = Box(cfg).rl_config  # convert config dict into namespaces
@@ -80,6 +85,4 @@ if __name__ == "__main__":
         model_adapted = Adaptation(net=rma.RMAPhase2, arch_config=arch_config, tensorboard_log_writer=save_history_callback.tb_formatter)
         model_adapted.adapt(phase2dataloader)
         model_adapted.save(path=model_save_path)
-
-
-
+"""

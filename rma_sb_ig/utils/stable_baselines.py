@@ -1,6 +1,7 @@
 from rma_sb_ig.envs.a1task_rma import A1LeggedRobotTask
 from rma_sb_ig.envs.v0_task_rma import V0LeggedRobotTask
 from rma_sb_ig.envs.v0six_task_rma import V0SixLeggedRobotTask
+from rma_sb_ig.envs.Sototask_rma import SotoRobotTask
 from stable_baselines3.common.vec_env import VecEnv
 from abc import abstractmethod
 from abc import ABC
@@ -36,7 +37,8 @@ class SaveHistoryCallback(EventCallback):
         zt = self.model.policy.features_extractor.zt.clone().detach().cpu()
         current_state = self.model.env.X_t.clone().detach().cpu()
         current_actions = self.model.env.actions.clone().detach().cpu()
-        self.datadict[self.n_calls] = {'state': current_state, 'env_encoding': zt, 'actions': current_actions}
+        self.datadict[self.n_calls] = {
+            'state': current_state, 'env_encoding': zt, 'actions': current_actions}
 
         return True
 
@@ -88,3 +90,8 @@ class RMAV0TaskVecEnvStableBaselineGym(V0LeggedRobotTask, StableBaselinesVecEnvA
 class RMAV0SixTaskVecEnvStableBaselineGym(V0SixLeggedRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):
         V0SixLeggedRobotTask.__init__(self, *args, **kwargs)
+
+
+class RMASotoTaskVecEnvStableBaseLineGym(SotoRobotTask, StableBaselinesVecEnvAdapter):
+    def __init__(self, *args, **kwargs):  # args : tuple / kwargs : dictionnary
+        SotoRobotTask.__init__(self, *args, **kwargs)

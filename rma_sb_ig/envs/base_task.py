@@ -2,20 +2,22 @@ from abc import ABC, abstractmethod
 from isaacgym import gymutil
 import gym
 import torch
+import warnings
 
 
 class BaseTask(ABC, gym.Env):
     def __init__(self, cfg, sim_params, sim_device):
 
         self.cfg = cfg
-        sim_device_type, self.sim_device_id = gymutil.parse_device_str(sim_device)
+        sim_device_type, self.sim_device_id = gymutil.parse_device_str(
+            sim_device)
 
         # env device is GPU only if sim is on GPU and use_gpu_pipeline=True, otherwise returned tensors are copied to CPU by physX.
         if sim_device_type == 'cuda' and sim_params.use_gpu_pipeline:
             self.device = sim_device
         else:
             self.device = 'cpu'
-
+            warnings.warn("Warning : cpu is used")
         num_envs = cfg.env.num_envs
         self.num_obs = cfg.env.num_observations
         if type(cfg.env.num_privileged_obs) == str:
@@ -28,13 +30,19 @@ class BaseTask(ABC, gym.Env):
         torch._C._jit_set_profiling_executor(False)
 
         # allocate buffers
-        self.obs_buf = torch.zeros(num_envs, self.num_obs, device=self.device, dtype=torch.float)
-        self.rew_buf = torch.zeros(num_envs, device=self.device, dtype=torch.float)
-        self.reset_buf = torch.ones(num_envs, device=self.device, dtype=torch.long)
-        self.episode_length_buf = torch.zeros(num_envs, device=self.device, dtype=torch.long)
-        self.time_out_buf = torch.zeros(num_envs, device=self.device, dtype=torch.bool)
-        if self.num_privileged_obs is not None:
-            self.privileged_obs_buf = torch.zeros(num_envs, self.num_privileged_obs, device=self.device, dtype=torch.float)
+        self.obs_buf = torch.zeros(  # observation buffer
+            num_envs, self.num_obs, device=self.device, dtype=torch.float)
+        self.rew_buf = torch.zeros(  # reward buffer
+            num_envs, device=self.device, dtype=torch.float)
+        self.reset_buf = torch.ones(  # reset buffer
+            num_envs, device=self.device, dtype=torch.long)
+        self.episode_length_buf = torch.zeros(  # TODO : understand
+            num_envs, device=self.device, dtype=torch.long)
+        self.time_out_buf = torch.zeros(  # TODO : understand
+            num_envs, device=self.device, dtype=torch.bool)
+        if self.num_privileged_obs is not None:  # TODO : understand
+            self.privileged_obs_buf = torch.zeros(
+                num_envs, self.num_privileged_obs, device=self.device, dtype=torch.float)
         else:
             self.privileged_obs_buf = None
             # self.num_privileged_obs = self.num_obs
