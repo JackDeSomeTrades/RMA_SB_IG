@@ -9,59 +9,90 @@ import gym.spaces as gymspace
 import math
 
 from rma_sb_ig.utils.helpers import *
-from rma_sb_ig.envs.forward_task import ForwardTask
+from rma_sb_ig.envs.soto_forward_task import SotoForwardTask
 
 
-class A1LeggedRobotTask(ForwardTask):
+class SotoRobotTask(SotoForwardTask):
     def __init__(self, *args):
-        super(A1LeggedRobotTask, self).__init__(*args)
+
+        super(SotoRobotTask, self).__init__(*args)
 
     def _init_observation_space(self):
         """
         Observation consists of :
-                        dof_pos - 12
-                        dof_vel - 12
-                        roll - 1
-                        pitch - 1
-                        feet_contact_switches - 4
-                        previous_actions -12
-                        Mass - 1
+            intrinsic
+                        dof_pos - 7 + 2 cylinders
+                        dof_vel - 7 + 2 cylinders
+                        previous_action - 7 + 2 cylinders
+                        distance_btw_conveyors - 1
+            extrinsic
+                        friction box/belt - 2
+                        dynamic friction - 1
+                        Mass_box - 1
                         COM_x - 1
                         COM_y - 1
-                        Motor Strength - 12
-                        Friction - 1
-                        Local terrain height - 1
+                        GC_x - 1
+                        GC_y - 1
+                        width-length-height_box - 3
+                        distance sensors feedback(d1,d2) - 2
+                        box_angle - 1
         :return: obs_space
         """
+
+        # TODO : Do not forget to add motors control when they will be available
+        index = self.dof_usefull_names.index('gripper_y_left')
+        dist_max = self.upper_bounds_joints[index] - self.lower_bounds_joints[index]
+        print("distance max", dist_max)
         limits_low = np.array(
-            self.lower_bounds_joints +
-            [0] * 12 +    # minimum values of joint velocities
-            [-math.inf] +
-            [-math.inf] +
-            [0] * 4 +
-            self.lower_bounds_joints +
+            list(self.lower_bounds_joints[self.dof_usefull_id]) +
+            [0] * 9 +    # minimum values of joint velocities
+            list(self.lower_bounds_joints[self.dof_usefull_id]) +
             [0] +
-            [-math.inf] +
-            [-math.inf] +
-            [motor_strength * self.cfg.domain_rand.motor_strength_range[0] for motor_strength in self.motor_strength] +
+
+
+            [self.cfg.domain_rand.friction_range[0]]*2 +
             [self.cfg.domain_rand.friction_range[0]] +
+            [self.cfg.domain_rand.mass_box[0]] +
+            [0] +
+            [0] +
+            [0] +
+            [0] +
+            [self.cfg.domain_rand.width_box[0]] +
+            [self.cfg.domain_rand.length_box[0]] +
+            [self.cfg.domain_rand.height_box[0]] +
+
+            [0]*2 +
             [0]
         )
+
         limits_high = np.array(
-            self.upper_bounds_joints +
-            self.upper_bound_joint_velocities +
-            [math.inf] +
-            [math.inf] +
-            [1] * 4 +
-            self.upper_bounds_joints +
-            [math.inf] +
-            [math.inf] +
-            [math.inf] +
-            [motor_strength * self.cfg.domain_rand.motor_strength_range[1] for motor_strength in self.motor_strength] +
+            list(self.upper_bounds_joints[self.dof_usefull_id]) +
+            list(self.joint_velocity[self.dof_usefull_id]) +    # maximum values of joint velocities
+            list(self.upper_bounds_joints[self.dof_usefull_id]) +
+            # distance max btw 2 conveyors +
+            [dist_max] +
+
+
+            [self.cfg.domain_rand.friction_range[1]]*2 +
             [self.cfg.domain_rand.friction_range[1]] +
-            [math.inf]
+            [self.cfg.domain_rand.mass_box[1]] +
+
+            [self.cfg.domain_rand.length_box[1]] +
+            [self.cfg.domain_rand.width_box[1]] +
+
+            [self.cfg.domain_rand.length_box[1]] +
+            [self.cfg.domain_rand.width_box[1]] +
+
+            [self.cfg.domain_rand.width_box[1]] +
+            [self.cfg.domain_rand.length_box[1]] +
+            [self.cfg.domain_rand.height_box[1]] +
+
+            [3.0]*2 +  # supposed length of grippers
+            [2*np.pi]
         )
-        obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float32)
+
+        obs_space = gymspace.Box(
+            limits_low, limits_high, dtype=np.float32)
         return obs_space
 
     def _init_action_space(self):
@@ -72,8 +103,8 @@ class A1LeggedRobotTask(ForwardTask):
 
         :return: act_space -> gym.space.Box
         """
-        lb = np.array(self.lower_bounds_joints)
-        ub = np.array(self.upper_bounds_joints)
+        lb = np.array(self.lower_bounds_joints[self.dof_usefull_id])
+        ub = np.array(self.upper_bounds_joints[self.dof_usefull_id])
         act_space = gymspace.Box(lb, ub, dtype=np.float32)
 
         return act_space
@@ -109,8 +140,6 @@ class A1LeggedRobotTask(ForwardTask):
         return noise_vec
 
     def compute_observations(self):
-        """Overrides the base class observation computation to bring it in line with observations proposed in the RMA
-        paper. The observation consists of two major parts - the environment variables and the state-action pair."""
         # self.compute_heading_deviation()
         feet_contact_switches = self._get_foot_status()
         local_terrain_height = self._get_local_terrain_height()
@@ -331,3 +360,9 @@ class A1LeggedRobotTask(ForwardTask):
         local_terrain_height = torch.max(local_terrain_height, dim=-1)[0]
 
         return local_terrain_height
+
+    def _get_random_boxes(self, l_limit, w_limit, h_limit):
+        length = random.uniform(l_limit[0], l_limit[1])
+        width = random.uniform(w_limit[0], w_limit[1])
+        height = random.uniform(h_limit[0], h_limit[1])
+        return (length, width, height)
