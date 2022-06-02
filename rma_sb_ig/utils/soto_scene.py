@@ -47,6 +47,8 @@ class SotoEnvScene:
             self.gym.subscribe_viewer_keyboard_event(
                 self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
             self._define_viewer()
+        self.gym.prepare_sim(self.sim)  # TODO : ATTENTION FAIT TOUT PLANTER avec set actor dof state
+
 
     def create_sim(self):
         """ Creates simulation, terrain and evironments
@@ -124,16 +126,33 @@ class SotoEnvScene:
         self.dof_usefull_names = list(
             filter(lambda i: not 'cylinder' in i, self.gym.get_asset_dof_names(self.soto_asset)))
         self.dof_usefull_names += ["cylinder_left_4_to_belt", "cylinder_right_4_to_belt"]
+
+
+        self.dof_left_cylinders = list(filter(lambda i: 'cylinder_left' in i, self.gym.get_asset_dof_names(self.soto_asset)))
+        self.dof_right_cylinders = list(filter(lambda i: 'cylinder_right' in i, self.gym.get_asset_dof_names(self.soto_asset)))
+
+        self.cylinder_left_id = self.dof_usefull_names.find("cylinder_left_4_to_belt")
+        self.cylinder_right_id = self.dof_usefull_names.find("cylinder_right_4_to_belt")
+
+        print(self.cylinder_left_id,self.cylinder_right_id)
         self.dof_usefull_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_usefull_names])
+        self.dof_left_cylinders_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_left_cylinders])
+        self.dof_right_cylinders_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_right_cylinders])
+
         self.soto_dof_props = self.gym.get_asset_dof_properties(
             self.soto_asset)
-
+        self.num_usefull_dofs = len(self.dof_usefull_id)
         self.lower_bounds_joints = self.soto_dof_props["lower"]
         self.upper_bounds_joints = self.soto_dof_props["upper"]
+        self.lower_bounds_joint_tensor  = torch.tensor(self.lower_bounds_joints[self.dof_usefull_id], dtype = torch.float,device = self.device).expand(self.num_envs,np.size(self.dof_usefull_id))
+        self.upper_bounds_joint_tensor  = torch.tensor(self.upper_bounds_joints[self.dof_usefull_id], dtype = torch.float,device = self.device).expand(self.num_envs,np.size(self.dof_usefull_id))
+
 
         self.motor_strength = self.soto_dof_props["effort"]
+        self.torque_force_bound = torch.tensor(self.motor_strength[self.dof_usefull_id], dtype = torch.float,device = self.device).expand(self.num_envs,np.size(self.dof_usefull_id))
+        
         self.joint_velocity = self.soto_dof_props["velocity"]
-
+        self.joint_velocity_bound  = torch.tensor(self.joint_velocity[self.dof_usefull_id], dtype = torch.float,device = self.device).expand(self.num_envs,np.size(self.dof_usefull_id))
         self.soto_mids = 0.5 * \
             (self.upper_bounds_joints + self.lower_bounds_joints)
 
@@ -257,6 +276,7 @@ class SotoEnvScene:
             self.gym.attach_camera_to_body(
                 dist2, self.envs[i], body_handle2,local_transform, gymapi.FOLLOW_TRANSFORM)
             self.distance_handles[i].append(dist2)
+
 
     def _define_viewer(self):
         self.cam_pos = gymapi.Vec3(4, 3, 2)
