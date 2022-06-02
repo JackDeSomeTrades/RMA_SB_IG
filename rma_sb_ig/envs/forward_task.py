@@ -86,8 +86,11 @@ class ForwardTask(EnvScene, BaseTask):
                                         requires_grad=False)
         self.last_torques = torch.zeros_like(self.torques)  # new addition for RMA
         self.last_contact_forces = torch.zeros_like(self.contact_forces)  # new addition for RMA
+
         self.last_dof_vel = torch.zeros_like(self.dof_vel)
         self.last_root_vel = torch.zeros_like(self.root_states[:, 7:13])
+
+
         self.commands = torch.zeros(self.num_envs, self.cfg.commands.num_commands, dtype=torch.float,
                                     device=self.device, requires_grad=False)  # x vel, y vel, yaw vel, heading
         self.commands_scale = torch.tensor([self.obs_scales.lin_vel, self.obs_scales.lin_vel, self.obs_scales.ang_vel],

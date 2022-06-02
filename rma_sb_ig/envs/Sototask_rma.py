@@ -106,7 +106,6 @@ class SotoRobotTask(SotoForwardTask):
         lb = np.array(self.lower_bounds_joints[self.dof_usefull_id])
         ub = np.array(self.upper_bounds_joints[self.dof_usefull_id])
         act_space = gymspace.Box(lb, ub, dtype=np.float32)
-
         return act_space
 
     def _get_noise_scale_vec(self, cfg):
