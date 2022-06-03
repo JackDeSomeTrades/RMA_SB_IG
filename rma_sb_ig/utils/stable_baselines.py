@@ -11,7 +11,7 @@ import numpy as np
 import hickle as hkl
 import os
 from pathlib import Path
-
+from rma_sb_ig.utils import *
 
 class SaveHistoryCallback(EventCallback):
     def __init__(self, savepath=None, verbose=0):
@@ -77,21 +77,25 @@ class StableBaselinesVecEnvAdapter(VecEnv):
         pass
 
 
+@register("a1")
 class RMAA1TaskVecEnvStableBaselineGym(A1LeggedRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):
         A1LeggedRobotTask.__init__(self, *args, **kwargs)
 
 
+@register("v0")
 class RMAV0TaskVecEnvStableBaselineGym(V0LeggedRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):
         V0LeggedRobotTask.__init__(self, *args, **kwargs)
 
 
+@register("v0Six")
 class RMAV0SixTaskVecEnvStableBaselineGym(V0SixLeggedRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):
         V0SixLeggedRobotTask.__init__(self, *args, **kwargs)
 
 
+@register("soto")
 class RMASotoTaskVecEnvStableBaseLineGym(SotoRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):  # args : tuple / kwargs : dictionnary
         SotoRobotTask.__init__(self, *args, **kwargs)

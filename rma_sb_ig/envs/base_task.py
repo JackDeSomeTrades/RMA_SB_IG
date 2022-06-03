@@ -30,19 +30,13 @@ class BaseTask(ABC, gym.Env):
         torch._C._jit_set_profiling_executor(False)
 
         # allocate buffers
-        self.obs_buf = torch.zeros(  # observation buffer
-            num_envs, self.num_obs, device=self.device, dtype=torch.float)
-        self.rew_buf = torch.zeros(  # reward buffer
-            num_envs, device=self.device, dtype=torch.float)
-        self.reset_buf = torch.ones(  # reset buffer
-            num_envs, device=self.device, dtype=torch.long)
-        self.episode_length_buf = torch.zeros(  # TODO : understand
-            num_envs, device=self.device, dtype=torch.long)
-        self.time_out_buf = torch.zeros(  # TODO : understand
-            num_envs, device=self.device, dtype=torch.bool)
-        if self.num_privileged_obs is not None:  # TODO : understand
-            self.privileged_obs_buf = torch.zeros(
-                num_envs, self.num_privileged_obs, device=self.device, dtype=torch.float)
+        self.obs_buf = torch.zeros(num_envs, self.num_obs, device=self.device, dtype=torch.float)
+        self.rew_buf = torch.zeros(num_envs, device=self.device, dtype=torch.float)
+        self.reset_buf = torch.ones(num_envs, device=self.device, dtype=torch.long)
+        self.episode_length_buf = torch.zeros(num_envs, device=self.device, dtype=torch.long)
+        self.time_out_buf = torch.zeros(num_envs, device=self.device, dtype=torch.bool)
+        if self.num_privileged_obs is not None:
+            self.privileged_obs_buf = torch.zeros(num_envs, self.num_privileged_obs, device=self.device, dtype=torch.float)
         else:
             self.privileged_obs_buf = None
             # self.num_privileged_obs = self.num_obs

@@ -19,8 +19,7 @@ class EnvScene:
         self.sim_params = sim_params
         self.physics_engine = physics_engine
         self.sim_device = sim_device
-        sim_device_type, self.sim_device_id = gymutil.parse_device_str(
-            self.sim_device)
+        sim_device_type, self.sim_device_id = gymutil.parse_device_str(self.sim_device)
         self.headless = headless
 
         self.num_envs = cfg.env.num_envs
@@ -136,10 +135,8 @@ class EnvScene:
         hf_params.dynamic_friction = self.cfg.terrain.dynamic_friction
         hf_params.restitution = self.cfg.terrain.restitution
 
-        self.gym.add_heightfield(
-            self.sim, self.terrain.heightsamples, hf_params)
-        self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows,
-                                                                            self.terrain.tot_cols).to(self.device)
+        self.gym.add_heightfield(self.sim, self.terrain.heightsamples, hf_params)
+        self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
 
     def _create_trimesh(self):
         """ Adds a triangle mesh terrain to the simulation, sets parameters based on the cfg.
@@ -156,8 +153,7 @@ class EnvScene:
         tm_params.restitution = self.cfg.terrain.restitution
         self.gym.add_triangle_mesh(self.sim, self.terrain.vertices.flatten(order='C'),
                                    self.terrain.triangles.flatten(order='C'), tm_params)
-        self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows,
-                                                                            self.terrain.tot_cols).to(self.device)
+        self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
 
     def _create_envs(self):  # TODO : recreer un environnement
         """ Creates environments:
@@ -178,24 +174,21 @@ class EnvScene:
         asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
         asset_options.flip_visual_attachments = self.cfg.asset.flip_visual_attachments
         asset_options.fix_base_link = self.cfg.asset.fix_base_link
-        # asset_options.density = self.cfg.asset.density
-        # asset_options.angular_damping = self.cfg.asset.angular_damping
-        # asset_options.linear_damping = self.cfg.asset.linear_damping
-        # asset_options.max_angular_velocity = self.cfg.asset.max_angular_velocity
-        # asset_options.max_linear_velocity = self.cfg.asset.max_linear_velocity
-        # asset_options.armature = self.cfg.asset.armature
-        # asset_options.thickness = self.cfg.asset.thickness
+        asset_options.density = self.cfg.asset.density
+        asset_options.angular_damping = self.cfg.asset.angular_damping
+        asset_options.linear_damping = self.cfg.asset.linear_damping
+        asset_options.max_angular_velocity = self.cfg.asset.max_angular_velocity
+        asset_options.max_linear_velocity = self.cfg.asset.max_linear_velocity
+        asset_options.armature = self.cfg.asset.armature
+        asset_options.thickness = self.cfg.asset.thickness
         asset_options.disable_gravity = self.cfg.asset.disable_gravity
 
-        robot_asset = self.gym.load_asset(
-            self.sim, asset_root, asset_file, asset_options)
+        robot_asset = self.gym.load_asset(self.sim, asset_root, asset_file, asset_options)
 
         self.num_dof = self.gym.get_asset_dof_count(robot_asset)
         self.num_bodies = self.gym.get_asset_rigid_body_count(robot_asset)
         dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
-        rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(
-            robot_asset)
-        # TODO :  continuer a partir d'ici
+        rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(robot_asset)
         self._get_asset_joint_details(asset_path)
 
         # save body names from the asset
@@ -213,10 +206,8 @@ class EnvScene:
             termination_contact_names.extend(
                 [s for s in body_names if name in s])
 
-        base_init_state_list = self.cfg.init_state.pos + self.cfg.init_state.rot + \
-                               self.cfg.init_state.lin_vel + self.cfg.init_state.ang_vel
-        self.base_init_state = to_torch(
-            base_init_state_list, device=self.device, requires_grad=False)
+        base_init_state_list = self.cfg.init_state.pos + self.cfg.init_state.rot + self.cfg.init_state.lin_vel + self.cfg.init_state.ang_vel
+        self.base_init_state = to_torch(base_init_state_list, device=self.device, requires_grad=False)
         start_pose = gymapi.Transform()
         start_pose.p = gymapi.Vec3(*self.base_init_state[:3])
 
@@ -229,35 +220,24 @@ class EnvScene:
         self.body_com_x = []
         self.body_com_y = []
         self.body_com_z = []
-        self.torque_limits = torch.zeros(
-            self.num_envs, self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
-        self.dof_pos_limits = torch.zeros(
-            self.num_dof, 2, dtype=torch.float, device=self.device, requires_grad=False)
-        self.dof_vel_limits = torch.zeros(
-            self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
+        self.torque_limits = torch.zeros(self.num_envs, self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
+        self.dof_pos_limits = torch.zeros(self.num_dof, 2, dtype=torch.float, device=self.device, requires_grad=False)
+        self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
         for i in range(self.num_envs):
             # create env instance
-            env_handle = self.gym.create_env(
-                self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
+            env_handle = self.gym.create_env(self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
             pos = self.env_origins[i].clone()
-            pos[:2] += torch_rand_float(-1., 1.,
-                                        (2, 1), device=self.device).squeeze(1)
+            pos[:2] += torch_rand_float(-1., 1., (2, 1), device=self.device).squeeze(1)
             start_pose.p = gymapi.Vec3(*pos)
 
-            rigid_shape_props = self._process_rigid_shape_props(
-                rigid_shape_props_asset, i)
-            self.gym.set_asset_rigid_shape_properties(
-                robot_asset, rigid_shape_props)
-            actor_handle = self.gym.create_actor(
-                env_handle, robot_asset, start_pose, self.cfg.asset.name, i, self.cfg.asset.self_collisions, 0)
+            rigid_shape_props = self._process_rigid_shape_props(rigid_shape_props_asset, i)
+            self.gym.set_asset_rigid_shape_properties(robot_asset, rigid_shape_props)
+            actor_handle = self.gym.create_actor(env_handle, robot_asset, start_pose, self.cfg.asset.name, i, self.cfg.asset.self_collisions, 0)
             dof_props = self._process_dof_props(dof_props_asset, i)
-            self.gym.set_actor_dof_properties(
-                env_handle, actor_handle, dof_props)
-            body_props = self.gym.get_actor_rigid_body_properties(
-                env_handle, actor_handle)
+            self.gym.set_actor_dof_properties(env_handle, actor_handle, dof_props)
+            body_props = self.gym.get_actor_rigid_body_properties(env_handle, actor_handle)
             body_props = self._process_rigid_body_props(body_props, i)
-            self.gym.set_actor_rigid_body_properties(
-                env_handle, actor_handle, body_props, recomputeInertia=True)
+            self.gym.set_actor_rigid_body_properties(env_handle, actor_handle, body_props, recomputeInertia=True)
             self.envs.append(env_handle)
             self.actor_handles.append(actor_handle)
 
@@ -266,23 +246,17 @@ class EnvScene:
         self.body_com_y = torch.cuda.FloatTensor(self.body_com_y)
         self.body_com_z = torch.cuda.FloatTensor(self.body_com_z)
 
-        self.feet_indices = torch.zeros(
-            len(feet_names), dtype=torch.long, device=self.device, requires_grad=False)
+        self.feet_indices = torch.zeros(len(feet_names), dtype=torch.long, device=self.device, requires_grad=False)
         for i in range(len(feet_names)):
-            self.feet_indices[i] = self.gym.find_actor_rigid_body_handle(
-                self.envs[0], self.actor_handles[0], feet_names[i])
+            self.feet_indices[i] = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], feet_names[i])
 
-        self.penalised_contact_indices = torch.zeros(len(
-            penalized_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
+        self.penalised_contact_indices = torch.zeros(len(penalized_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
         for i in range(len(penalized_contact_names)):
-            self.penalised_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
-                self.envs[0], self.actor_handles[0], penalized_contact_names[i])
+            self.penalised_contact_indices[i] = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], penalized_contact_names[i])
 
-        self.termination_contact_indices = torch.zeros(len(
-            termination_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
+        self.termination_contact_indices = torch.zeros(len(termination_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
         for i in range(len(termination_contact_names)):
-            self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
-                self.envs[0], self.actor_handles[0], termination_contact_names[i])
+            self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], termination_contact_names[i])
 
     def _get_asset_joint_details(self, asset_path):
         self.motor_strength = []
@@ -296,14 +270,10 @@ class EnvScene:
             if child.tag == "joint":
                 for joint_type in child:
                     if joint_type.tag == "limit":
-                        self.motor_strength.append(
-                            float(joint_type.attrib['effort']))
-                        self.lower_bounds_joints.append(
-                            float(joint_type.attrib['lower']))
-                        self.upper_bounds_joints.append(
-                            float(joint_type.attrib['upper']))
-                        self.upper_bound_joint_velocities.append(
-                            float(joint_type.attrib['velocity']))
+                        self.motor_strength.append(float(joint_type.attrib['effort']))
+                        self.lower_bounds_joints.append(float(joint_type.attrib['lower']))
+                        self.upper_bounds_joints.append(float(joint_type.attrib['upper']))
+                        self.upper_bound_joint_velocities.append(float(joint_type.attrib['velocity']))
 
     def _get_env_origins(self):
         """ Sets environment origins. On rough terrain the origins are defined by the terrain platforms.
@@ -311,21 +281,16 @@ class EnvScene:
         """
         if self.cfg.terrain.mesh_type in ["heightfield", "trimesh"]:
             self.custom_origins = True
-            self.env_origins = torch.zeros(
-                self.num_envs, 3, device=self.device, requires_grad=False)
+            self.env_origins = torch.zeros(self.num_envs, 3, device=self.device, requires_grad=False)
             # put robots at the origins defined by the terrain
             max_init_level = self.cfg.terrain.max_init_terrain_level
             if not self.cfg.terrain.curriculum:
                 max_init_level = self.cfg.terrain.num_rows - 1
-            self.terrain_levels = torch.randint(
-                0, max_init_level + 1, (self.num_envs,), device=self.device)
-            self.terrain_types = torch.div(torch.arange(self.num_envs, device=self.device), (
-                    self.num_envs / self.cfg.terrain.num_cols), rounding_mode='floor').to(torch.long)
+            self.terrain_levels = torch.randint(0, max_init_level + 1, (self.num_envs,), device=self.device)
+            self.terrain_types = torch.div(torch.arange(self.num_envs, device=self.device), (self.num_envs / self.cfg.terrain.num_cols), rounding_mode='floor').to(torch.long)
             self.max_terrain_level = self.cfg.terrain.num_rows
-            self.terrain_origins = torch.from_numpy(
-                self.terrain.env_origins).to(self.device).to(torch.float)
-            self.env_origins[:] = self.terrain_origins[self.terrain_levels,
-                                                       self.terrain_types]
+            self.terrain_origins = torch.from_numpy(self.terrain.env_origins).to(self.device).to(torch.float)
+            self.env_origins[:] = self.terrain_origins[self.terrain_levels, self.terrain_types]
         else:
             self.custom_origins = False
             self.env_origins = torch.zeros(
@@ -333,8 +298,7 @@ class EnvScene:
             # create a grid of robots
             num_cols = np.floor(np.sqrt(self.num_envs))
             num_rows = np.ceil(self.num_envs / num_cols)
-            xx, yy = torch.meshgrid(torch.arange(
-                num_rows), torch.arange(num_cols))
+            xx, yy = torch.meshgrid(torch.arange(num_rows), torch.arange(num_cols))
             spacing = self.cfg.env.env_spacing
             self.env_origins[:, 0] = spacing * xx.flatten()[:self.num_envs]
             self.env_origins[:, 1] = spacing * yy.flatten()[:self.num_envs]
@@ -359,16 +323,14 @@ class EnvScene:
                 friction_range = self.cfg.domain_rand.friction_range
                 num_buckets = 64
                 bucket_ids = torch.randint(0, num_buckets, (self.num_envs, 1))
-                friction_buckets = torch_rand_float(
-                    friction_range[0], friction_range[1], (num_buckets, 1), device=self.device)
+                friction_buckets = torch_rand_float(friction_range[0], friction_range[1], (num_buckets, 1), device=self.device)
                 self.friction_coeffs = friction_buckets[bucket_ids]
 
             for s in range(len(props)):
                 props[s].friction = self.friction_coeffs[env_id]
         else:
             # Guesstimate.
-            self.friction_coeffs = torch.full(
-                (self.num_envs, 1, 1), fill_value=0.6, device=self.device)
+            self.friction_coeffs = torch.full((self.num_envs, 1, 1), fill_value=0.6, device=self.device)
         return props
 
     def _process_dof_props(self, props, env_id):
@@ -391,14 +353,11 @@ class EnvScene:
                 # soft limits
                 m = (self.dof_pos_limits[i, 0] + self.dof_pos_limits[i, 1]) / 2
                 r = self.dof_pos_limits[i, 1] - self.dof_pos_limits[i, 0]
-                self.dof_pos_limits[i, 0] = m - 0.5 * \
-                                            r * self.cfg.rewards.soft_dof_pos_limit
-                self.dof_pos_limits[i, 1] = m + 0.5 * \
-                                            r * self.cfg.rewards.soft_dof_pos_limit
+                self.dof_pos_limits[i, 0] = m - 0.5 * r * self.cfg.rewards.soft_dof_pos_limit
+                self.dof_pos_limits[i, 1] = m + 0.5 * r * self.cfg.rewards.soft_dof_pos_limit
 
             if self.cfg.domain_rand.randomize_motor_strength:
-                self.torque_limits[env_id][i] = props["effort"][i].item() * np.random.uniform(
-                    self.cfg.domain_rand.motor_strength_range[0], self.cfg.domain_rand.motor_strength_range[1])
+                self.torque_limits[env_id][i] = props["effort"][i].item() * np.random.uniform(self.cfg.domain_rand.motor_strength_range[0], self.cfg.domain_rand.motor_strength_range[1])
             else:
                 self.torque_limits[env_id][i] = props["effort"][i].item()
             props["effort"][i] = self.torque_limits[env_id][i]
@@ -461,15 +420,12 @@ class EnvScene:
         if self.cfg.terrain.mesh_type == 'plane':
             return torch.zeros(self.num_envs, self.num_height_points, device=self.device, requires_grad=False)
         elif self.cfg.terrain.mesh_type == 'none':
-            raise NameError(
-                "Can't measure height with terrain mesh type 'none'")
+            raise NameError("Can't measure height with terrain mesh type 'none'")
 
         if env_ids:
-            points = quat_apply_yaw(self.base_quat[env_ids].repeat(
-                1, self.num_height_points), self.height_points[env_ids]) + (self.root_states[env_ids, :3]).unsqueeze(1)
+            points = quat_apply_yaw(self.base_quat[env_ids].repeat(1, self.num_height_points), self.height_points[env_ids]) + (self.root_states[env_ids, :3]).unsqueeze(1)
         else:
-            points = quat_apply_yaw(self.base_quat.repeat(
-                1, self.num_height_points), self.height_points) + (self.root_states[:, :3]).unsqueeze(1)
+            points = quat_apply_yaw(self.base_quat.repeat(1, self.num_height_points), self.height_points) + (self.root_states[:, :3]).unsqueeze(1)
 
         points += self.terrain.cfg.border_size
         points = (points / self.terrain.cfg.horizontal_scale).long()
@@ -501,17 +457,13 @@ class EnvScene:
         # robots that walked far enough progress to harder terains
         move_up = distance > self.terrain.env_length / 2
         # robots that walked less than half of their required distance go to simpler terrains
-        move_down = (distance < torch.norm(
-            self.commands[env_ids, :2], dim=1) * self.max_episode_length_s * 0.5) * ~move_up
+        move_down = (distance < torch.norm(self.commands[env_ids, :2], dim=1) * self.max_episode_length_s * 0.5) * ~move_up
         self.terrain_levels[env_ids] += 1 * move_up - 1 * move_down
         # Robots that solve the last level are sent to a random one
         self.terrain_levels[env_ids] = torch.where(self.terrain_levels[env_ids] >= self.max_terrain_level,
-                                                   torch.randint_like(
-                                                       self.terrain_levels[env_ids], self.max_terrain_level),
-                                                   torch.clip(self.terrain_levels[env_ids],
-                                                              0))  # (the minumum level is zero)
-        self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids],
-                                                         self.terrain_types[env_ids]]
+                                                   torch.randint_like(self.terrain_levels[env_ids], self.max_terrain_level),
+                                                   torch.clip(self.terrain_levels[env_ids], 0))  # (the minumum level is zero)
+        self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids], self.terrain_types[env_ids]]
 
     def _draw_debug_vis(self):
         """ Draws visualizations for dubugging (slows down simulation a lot).
@@ -522,20 +474,17 @@ class EnvScene:
             return
         self.gym.clear_lines(self.viewer)
         self.gym.refresh_rigid_body_state_tensor(self.sim)
-        sphere_geom = gymutil.WireframeSphereGeometry(
-            0.02, 4, 4, None, color=(1, 1, 0))
+        sphere_geom = gymutil.WireframeSphereGeometry(0.02, 4, 4, None, color=(1, 1, 0))
         for i in range(self.num_envs):
             base_pos = (self.root_states[i, :3]).cpu().numpy()
             heights = self.measured_heights[i].cpu().numpy()
-            height_points = quat_apply_yaw(self.base_quat[i].repeat(
-                heights.shape[0]), self.height_points[i]).cpu().numpy()
+            height_points = quat_apply_yaw(self.base_quat[i].repeat(heights.shape[0]), self.height_points[i]).cpu().numpy()
             for j in range(heights.shape[0]):
                 x = height_points[j, 0] + base_pos[0]
                 y = height_points[j, 1] + base_pos[1]
                 z = heights[j]
                 sphere_pose = gymapi.Transform(gymapi.Vec3(x, y, z), r=None)
-                gymutil.draw_lines(sphere_geom, self.gym,
-                                   self.viewer, self.envs[i], sphere_pose)
+                gymutil.draw_lines(sphere_geom, self.gym, self.viewer, self.envs[i], sphere_pose)
 
     def close(self):
         self.gym.destroy_sim(self.sim)
