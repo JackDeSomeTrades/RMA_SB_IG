@@ -19,7 +19,7 @@ class SotoRobotTask(SotoForwardTask):
 
     def _init_observation_space(self):
         """
-        Observation consists of :
+        Observation consists of : 42
             intrinsic
                         dof_pos - 7 + 2 cylinders
                         dof_vel - 7 + 2 cylinders
@@ -38,8 +38,6 @@ class SotoRobotTask(SotoForwardTask):
                         box_angle - 1
         :return: obs_space
         """
-
-        # TODO : Do not forget to add motors control when they will be available
         index = self.dof_usefull_names.index('gripper_y_left')
         dist_max = self.upper_bounds_joints[index] - self.lower_bounds_joints[index]
         print("distance max", dist_max)
@@ -118,23 +116,42 @@ class SotoRobotTask(SotoForwardTask):
         Returns:
             [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
         """
+       # Observation consists of : 42
+       #     intrinsic
+       #                 dof_pos - 7 + 2 cylinders
+       #                 dof_vel - 7 + 2 cylinders
+       #                 previous_action - 7 + 2 cylinders
+       #                 distance_btw_conveyors - 1
+       #     extrinsic
+       #                 friction box/belt - 2
+       #                 dynamic friction - 1
+       #                 Mass_box - 1
+       #                 COM_x - 1
+       #                 COM_y - 1
+       #                 GC_x - 1
+       #                 GC_y - 1
+       #                 width-length-height_box - 3
+       #                 distance sensors feedback(d1,d2) - 2
+       #                 box_angle - 1
+       # :return: obs_space
         noise_vec = torch.zeros_like(self.obs_buf[0])
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         noise_level = self.cfg.noise.noise_level
 
-        noise_vec[:12] = noise_scales.dof_pos * \
+        noise_vec[:9] = noise_scales.dof_pos * \
             noise_level * self.obs_scales.dof_pos
-        noise_vec[12:24] = noise_scales.dof_vel * \
+        noise_vec[9:18] = noise_scales.dof_vel * \
             noise_level * self.obs_scales.dof_vel
-        noise_vec[24:26] = noise_scales.ang_vel * \
-            noise_level * self.obs_scales.ang_vel
-        noise_vec[26:30] = 0.
-        noise_vec[30:42] = 0.  # Previous action.
-        noise_vec[42:45] = 0.  # Mass and COM
-        noise_vec[45:57] = noise_scales.motor_strength * noise_level
-        noise_vec[58] = noise_scales.height_measurements * \
-            noise_level * self.obs_scales.height_measurements
+        noise_vec[18:27] = noise_scales.action * \
+            noise_level * self.obs_scales.action
+        noise_vec[27:28] = 0.
+
+        noise_vec[28:31] = 0.05 #friction
+        noise_vec[31:36] = 0.  # Mass and COM and GC
+        noise_vec[36:39] = 0. #box dimensions
+        noise_vec[39:41] = noise_scales.distance_measurements * \
+            noise_level
 
         return noise_vec
 
