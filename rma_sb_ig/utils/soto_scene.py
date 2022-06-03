@@ -131,10 +131,9 @@ class SotoEnvScene:
         self.dof_left_cylinders = list(filter(lambda i: 'cylinder_left' in i, self.gym.get_asset_dof_names(self.soto_asset)))
         self.dof_right_cylinders = list(filter(lambda i: 'cylinder_right' in i, self.gym.get_asset_dof_names(self.soto_asset)))
 
-        self.cylinder_left_id = self.dof_usefull_names.find("cylinder_left_4_to_belt")
-        self.cylinder_right_id = self.dof_usefull_names.find("cylinder_right_4_to_belt")
+        self.cylinder_left_id = self.dof_usefull_names.index("cylinder_left_4_to_belt")
+        self.cylinder_right_id = self.dof_usefull_names.index("cylinder_right_4_to_belt")
 
-        print(self.cylinder_left_id,self.cylinder_right_id)
         self.dof_usefull_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_usefull_names])
         self.dof_left_cylinders_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_left_cylinders])
         self.dof_right_cylinders_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_right_cylinders])
@@ -177,6 +176,18 @@ class SotoEnvScene:
         self.soto_pose = gymapi.Transform()
         self.soto_pose.p = gymapi.Vec3(*self.cfg.init_state.pos)
         self.box_pose = gymapi.Transform()
+
+        self.body_names = self.gym.get_asset_rigid_body_names(self.soto_asset)
+        self.feet_names = [s for s in self.body_names if self.cfg.asset.foot_name in s]
+        self.penalized_contact_names = []
+        for name in self.cfg.asset.penalize_contacts_on:
+            self.penalized_contact_names.extend(
+                [s for s in self.body_names if name in s])
+        self.termination_contact_names = []
+        for name in self.cfg.asset.terminate_after_contacts_on:
+            self.termination_contact_names.extend(
+                [s for s in self.body_names if name in s])
+
         self._initialize_env()
 
     def _initialize_env(self):
@@ -187,6 +198,12 @@ class SotoEnvScene:
         self.env_upper = gymapi.Vec3(spacing, spacing, spacing)
         print("Creating %d environments" % self.num_envs)
         self.envs = []
+        self.box_masses = []
+        self.box_com_x = []
+        self.box_com_y = []
+        self.box_com_z = []
+        self.actor_handles = []
+        self.box_handles = []
         for i in range(self.num_envs):
             # create env
             env = self.gym.create_env(
@@ -229,15 +246,67 @@ class SotoEnvScene:
                 0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
             self.gym.set_rigid_body_color(
                 env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
+            
             box_properties = self.gym.get_actor_rigid_body_properties(env, self.box_handle)
-
+            box_properties = self._process_rigid_box_props(box_properties, i)
+            self.gym.set_actor_rigid_body_properties(
+                env, self.box_handle, box_properties, recomputeInertia=True)
+            
             # get box id (always the same at each iteration)
             self.box_idx = self.gym.get_actor_rigid_body_index(
                 env, self.box_handle, 0, gymapi.DOMAIN_SIM)
+            self.actor_handles.append(self.soto_handle)
+            self.box_handles.append(self.box_handle)
             self.envs.append(env)
 
+        self.box_masses = torch.cuda.FloatTensor(self.box_masses)
+        self.box_com_x = torch.cuda.FloatTensor(self.box_com_x)
+        self.box_com_y = torch.cuda.FloatTensor(self.box_com_y)
+        self.box_com_z = torch.cuda.FloatTensor(self.box_com_z)
+        print(self.box_masses,self.box_com_x,self.box_com_y)
 
+        self.feet_indices = torch.zeros(
+            len(self.feet_names), dtype=torch.long, device=self.device, requires_grad=False)
+        for i in range(len(self.feet_names)):
+            self.feet_indices[i] = self.gym.find_actor_rigid_body_handle(
+                self.envs[0], self.actor_handles[0], self.feet_names[i])
+
+        self.penalised_contact_indices = torch.zeros(len(
+            self.penalized_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
+        
+        for i in range(len(self.penalized_contact_names)):
+            self.penalised_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
+                self.envs[0], self.actor_handles[0], self.penalized_contact_names[i])
+
+        self.termination_contact_indices = torch.zeros(len(
+            self.termination_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
+        for i in range(len(self.termination_contact_names)):
+            self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
+                self.envs[0], self.actor_handles[0], self.termination_contact_names[i])
+        
+        
         self._create_distance_sensors()
+
+    def _process_rigid_box_props(self, props, env_id):
+        # if env_id==0:
+        #     sum = 0
+        #     for i, p in enumerate(props):
+        #         sum += p.mass
+        #         print(f"Mass of body {i}: {p.mass} (before randomization)")
+        #     print(f"Total mass {sum} (before randomization)")
+        # randomize base mass
+        if self.cfg.domain_rand.randomize_base_mass:
+            rng = self.cfg.domain_rand.mass_box
+            props[0].mass += np.random.uniform(rng[0], rng[1])
+        if self.cfg.domain_rand.randomize_com:
+            rng_2 = self.cfg.domain_rand.com_distribution_range
+            props[0].com.x += np.random.uniform(rng_2[0], rng_2[1])
+            props[0].com.y += np.random.uniform(rng_2[0], rng_2[1])
+        self.box_masses.append(props[0].mass)
+        self.box_com_x.append(props[0].com.x)
+        self.box_com_y.append(props[0].com.y)
+        self.box_com_z.append(props[0].com.z)
+        return props
 
     def _create_distance_sensors(self):
         self.distance_handles = [[]]

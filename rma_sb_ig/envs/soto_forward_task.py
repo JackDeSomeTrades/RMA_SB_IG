@@ -39,7 +39,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
         self.reward_scales = self.cfg.rewards.scales.to_dict()
-
+        self.command_ranges = self.cfg.commands.ranges.to_dict()
         self.max_episode_length_s = self.cfg.env.episode_length_s
         # in terms of timsesteps.
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
@@ -89,6 +89,14 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         self.commands = torch.zeros(self.num_envs, self.cfg.commands.num_commands, dtype=torch.float,
                                     device=self.device, requires_grad=False)  # x vel, y vel, yaw vel, heading
+        
+        self.commands_scale = torch.tensor([self.obs_scales.lin_vel, self.obs_scales.lin_vel, self.obs_scales.ang_vel],
+                                           device=self.device, requires_grad=False, )
+
+        self.feet_air_time = torch.zeros(self.num_envs, self.feet_indices.shape[0], dtype=torch.float,
+                                         device=self.device, requires_grad=False)
+        self.last_contacts = torch.zeros(self.num_envs, len(self.feet_indices), dtype=torch.bool, device=self.device,
+                                         requires_grad=False)
 
         self.base_rpy = get_euler_xyz(self.base_quat)
 
@@ -280,22 +288,20 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.base_quat[:] = self.root_states[:, 3:7]
         self.base_rpy = get_euler_xyz(self.base_quat)
 
-        env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).nonzero(as_tuple=False).flatten()
-        self._resample_commands(env_ids)
-        if self.cfg.commands.heading_command:
-            forward = quat_apply(self.base_quat, self.forward_vec)
-            heading = torch.atan2(forward[:, 1], forward[:, 0])
-            self.commands[:, 2] = torch.clip(0.5 * wrap_to_pi(self.commands[:, 3] - heading), -1., 1.)
-
-        if self.cfg.terrain.measure_heights:
-            self.measured_heights = self._get_heights()
-        if self.cfg.domain_rand.push_robots and (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
-            # self._push_robots()
-            """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity. 
-                    """
-            max_vel = self.cfg.domain_rand.max_push_vel_xy
-            self.root_states[:, 7:9] = torch_rand_float(-max_vel, max_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
-            self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
+        # env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).nonzero(as_tuple=False).flatten()
+        # self._resample_commands(env_ids)
+        # # if self.cfg.commands.heading_command:
+        # #     forward = quat_apply(self.base_quat, self.forward_vec)
+        # #     heading = torch.atan2(forward[:, 1], forward[:, 0])
+        # #     self.commands[:, 2] = torch.clip(0.5 * wrap_to_pi(self.commands[:, 3] - heading), -1., 1.)
+        #
+        # if self.cfg.domain_rand.push_robots and (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
+        #     # self._push_robots()
+        #     """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity.
+        #             """
+        #     max_vel = self.cfg.domain_rand.max_push_vel_xy
+        #     self.root_states[:, 7:9] = torch_rand_float(-max_vel, max_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
+        #     self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
 
         # print("base_lin_vel", self.base_lin_vel)
         # print("base_ang_vel", self.base_ang_vel)
@@ -303,12 +309,13 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         # compute observations, rewards, resets, ...
         self.check_termination()
         self.compute_reward()
+
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
         self.compute_observations() # in some cases a simulation step might be required to refresh some obs (for example body positions)
 
         self.last_actions[:] = self.actions[:]
-        self.last_torques[:] = self.torques[:]  # for RMA
+        self.last_torques[:] = self.torques_forces[:]  # for RMA
         self.last_contact_forces[:] = self.contact_forces[:]
         self.last_dof_vel[:] = self.dof_vel[:]
         self.last_root_vel[:] = self.root_states[:, 7:13]
@@ -317,25 +324,31 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             self._draw_debug_vis()
 
 
-    def _resample_commands(self, env_ids):
-        """ Randommly select commands of some environments
-
-        Args:
-            env_ids (List[int]): Environments ids for which new commands are needed
+    def compute_reward(self):
+        """ Compute rewards
+            Calls each reward function which had a non-zero scale (processed in self._prepare_reward_function())
+            adds each terms to the episode sums and to the total reward
         """
-        self.commands[env_ids, 0] = torch_rand_float(self.command_ranges["lin_vel_x"][0], self.command_ranges["lin_vel_x"][1], (len(env_ids), 1), device=self.device).squeeze(1)
-        self.commands[env_ids, 1] = torch_rand_float(self.command_ranges["lin_vel_y"][0], self.command_ranges["lin_vel_y"][1], (len(env_ids), 1), device=self.device).squeeze(1)
-        # if env_ids.shape[0] != 0:
-        #     print("env_ids:", env_ids)
-        #     print("commands:", self.commands[env_ids, :])
-        if self.cfg.commands.heading_command:
-            self.commands[env_ids, 3] = torch_rand_float(self.command_ranges["heading"][0], self.command_ranges["heading"][1], (len(env_ids), 1), device=self.device).squeeze(1)
-        else:
-            self.commands[env_ids, 2] = torch_rand_float(self.command_ranges["ang_vel_yaw"][0], self.command_ranges["ang_vel_yaw"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+        self.rew_buf[:] = 0.
+        for i in range(len(self.reward_functions)):
+            name = self.reward_names[i]
+            rew = self.reward_functions[i]() * self.reward_scales[name]
+            self.rew_buf += rew
+            self.episode_sums[name] += rew
+        if self.cfg.rewards.only_positive_rewards:
+            self.rew_buf[:] = torch.clip(self.rew_buf[:], min=0.)
+        # add termination reward after clipping
+        if "termination" in self.reward_scales:
+            rew = self._reward_termination() * self.reward_scales["termination"]
+            self.rew_buf += rew
+            self.episode_sums["termination"] += rew
 
-        # set small commands to zero
-        self.commands[env_ids, :2] *= (torch.norm(self.commands[env_ids, :2], dim=1) > 0.2).unsqueeze(1)
-
+    def check_termination(self):
+        """ Check if environments need to be reset. Sets up the dones for the return values of step.
+        """
+        self.reset_buf = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1., dim=1)
+        self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
+        self.reset_buf |= self.time_out_buf
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.
