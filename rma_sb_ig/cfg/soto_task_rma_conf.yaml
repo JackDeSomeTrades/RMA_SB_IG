@@ -3,7 +3,7 @@ task_config:
 
   env:
     num_envs: 6
-    num_observations: 40
+    num_observations: 43
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 9
     env_spacing: 3. 
@@ -13,7 +13,7 @@ task_config:
   sim_param :
     dt : 0.01
     use_gpu : True
-    substep : 2
+    substep : 1
     solver_type : 1
     num_position_iterations : 8
     num_velocity_iterations  : 1
@@ -23,7 +23,7 @@ task_config:
     friction_correlation_distance  : 0.0005
     num_threads  : 0
     use_gpu_physx  : True
-    test : True
+    test : False
 
   terrain:
     mesh_type: 'none' # "heightfield" # none, plane, heightfield or trimesh
@@ -41,15 +41,15 @@ task_config:
     lin_vel: [ 0.0, 0.0, 0.0 ]  # x,y,z [m/s]
     ang_vel: [ 0.0, 0.0, 0.0 ]  # x,y,z [rad/s]
     pos: [ 0.0, 0.0, 0.42 ]  # x,y,z [m]
-
+    angle : -3.14
     default_joint_init: { #: target angles [rad] when action: 0.0
       'cylinder' : 0.0,  # [rad]
-      'vertical_axis' : 0.0,
-      'gripper_rotate' : 3.14,
-      'gripper_base_x' : 0.0,
-      'gripper_y_left' : 0.0,
+      'vertical_axis' : 1.0,
+      'gripper_rotate' : -3.14,
+      'gripper_base_x' : 0.3,
+      'gripper_y_left' : 0.25,
       'conveyor_belt_left' : 0.0,
-      'gripper_y_right' : 0.0,
+      'gripper_y_right' : 0.25,
       'conveyor_belt_right' : 0.0
     }
 
@@ -72,8 +72,8 @@ task_config:
 
   distance_sensor :
     fov : 3 #degrés
-    near_plane : 0.01
-    far_plane : 3.0
+    near_plane : 0.025
+    far_plane : 1.5
     use_collision_geometry : True
     enable_tensors : True
     height : 1
@@ -92,22 +92,22 @@ task_config:
   commands:
     curriculum: False
     max_curriculum: 1.
-    num_commands: 1 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
+    num_commands: 1 # default: pos_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
     resampling_time: 30. # time before command are changed[s]
     heading_command: True # if true: compute ang vel command from heading error. If false, set to 0.
     ranges:
+      pos_x : [0.3,0.6]
       lin_vel_x: [ 0.2, 0.35 ] # min max [m/s]
-      lin_vel_y: [ 0.0, 0.0 ]   # min max [m/s]
-      ang_vel_yaw: [ 0, 0 ]    # min max [rad/s]
-      heading: [ -3.14, 3.14 ]
+
 
   domain_rand:
-    randomize_friction: True
-    friction_range: [0.05, 4.5]
+    randomize_friction : True
+    friction_range : [0.05,3]
+
     randomize_base_mass: True
     mass_box: [-0.05, 0.05]
     length_box : [0.4,0.45]
-    width_box : [0.3,0.35]
+    width_box : [0.6,0.65]
     height_box : [0.15,0.2]
     randomize_com : True
     com_distribution_range : [-0.05,0.05]
@@ -119,9 +119,7 @@ task_config:
     clip_actions: 100.
     obs_scales:
       lin_vel: 2.0
-      ang_vel: 0.25
       dof_pos: 1.0
-      dof_vel: 0.05
       height_measurements: 5.0
 
   rewards:
@@ -134,16 +132,19 @@ task_config:
     base_height_target: 0.42
     scales:
       #        termination: -10.0   # 0.0
-      tracking_lin_vel: 20.0
-      tracking_ang_vel: 10.0
-      lin_vel_z: -2.0
+      forward: 10
+      distance_equal: -10.0
+      #maintain_forward : 10
+      #tracking_lin_vel: 20.0
+      #tracking_ang_vel: 10.0
+      #lin_vel_z: -2.0
       #        ang_vel_xy: -0.05
       #        dof_vel: -0.
       #        dof_acc: -2.5e-7
-      base_height: -2.0
+      #base_height: -2.0
       #        feet_air_time: 1.0
       #        collision: -1.
-      feet_stumble: -0.025
+      #feet_stumble: -0.025
       #        action_rate: -0.01
       #        stand_still: -0.0005
       #        torques: -0.0002
@@ -161,13 +162,10 @@ task_config:
       # #        z_acceleration: -2.0
       # #        foot_slip: -0.8
 
-
-
-
-   noise:
-     add_noise: True
-     noise_level: 1.0 # scales other values
-     noise_scales:
+  noise:
+    add_noise: True
+    noise_level: 1.0 # scales other values
+    noise_scales:
        dof_pos: 0.01
        dof_vel: 1.5
        lin_vel: 0.1
@@ -177,63 +175,40 @@ task_config:
        distance_measurements: 0.1
        motor_strength: 0.5
 
-# # viewer camera:
-#   viewer:
-#     ref_env: 0
-#     pos: [10, 0, 6]  # [m]
-#     lookat: [11., 5, 3.]  # [m]
+rl_config:
+  device: 'cuda:0'
+#  batchsize_p1: 80000
+  num_iterations_p1: 15000
+  n_timesteps: 18000000
+  normalize: True
+  logging:
+    dir: '{ROOT_DIR}/logs/'
+  ppo:
+    n_steps: 20 # TODO: adapt to your setting
+    batch_size: 120 # TODO: adapt to your setting
+#    n_epochs: 5
+    gae_lambda: 0.95
+    gamma: 0.99
+    n_epochs: 10
+    ent_coef: 0.01
+    lr: 1e-3
+    clip_range: 0.2
+    max_grad_norm: 1.0
+    vf_coef: 1.0
+    # use_sde: False
+    # sde_sample_freq: 4
 
-#   sim:
-#     dt: 0.005
-#     substeps: 1
-#     gravity: [0., 0. ,-9.81]  # [m/s^2]
-#     up_axis: 1  # 0 is y, 1 is z
-#     physx:
-#       num_threads: 10
-#       solver_type: 1  # 0: pgs, 1: tgs
-#       num_position_iterations: 4
-#       num_velocity_iterations: 0
-#       contact_offset: 0.01  # [m]
-#       rest_offset: 0.0   # [m]
-#       bounce_threshold_velocity: 0.5 #0.5 [m/s]
-#       max_depenetration_velocity: 1.0
-#       max_gpu_contact_pairs: 2**23 #2**24 -> needed for 8000 envs and more
-#       default_buffer_size_multiplier: 5
-#       contact_collection: 2 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
+arch_config:
+  device: 'cuda:0'
+  state_action_horizon: 50
+  encoder:
+    encoded_extrinsic_size: 8
+    action_space_size: 12
+    state_space_size: 30
+    env_size: 17
+  adaptation:
+    epochs: 500
+    optimizer: 'Adam'
+    lr: 5.0e-4
+    loss: 'mse'
 
-# rl_config:
-#   device: 'cuda:0'
-# #  batchsize_p1: 80000
-#   num_iterations_p1: 15000
-#   n_timesteps: 18000000
-#   normalize: True
-#   logging:
-#     dir: '{ROOT_DIR}/logs/'
-#   ppo:
-#     n_steps: 24 # TODO: adapt to your setting
-#     batch_size: 6144 # TODO: adapt to your setting
-# #    n_epochs: 5
-#     gae_lambda: 0.95
-#     gamma: 0.99
-#     n_epochs: 10
-#     ent_coef: 0.01
-#     lr: 1e-3
-#     clip_range: 0.2
-#     max_grad_norm: 1.0
-#     vf_coef: 1.0
-#     # use_sde: False
-#     # sde_sample_freq: 4
-
-# arch_config:
-#   device: 'cuda:0'
-#   state_action_horizon: 50
-#   encoder:
-#     encoded_extrinsic_size: 8
-#     action_space_size: 12
-#     state_space_size: 30
-#     env_size: 17
-#   adaptation:
-#     epochs: 500
-#     optimizer: 'Adam'
-#     lr: 5.0e-4
-#     loss: 'mse'
