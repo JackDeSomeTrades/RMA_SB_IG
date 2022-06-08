@@ -17,12 +17,12 @@ from stable_baselines3 import PPO
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # -> devient args.config
-    parser.add_argument('--cfg', '-c', type=str, default='a1_task_rma')
+    parser.add_argument('--cfg', '-c', type=str, default='soto_task_rma')
     parser.add_argument('--savedir', '-s', type=str, default='experiments/')
     parser.add_argument('--dsetsavedir', '-k', type=str, default='output/')
-    parser.add_argument('--phase', '-p', type=str, default='2')
+    parser.add_argument('--phase', '-p', type=str, default='1')
     parser.add_argument('--run_comment', '-m', type=str, default=None)
-    parser.add_argument('--robot_name', '-r', type=str, default='a1')
+    parser.add_argument('--robot_name', '-r', type=str, default='soto')
     parser.add_argument('--timestamp', '-t', type=bool, default=False)
 
     args, _ = parser.parse_known_args()
