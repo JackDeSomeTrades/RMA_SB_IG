@@ -44,8 +44,8 @@ class SotoRobotTask(SotoForwardTask):
         limits_low = np.array(
             list(self.lower_bounds_joints[self.dof_usefull_id]) +
             [0] * 9 +    # minimum values of joint velocities
-            list(self.lower_bounds_joints[self.dof_usefull_id]) +
             [0] +
+            list(self.lower_bounds_joints[self.dof_usefull_id]) +
 
 
             [self.cfg.domain_rand.friction_range[0]]*2 +
@@ -66,9 +66,9 @@ class SotoRobotTask(SotoForwardTask):
         limits_high = np.array(
             list(self.upper_bounds_joints[self.dof_usefull_id]) +
             list(self.joint_velocity[self.dof_usefull_id]) +    # maximum values of joint velocities
-            list(self.upper_bounds_joints[self.dof_usefull_id]) +
             # distance max btw 2 conveyors +
             [dist_max] +
+            list(self.upper_bounds_joints[self.dof_usefull_id]) +
 
 
             [self.cfg.domain_rand.friction_range[1]]*2 +
@@ -121,14 +121,14 @@ class SotoRobotTask(SotoForwardTask):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         noise_level = self.cfg.noise.noise_level
-
         noise_vec[:9] = noise_scales.dof_pos * \
             noise_level * self.obs_scales.dof_pos
         noise_vec[9:18] = noise_scales.dof_vel * \
             noise_level * self.obs_scales.dof_vel
-        noise_vec[18:27] = noise_scales.action * \
+        noise_vec[18:19] = 0.
+        noise_vec[19:28] = noise_scales.action * \
             noise_level * self.obs_scales.action
-        noise_vec[27:28] = 0.
+
 
         noise_vec[28:32] = 0.05 #friction
         noise_vec[32:37] = 0.  # Mass and COM and GC
@@ -140,11 +140,10 @@ class SotoRobotTask(SotoForwardTask):
         return noise_vec
 
     def compute_observations(self):
-        # Observation consists of : 42
+        # Observation consists of : 43
         #     intrinsic
         #                 dof_pos - 7 + 2 cylinders
         #                 dof_vel - 7 + 2 cylinders
-        #                 previous_action - 7 + 2 cylinders
         #                 distance_btw_conveyors - 1
         #     extrinsic
         #                 friction box/belt - 2
@@ -157,28 +156,29 @@ class SotoRobotTask(SotoForwardTask):
         #                 width-length-height_box - 3
         #                 distance sensors feedback(d1,d2) - 2
         #                 box_angle - 1
+
+        # + previous_action - 7 + 2 cylinders
         # :return: obs_space
 
         self.distance_sensors = self._get_distance_sensors()
         distance_btw_arms = torch.abs(self.dof_pos[:,self.right_arm_index] -(0.7-self.dof_pos[:,self.left_arm_index]))
         self.X_t = torch.cat((self.dof_pos,
                               self.dof_vel,
-                              self.last_actions,
-                              distance_btw_arms
+                              distance_btw_arms.unsqueeze(-1)
                               ), dim=-1)
         E_t = torch.cat((
-            self.soto_fric.unsqueeze(-1),
-            self.box_fric.unsqueeze(-1),
+            self.soto_fric,
+            self.box_fric,
             self.box_masses.unsqueeze(-1),
             self.box_com_x.unsqueeze(-1),
             self.box_com_y.unsqueeze(-1),
             self.box_pos[...,:2],
-            self.box_dim.unsqueeze(-1),
+            self.box_dim,
             self.distance_sensors,
-            self.box_angle
+            self.box_angle.unsqueeze(-1)
         ), dim=-1)
 
-        self.obs_buf = torch.cat((self.X_t,
+        self.obs_buf = torch.cat((self.X_t,self.last_actions,
                                   E_t), dim=-1)
 
         # add noise if needed
@@ -196,12 +196,12 @@ class SotoRobotTask(SotoForwardTask):
         return depth
 
     def _reward_forward(self):
-        forward = quat_apply(self.base_quat, self.forward_vec)
+        forward = quat_apply(self.gripper_quat, self.forward_vec)
         # max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
         # reward = torch.abs(base_x_velocity - max_fwd_vel_tensor)
         diff = self.box_lin_vel - forward
         reward = torch.linalg.norm(
-            diff.unsqueeze(-1), dim=1, ord=1)   # L1 norm
+            diff, dim=1, ord=1)   # L1 norm
 
         return reward
 

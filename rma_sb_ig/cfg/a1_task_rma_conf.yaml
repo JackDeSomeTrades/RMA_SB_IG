@@ -227,8 +227,8 @@ arch_config:
   state_action_horizon: 50
   encoder:
     encoded_extrinsic_size: 8
-    action_space_size: 12
-    state_space_size: 30
+    action_space_size: 12 #ok
+    state_space_size: 30 #ok
     env_size: 17
   adaptation:
     epochs: 500
