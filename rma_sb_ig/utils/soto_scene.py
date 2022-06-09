@@ -33,6 +33,7 @@ class SotoEnvScene:
         self._adjust_sim_param()
 
         # create sim
+        self.enable_viewer_sync = True
         self.sim = self.gym.create_sim(
             self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
         self.create_sim()

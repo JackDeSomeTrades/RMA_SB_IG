@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 6
+    num_envs: 5
     num_observations: 43
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 9
@@ -119,8 +119,9 @@ task_config:
     clip_actions: 100.
     obs_scales:
       lin_vel: 2.0
+      dof_vel: 1.0
       dof_pos: 1.0
-      height_measurements: 5.0
+      action: 1.0
 
   rewards:
     only_positive_rewards: False # if true negative total rewards are clipped at zero (avoids early termination problems)
@@ -184,8 +185,8 @@ rl_config:
   logging:
     dir: '{ROOT_DIR}/logs/'
   ppo:
-    n_steps: 20 # TODO: adapt to your setting
-    batch_size: 120 # TODO: adapt to your setting
+    n_steps: 24 # TODO: adapt to your setting
+    batch_size: 30 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
@@ -200,12 +201,12 @@ rl_config:
 
 arch_config:
   device: 'cuda:0'
-  state_action_horizon: 50
+  state_action_horizon: 34
   encoder:
-    encoded_extrinsic_size: 8
-    action_space_size: 12
-    state_space_size: 30
-    env_size: 17
+    encoded_extrinsic_size: 6
+    action_space_size: 9 #ok
+    state_space_size: 19 #ok
+    env_size: 15
   adaptation:
     epochs: 500
     optimizer: 'Adam'
