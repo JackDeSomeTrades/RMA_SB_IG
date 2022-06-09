@@ -160,7 +160,8 @@ class SotoRobotTask(SotoForwardTask):
         # + previous_action - 7 + 2 cylinders
         # :return: obs_space
 
-        self.distance_sensors = self._get_distance_sensors()
+        distance = self._get_distance_sensors()
+        self.distance_sensors = torch.clip(distance, -1.5, -0.025)
         distance_btw_arms = torch.abs(self.dof_pos[:,self.right_arm_index] -(0.7-self.dof_pos[:,self.left_arm_index]))
         self.X_t = torch.cat((self.dof_pos,
                               self.dof_vel,
@@ -202,7 +203,6 @@ class SotoRobotTask(SotoForwardTask):
         diff = self.box_lin_vel - forward
         reward = torch.linalg.norm(
             diff, dim=1, ord=1)   # L1 norm
-
         return reward
 
     def _reward_distance_equal(self):

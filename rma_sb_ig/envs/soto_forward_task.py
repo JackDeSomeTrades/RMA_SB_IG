@@ -73,6 +73,11 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         self.dof_pos = self.dof_pos_tensor[:, self.dof_usefull_id]
         self.dof_vel = self.dof_vel_tensor[:, self.dof_usefull_id]
+        self.gym.simulate(self.sim)
+        self.gym.refresh_dof_state_tensor(self.sim)
+        self.gym.refresh_actor_root_state_tensor(self.sim)
+        self.gym.refresh_net_contact_force_tensor(self.sim)
+        self.gym.refresh_rigid_body_state_tensor(self.sim)
         self.soto_init_state = torch.clone(self.soto_root_state)
         self.box_init_state = torch.clone(self.box_root_state)
         self.index_rotate = self.dof_usefull_names.index("gripper_rotate")
@@ -245,7 +250,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             actions = torch.tensor(actions, device=self.device)
 
         self.actions = torch.clip(actions, self.lower_bounds_joint_tensor, self.upper_bounds_joint_tensor).to(
-            self.device)  # TODO : verifier si ça fonctionne
+            self.device)
 
         # print(self.actions)
         # step physics and render each frame
@@ -368,9 +373,8 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.last_dof_vel[:] = self.dof_vel[:]
         self.last_root_vel[:] = self.root_states[:, 7:13]
 
-        if self.viewer and self.enable_viewer_sync and self.debug_viz:
-            self._draw_debug_vis()
-
+        # if self.viewer and self.enable_viewer_sync and self.debug_viz:
+        #     self._draw_debug_vis()
 
 
     def reset_idx(self, env_ids):
@@ -389,13 +393,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self._reset_dofs(env_ids)
         self._reset_root_states(env_ids)
         self._resample_commands(env_ids)
-
-
-
-
-
-
-
 
         # fill infos
         # convert tensor to list -
