@@ -271,8 +271,10 @@ class SotoEnvScene:
             quat = gymapi.Quat.from_axis_angle(gymapi.Vec3(0.,0.,1.),self.default_dof_state["pos"][index_rotate])
 
             self.box_pose.p +=quat.rotate(vec_add)
+            r = gymapi.Quat.from_axis_angle(gymapi.Vec3(0.,0.,1.),np.pi)
 
-            self.box_pose.r = body_states["pose"][self.gripper_x_id][1]
+            self.box_pose.r = gymapi.Quat(*body_states["pose"][self.gripper_x_id][1])*r
+
 
 
             self.box_handle = self.gym.create_actor(env, self.l_boxes_asset[i], self.box_pose, "box", i,0,1)
@@ -378,7 +380,7 @@ class SotoEnvScene:
 
             dist1 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
             dist2 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
-
+            print(distance_sensor)
             # get index of pieces in rigid body state tensor
             dist1_idx = self.gym.find_actor_rigid_body_index(
                 self.envs[i], self.soto_handle, "conveyor_belt_left_link", gymapi.DOMAIN_ENV)

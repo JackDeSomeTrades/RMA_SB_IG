@@ -1,17 +1,8 @@
-from time import time
-from warnings import WarningMessage
-
 import matplotlib.pyplot as plt
-import numpy as np
-import os
 from abc import ABC, abstractmethod
-
-from isaacgym import gymapi
 from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
-import box
-import gym.spaces as gymspace
-import math
+
 import torch
 
 # import torch
@@ -40,7 +31,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
         self.reward_scales = self.cfg.rewards.scales.to_dict()
-        self.command_ranges = self.cfg.commands.ranges.to_dict()
+        self.command_angle = np.pi/2 #rotation to do
         self.max_episode_length_s = self.cfg.env.episode_length_s
         # in terms of timsesteps.
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
@@ -89,11 +80,13 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.box_quat = self.box_root_state[:, 3:7]
         self.box_rpy = get_euler_xyz(self.box_quat)
         self.box_angle = self.box_rpy[2]
-        self.box_lin_vel = quat_rotate_inverse(self.box_quat, self.box_root_state[..., 7:10])
-        self.box_pos = quat_rotate_inverse(self.box_quat, self.box_root_state[..., 0:3])
+        self.box_init_angle = self.box_angle[0]
+        self.gripper_init_yaw = self.gripper_yaw_orientation[:]
+        self.box_lin_vel = self.box_root_state[..., 7:10]
+        self.box_pos = self.box_root_state[..., 0:3]
+        self.box_init_pos = torch.clone(self.box_pos[:])
 
         self.contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(self.num_envs, -1, 3)
-
         # initialize some data used later on
         self.common_step_counter = 0
         self.infos = [{} for _ in range(self.num_envs)]
@@ -122,7 +115,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         self.commands = torch.zeros(self.num_envs, self.cfg.commands.num_commands, dtype=torch.float,
                                     device=self.device, requires_grad=False)  # x vel, y vel, yaw vel, heading
-
+        self.commands[:, 0] = self.command_angle + self.box_angle
         self.commands_scale = torch.tensor([self.obs_scales.lin_vel],
                                            device=self.device, requires_grad=False, )
 
@@ -199,6 +192,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             self.box_rpy = get_euler_xyz(self.box_quat)
             self.box_angle = self.box_rpy[2]
             self.gripper_yaw_orientation = self.dof_pos[:, self.index_rotate]
+
             self.gripper_quat = quat_from_angle_axis(self.gripper_yaw_orientation, self.yaw_vec)
             forward = quat_apply(self.gripper_quat, self.forward_vec)
             #print(self.rigid_body_tensor[:,self.gripper_x_id,:3])
@@ -344,13 +338,12 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.box_pos[:] = self.box_root_state[..., 0:3]
         self.box_rpy = get_euler_xyz(self.box_quat)
         self.box_angle = self.box_rpy[2]
+        self.gripper_yaw_orientation = self.dof_pos[:, self.index_rotate]
         # env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).nonzero(as_tuple=False).flatten()
         # self._resample_commands(env_ids) #USELESS, add a force on certain env for an other probleme
 
         if self.cfg.commands.heading_command:
-            dir = quat_apply(self.gripper_quat, self.forward_vec)
-
-            self.commands[:,0] = self.cfg.commands.ranges.lin_vel_x[0]
+            self.commands[:,0] = self.command_angle + self.box_init_angle + (self.gripper_yaw_orientation - self.gripper_init_yaw)
         #
         # if self.cfg.domain_rand.push_robots and (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
         #     # self._push_robots()
@@ -436,7 +429,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.dof_vel_tensor[env_ids] = 0.
         #
         env_ids_int32 = env_ids.to(dtype=torch.int32)
-        self.gym.set_dof_state_tensor(self.sim,gymtorch.unwrap_tensor(self.dof_state))
+        self.gym.set_dof_state_tensor_indexed(self.sim,gymtorch.unwrap_tensor(self.dof_state))
     def _reset_root_states(self, env_ids):
         """ Resets ROOT states position and velocities of selected environmments
             Sets base position based on the curriculum
@@ -449,7 +442,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.soto_root_state[env_ids] = self.soto_init_state[env_ids]
 
         env_ids_int32 = env_ids.to(dtype=torch.int32)
-        self.gym.set_actor_root_state_tensor_indexed(self.sim,
+        self.gym.set_actor_root_state_tensor(self.sim,
                                                      gymtorch.unwrap_tensor(self.root_states),
                                                      gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
 
@@ -458,7 +451,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         Args:
             env_ids (List[int]): Environments ids for which new commands are needed
         """
-        self.commands[env_ids, 0] = torch_rand_float(self.command_ranges["lin_vel_x"][0], self.command_ranges["lin_vel_x"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+        self.commands[env_ids, 0] = self.command_angle + self.box_init_angle
 
 
 
@@ -471,6 +464,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         for i in range(len(self.reward_functions)):
             name = self.reward_names[i]
             rew = self.reward_functions[i]() * self.reward_scales[name]
+
             self.rew_buf += rew
             self.episode_sums[name] += rew
         if self.cfg.rewards.only_positive_rewards:
@@ -484,16 +478,33 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
     def check_termination(self):
         """ Check if environments need to be reset. Sets up the dones for the return values of step.
         """
-        self.reset_buf = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1.,
+        self.reset_buf = torch.any(torch.norm(self.contact_forces[:, 0, :], dim=-1) > 1.,
                                    dim=1)
+
+        self.box_out_buffer = (self.contact_forces[:, -1, 2] < 0.05)
+        test = torch.norm(self.box_pos[:,:2]-self.box_init_pos[:,:2],dim=-1) > 0.4
+        test1 = self.box_pos[:,2] < 0.85
+        test2 = self.box_pos[:,2] > 3
+        self.box_out_buffer = torch.logical_and(self.box_out_buffer,test)
+        self.box_out_buffer = torch.logical_or(torch.logical_or(self.box_out_buffer,test1),test2)
         self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
         self.reset_buf |= self.time_out_buf
+        self.reset_buf |= self.box_out_buffer
 
+        print("z position of reseted", self.box_pos[self.reset_buf,2])
+        print("norm of reseted", torch.norm(self.box_pos[self.reset_buf,:2]-self.box_init_pos[self.reset_buf,:2],dim=-1))
+        print("contact of reseted", self.contact_forces[self.reset_buf, -1, 2])
+        print()
     def _get_depth_sensor_tensor(self):
         self.depth_sensors = [[gymtorch.wrap_tensor(
             self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[i], self.distance_handles[i][0],gymapi.IMAGE_DEPTH))[0][0],
             gymtorch.wrap_tensor(self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[i],self.distance_handles[i][1],
             gymapi.IMAGE_DEPTH))[0][0]] for i in range(self.num_envs)]
+
+
+
+        self.tensor2 = torch.cat([self.depth_sensors[0][0].unsqueeze(-1),self.depth_sensors[1][0].unsqueeze(-1)])
+        print("hello")
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.
@@ -524,6 +535,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
     def reset(self):
         """ Reset all robots"""
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
+
         obs, rews, dones, infos = self.step(
             torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
 

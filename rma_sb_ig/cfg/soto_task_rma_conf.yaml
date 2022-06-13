@@ -2,13 +2,13 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 32
+    num_envs: 100
     num_observations: 43
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 9
     env_spacing: 3. 
     send_timeouts: True # send time out information to the algorithm
-    episode_length_s : 60
+    episode_length_s : 20
     # episode length in seconds
   sim_param :
     dt : 0.01
@@ -41,7 +41,7 @@ task_config:
     lin_vel: [ 0.0, 0.0, 0.0 ]  # x,y,z [m/s]
     ang_vel: [ 0.0, 0.0, 0.0 ]  # x,y,z [rad/s]
     pos: [ 0.0, 0.0, 0.42 ]  # x,y,z [m]
-    angle : -3.14
+    angle : -1.59
     default_joint_init: { #: target angles [rad] when action: 0.0
       'cylinder' : 0.0,  # [rad]
       'vertical_axis' : 1.0,
@@ -65,7 +65,7 @@ task_config:
     collapse_fixed_joints: True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
     fix_base_link: True # so the base shouldn't be allowed to move no matter what 
     default_dof_drive_mode: 3 # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
-    replace_cylinder_with_capsule: False
+    replace_cylinder_with_capsule: True
     flip_visual_attachments: False # imp: this is the flag that was giving us issues.
     override_inertia : False #overide inertia properties (might be wrong)
     override_com : False #overide inertia properties (might be wrong)
@@ -95,19 +95,21 @@ task_config:
     num_commands: 1 # default: pos_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
     resampling_time: 30. # time before command are changed[s]
     heading_command: True # if true: compute ang vel command from heading error. If false, set to 0.
+    command_angle: 90
     ranges:
       pos_x : [0.3,0.6]
       lin_vel_x: [ 0.2, 0.35 ] # min max [m/s]
+      angle : [0.0, 90.0]
 
 
   domain_rand:
     randomize_friction : True
-    friction_range : [0.05,3]
+    friction_range : [1.0,4]
 
     randomize_base_mass: True
-    mass_box: [-0.05, 0.05]
-    length_box : [0.4,0.45]
-    width_box : [0.6,0.65]
+    mass_box: [-0.1, 0.1]
+    length_box : [0.35,0.40]
+    width_box : [0.5,0.55]
     height_box : [0.15,0.2]
     randomize_com : True
     com_distribution_range : [-0.05,0.05]
@@ -133,8 +135,14 @@ task_config:
     base_height_target: 0.42
     scales:
       #        termination: -10.0   # 0.0
-      forward: 10
-      distance_equal: -10.0
+      #forward: 10
+      #distance_equal: -10.0
+      turn: 40
+      distance_min : 2
+      #geometric_center : -1.0
+      #work: -0.005
+      #turning_velocity : 1.0
+      z_position : -1.0
       #maintain_forward : 10
       #tracking_lin_vel: 20.0
       #tracking_ang_vel: 10.0
@@ -154,7 +162,7 @@ task_config:
       #        forward: 20.0
       #        lateral_movement_rotation: -21.0
       #        orientation: -1.5
-      #        work: -0.002
+
       #        ground_impact: -0.02
       #        smoothness: -0.001
       #        action_magnitude: -0.07
@@ -168,25 +176,25 @@ task_config:
     noise_level: 1.0 # scales other values
     noise_scales:
        dof_pos: 0.01
-       dof_vel: 1.5
+       dof_vel: 0.1
        lin_vel: 0.1
-       ang_vel: 0.2
+       ang_vel: 0.1
        gravity: 0.05
        action : 0.1
        distance_measurements: 0.1
-       motor_strength: 0.5
+       motor_strength: 0.05
 
 rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 18000000
+  n_timesteps: 1800000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
   ppo:
     n_steps: 24 # TODO: adapt to your setting
-    batch_size: 192 # TODO: adapt to your setting
+    batch_size: 600 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
