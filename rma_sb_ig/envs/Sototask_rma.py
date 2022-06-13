@@ -192,23 +192,48 @@ class SotoRobotTask(SotoForwardTask):
     def _get_distance_sensors(self):
         self.gym.render_all_camera_sensors(self.sim)
         self.gym.start_access_image_tensors(self.sim)
-        depth = torch.tensor(self.depth_sensors,dtype=torch.float, device = self.device)
+        depth = torch.as_tensor(self.depth_sensors, device = self.device)
         self.gym.end_access_image_tensors(self.sim)
         return depth
 
-    def _reward_forward(self):
-        forward = quat_apply(self.gripper_quat, self.forward_vec)
-        # max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
-        # reward = torch.abs(base_x_velocity - max_fwd_vel_tensor)
-        diff = self.box_lin_vel - forward
-        reward = torch.linalg.norm(
-            diff, dim=1, ord=1)   # L1 norm
+    # def _reward_forward(self):
+    #     forward = quat_apply(self.gripper_quat, self.forward_vec)
+    #     # max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
+    #     # reward = torch.abs(base_x_velocity - max_fwd_vel_tensor)
+    #     diff = self.box_lin_vel - forward
+    #     reward = torch.linalg.norm(
+    #         diff, dim=1, ord=1)   # L1 norm
+    #     return reward
+
+    def _reward_turn(self):
+        value = torch.remainder(self.commands.squeeze(-1)-self.box_angle,torch.pi)
+        reward = torch.where(value > torch.pi/2,value - torch.pi/2, torch.pi/2-value)
+        print("reward angle", torch.mean(reward))
+        return reward
+    def _reward_distance_min(self):
+        reward = torch.where(torch.logical_and(self.distance_sensors[:,0] < -0.1, self.distance_sensors[:,1] < -0.1),1.,0.)
+        print("reward distance", torch.mean(reward))
         return reward
 
-    def _reward_distance_equal(self):
-        reward = torch.abs(self.distance_sensors[:,0]-self.distance_sensors[:,1])
+    # def _reward_geometric_center(self):
+    #     reward = torch.norm(self.box_pos - self.box_init_pos,dim=1)
+    #     return reward
+    # def _reward_work(self):
+    #     diff_joint_pos = self.actions - self.last_actions
+    #     # torque_transpose = torch.transpose(self.torques, 0, 1)
+    #     # this is the L1 norm
+    #     reward = torch.abs(torch.sum(torch.inner(
+    #         self.torques_forces, diff_joint_pos), dim=1))
+    #     return reward
+    def _reward_z_position(self):
+        reward = torch.abs(self.box_pos[:,2] - self.box_init_pos[:,2])
+        print('reward Z', torch.mean(reward))
         return reward
-
+    def _reward_turning_velocity(self):
+        reward = self.box_root_state[:,12]
+        print("reward Turning velocity",torch.mean(reward))
+        return reward
+    #
     # def _reward_maintain_forward(self):
     #     # Rewards forward motion at limited values (v_x)
     #     base_x_velocity = self.base_lin_vel[:, 0]
@@ -234,14 +259,7 @@ class SotoRobotTask(SotoForwardTask):
     #     reward = torch.sum(torch.square(orientation), dim=1)
     #     return reward
     #
-    # def _reward_work(self):
-    #     diff_joint_pos = self.actions - self.last_actions
-    #     # torque_transpose = torch.transpose(self.torques, 0, 1)
-    #     # this is the L1 norm
-    #     reward = torch.abs(torch.sum(torch.inner(
-    #         self.torques, diff_joint_pos), dim=1))
-    #     return reward
-    #
+
     # def _reward_ground_impact(self):
     #     reward = torch.sum(torch.square(self.contact_forces[:, self.feet_indices, 2] -
     #                                     self.last_contact_forces[:, self.feet_indices, 2]), dim=1)  # only taking into account the vertical reaction, might need to check if parallel ground reaction makes sense.
