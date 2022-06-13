@@ -478,6 +478,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
     def check_termination(self):
         """ Check if environments need to be reset. Sets up the dones for the return values of step.
         """
+        print(self.contact_forces)
         self.reset_buf = torch.any(torch.norm(self.contact_forces[:, 0, :], dim=-1) > 1.,
                                    dim=1)
 
