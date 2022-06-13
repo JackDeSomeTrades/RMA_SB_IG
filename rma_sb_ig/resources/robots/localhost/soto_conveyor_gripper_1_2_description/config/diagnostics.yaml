@@ -1,0 +1,118 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      gripper_operational:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: gripper
+        analyzers:
+          gripper_rotate:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: gripper_rotate
+            find_and_remove_prefix: 'hw_diagnostics:motor:gripper_rotate'
+          gripper_base_x:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: gripper_base_x
+            find_and_remove_prefix: 'hw_diagnostics:motor:gripper_base_x'
+          gripper_y_right:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: gripper_y_right
+            find_and_remove_prefix: 'hw_diagnostics:motor:gripper_y_right'
+          gripper_y_left:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: gripper_y_left
+            find_and_remove_prefix: 'hw_diagnostics:motor:gripper_y_left'
+          conveyor_belt_right:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: conveyor_belt_right
+            find_and_remove_prefix: 'hw_diagnostics:motor:conveyor_belt_right'
+          conveyor_belt_left:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: conveyor_belt_left
+            find_and_remove_prefix: 'hw_diagnostics:motor:conveyor_belt_left'
+      camera:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: camera
+        analyzers:
+          manipulation:
+            type: reactive_diagnostic_aggregator/AnalyzerGroup
+            path: manipulation
+            analyzers:
+              depth_gripper:
+                type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+                threshold: 1
+                path: depth_gripper  # /availability
+                find_and_remove_prefix: 'gripper_depth_camera/gripper_depth_camera_node: camera_'
+              barcode:
+                type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+                threshold: 1
+                path: barcode  # /availability
+                find_and_remove_prefix: 'gripper_barcode_camera: camera_'
+      sensor:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: sensor
+        analyzers:
+          manipulation:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: manipulation
+            find_and_remove_prefix: 'hw_diagnostics:custom_pcb:soto_conveyor_gripper_board'
+  sw_diagnostics:
+    analyzers:
+      gripper_operational:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: gripper
+        analyzers:
+          gripper_rotate:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: gripper_rotate
+            find_and_remove_prefix: 'sw_diagnostics:motor:gripper_rotate'
+          gripper_base_x:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: gripper_base_x
+            find_and_remove_prefix: 'sw_diagnostics:motor:gripper_base_x'
+          gripper_y_right:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: gripper_y_right
+            find_and_remove_prefix: 'sw_diagnostics:motor:gripper_y_right'
+          gripper_y_left:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: gripper_y_left
+            find_and_remove_prefix: 'sw_diagnostics:motor:gripper_y_left'
+          conveyor_belt_right:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: conveyor_belt_right
+            find_and_remove_prefix: 'sw_diagnostics:motor:conveyor_belt_right'
+          conveyor_belt_left:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: conveyor_belt_left
+            find_and_remove_prefix: 'sw_diagnostics:motor:conveyor_belt_left'
+      camera:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: camera
+        analyzers:
+          manipulation:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: manipulation
+            find_and_remove_prefix: 'gripper_barcode_camera: intrinsic_calibration'
+      sensor:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: sensor
+        analyzers:
+          manipulation:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: manipulation
+            find_and_remove_prefix: 'sw_diagnostics:custom_pcb:soto_conveyor_gripper_board'

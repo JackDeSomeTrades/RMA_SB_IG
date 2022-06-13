@@ -1,0 +1,239 @@
+digraph G {
+node [shape=box];
+"base_footprint" [label="base_footprint"];
+"base_link" [label="base_link"];
+"manipulator_base_link" [label="manipulator_base_link"];
+"blue_spot_front_link" [label="blue_spot_front_link"];
+"nav_depth_camera_front_link" [label="nav_depth_camera_front_link"];
+"vertical_axis_link" [label="vertical_axis_link"];
+"gripper_base_link" [label="gripper_base_link"];
+"gripper_barcode_camera" [label="gripper_barcode_camera"];
+"distance_sensor_gripper" [label="distance_sensor_gripper"];
+"reflective_sensor_gripper" [label="reflective_sensor_gripper"];
+"gripper_base_x_link" [label="gripper_base_x_link"];
+"gripper_surface_tip_link" [label="gripper_surface_tip_link"];
+"barcode_search_frame" [label="barcode_search_frame"];
+"gripper_y_left_link" [label="gripper_y_left_link"];
+"conveyor_belt_left_link" [label="conveyor_belt_left_link"];
+"conveyor_belt_left_surface_foremost_link" [label="conveyor_belt_left_surface_foremost_link"];
+"conveyor_belt_left_foremost_link" [label="conveyor_belt_left_foremost_link"];
+"cylinder_left_10" [label="cylinder_left_10"];
+"cylinder_left_11" [label="cylinder_left_11"];
+"cylinder_left_12" [label="cylinder_left_12"];
+"cylinder_left_13" [label="cylinder_left_13"];
+"cylinder_left_14" [label="cylinder_left_14"];
+"cylinder_left_15" [label="cylinder_left_15"];
+"cylinder_left_16" [label="cylinder_left_16"];
+"cylinder_left_17" [label="cylinder_left_17"];
+"cylinder_left_18" [label="cylinder_left_18"];
+"cylinder_left_19" [label="cylinder_left_19"];
+"cylinder_left_20" [label="cylinder_left_20"];
+"cylinder_left_21" [label="cylinder_left_21"];
+"cylinder_left_22" [label="cylinder_left_22"];
+"cylinder_left_23" [label="cylinder_left_23"];
+"cylinder_left_24" [label="cylinder_left_24"];
+"cylinder_left_25" [label="cylinder_left_25"];
+"cylinder_left_26" [label="cylinder_left_26"];
+"cylinder_left_27" [label="cylinder_left_27"];
+"cylinder_left_28" [label="cylinder_left_28"];
+"cylinder_left_29" [label="cylinder_left_29"];
+"cylinder_left_30" [label="cylinder_left_30"];
+"cylinder_left_31" [label="cylinder_left_31"];
+"cylinder_left_4" [label="cylinder_left_4"];
+"cylinder_left_5" [label="cylinder_left_5"];
+"cylinder_left_6" [label="cylinder_left_6"];
+"cylinder_left_7" [label="cylinder_left_7"];
+"cylinder_left_8" [label="cylinder_left_8"];
+"cylinder_left_9" [label="cylinder_left_9"];
+"distance_sensor_conveyor_left" [label="distance_sensor_conveyor_left"];
+"gripper_y_right_link" [label="gripper_y_right_link"];
+"conveyor_belt_right_link" [label="conveyor_belt_right_link"];
+"conveyor_belt_right_surface_foremost_link" [label="conveyor_belt_right_surface_foremost_link"];
+"conveyor_belt_right_foremost_link" [label="conveyor_belt_right_foremost_link"];
+"cylinder_right_10" [label="cylinder_right_10"];
+"cylinder_right_11" [label="cylinder_right_11"];
+"cylinder_right_12" [label="cylinder_right_12"];
+"cylinder_right_13" [label="cylinder_right_13"];
+"cylinder_right_14" [label="cylinder_right_14"];
+"cylinder_right_15" [label="cylinder_right_15"];
+"cylinder_right_16" [label="cylinder_right_16"];
+"cylinder_right_17" [label="cylinder_right_17"];
+"cylinder_right_18" [label="cylinder_right_18"];
+"cylinder_right_19" [label="cylinder_right_19"];
+"cylinder_right_20" [label="cylinder_right_20"];
+"cylinder_right_21" [label="cylinder_right_21"];
+"cylinder_right_22" [label="cylinder_right_22"];
+"cylinder_right_23" [label="cylinder_right_23"];
+"cylinder_right_24" [label="cylinder_right_24"];
+"cylinder_right_25" [label="cylinder_right_25"];
+"cylinder_right_26" [label="cylinder_right_26"];
+"cylinder_right_27" [label="cylinder_right_27"];
+"cylinder_right_28" [label="cylinder_right_28"];
+"cylinder_right_29" [label="cylinder_right_29"];
+"cylinder_right_30" [label="cylinder_right_30"];
+"cylinder_right_31" [label="cylinder_right_31"];
+"cylinder_right_4" [label="cylinder_right_4"];
+"cylinder_right_5" [label="cylinder_right_5"];
+"cylinder_right_6" [label="cylinder_right_6"];
+"cylinder_right_7" [label="cylinder_right_7"];
+"cylinder_right_8" [label="cylinder_right_8"];
+"cylinder_right_9" [label="cylinder_right_9"];
+"distance_sensor_conveyor_right" [label="distance_sensor_conveyor_right"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"base_footprint" -> "base_footprint_to_base" [label="xyz: 0 0 0.1665 \nrpy: 0 -0 0"]
+"base_footprint_to_base" -> "base_link"
+"base_link" -> "base_to_manipulator_base" [label="xyz: 0.33418 0 -0.02188 \nrpy: 0 -0 0"]
+"base_to_manipulator_base" -> "manipulator_base_link"
+"manipulator_base_link" -> "blue_spot_front" [label="xyz: 0.70999 0.117 1.92162 \nrpy: 3.14159 0.820293 3.14159"]
+"blue_spot_front" -> "blue_spot_front_link"
+"manipulator_base_link" -> "nav_depth_camera_front" [label="xyz: 0.70999 0.0135 1.92162 \nrpy: -2.3213 -5.55112e-17 -1.5708"]
+"nav_depth_camera_front" -> "nav_depth_camera_front_link"
+"manipulator_base_link" -> "vertical_axis" [label="xyz: 0 0 -0.47283 \nrpy: 0 -0 0"]
+"vertical_axis" -> "vertical_axis_link"
+"vertical_axis_link" -> "gripper_rotate" [label="xyz: 0 0 0.1205 \nrpy: 0 -0 -3.14159"]
+"gripper_rotate" -> "gripper_base_link"
+"gripper_base_link" -> "gripper_barcode_camera" [label="xyz: -0.4078 0 0.16419 \nrpy: -1.309 -5.55112e-17 -1.5708"]
+"gripper_barcode_camera" -> "gripper_barcode_camera"
+"gripper_base_link" -> "gripper_base_to_distance_sensor" [label="xyz: -0.42364 0.093946 0.1908 \nrpy: 1.5708 -0 -0.058124"]
+"gripper_base_to_distance_sensor" -> "distance_sensor_gripper"
+"gripper_base_link" -> "gripper_base_to_reflective_sensor" [label="xyz: -0.44819 0.096981 0.16975 \nrpy: 1.5708 -0 -0.058124"]
+"gripper_base_to_reflective_sensor" -> "reflective_sensor_gripper"
+"gripper_base_link" -> "gripper_base_x" [label="xyz: 0 0 0.08655 \nrpy: 0 -0 0"]
+"gripper_base_x" -> "gripper_base_x_link"
+"gripper_base_x_link" -> "gripper_base_x_to_surface_tip" [label="xyz: 0.386211 0 0.12155 \nrpy: 0 -0 0"]
+"gripper_base_x_to_surface_tip" -> "gripper_surface_tip_link"
+"gripper_surface_tip_link" -> "barcode_search_joint" [label="xyz: 0.1 0 0.1 \nrpy: 0 -0 0"]
+"barcode_search_joint" -> "barcode_search_frame"
+"gripper_base_x_link" -> "gripper_y_left" [label="xyz: -0.337 0.325 0.12155 \nrpy: 0 -0 0"]
+"gripper_y_left" -> "gripper_y_left_link"
+"gripper_y_left_link" -> "conveyor_belt_left" [label="xyz: 0.68001 0 -0.0182 \nrpy: 0 -0 0"]
+"conveyor_belt_left" -> "conveyor_belt_left_link"
+"gripper_y_left_link" -> "conveyor_belt_left_to_surface_foremost" [label="xyz: 0.705012 0 0 \nrpy: 0 -0 0"]
+"conveyor_belt_left_to_surface_foremost" -> "conveyor_belt_left_surface_foremost_link"
+"conveyor_belt_left_surface_foremost_link" -> "conveyor_belt_left_surface_to_foremost" [label="xyz: 0.0182 0 0 \nrpy: 0 -0 0"]
+"conveyor_belt_left_surface_to_foremost" -> "conveyor_belt_left_foremost_link"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_10_to_belt" [label="xyz: -0.53 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_10_to_belt" -> "cylinder_left_10"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_11_to_belt" [label="xyz: -0.505 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_11_to_belt" -> "cylinder_left_11"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_12_to_belt" [label="xyz: -0.48 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_12_to_belt" -> "cylinder_left_12"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_13_to_belt" [label="xyz: -0.455 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_13_to_belt" -> "cylinder_left_13"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_14_to_belt" [label="xyz: -0.43 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_14_to_belt" -> "cylinder_left_14"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_15_to_belt" [label="xyz: -0.405 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_15_to_belt" -> "cylinder_left_15"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_16_to_belt" [label="xyz: -0.38 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_16_to_belt" -> "cylinder_left_16"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_17_to_belt" [label="xyz: -0.355 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_17_to_belt" -> "cylinder_left_17"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_18_to_belt" [label="xyz: -0.33 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_18_to_belt" -> "cylinder_left_18"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_19_to_belt" [label="xyz: -0.305 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_19_to_belt" -> "cylinder_left_19"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_20_to_belt" [label="xyz: -0.28 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_20_to_belt" -> "cylinder_left_20"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_21_to_belt" [label="xyz: -0.255 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_21_to_belt" -> "cylinder_left_21"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_22_to_belt" [label="xyz: -0.23 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_22_to_belt" -> "cylinder_left_22"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_23_to_belt" [label="xyz: -0.205 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_23_to_belt" -> "cylinder_left_23"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_24_to_belt" [label="xyz: -0.18 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_24_to_belt" -> "cylinder_left_24"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_25_to_belt" [label="xyz: -0.155 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_25_to_belt" -> "cylinder_left_25"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_26_to_belt" [label="xyz: -0.13 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_26_to_belt" -> "cylinder_left_26"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_27_to_belt" [label="xyz: -0.105 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_27_to_belt" -> "cylinder_left_27"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_28_to_belt" [label="xyz: -0.08 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_28_to_belt" -> "cylinder_left_28"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_29_to_belt" [label="xyz: -0.055 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_29_to_belt" -> "cylinder_left_29"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_30_to_belt" [label="xyz: -0.03 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_30_to_belt" -> "cylinder_left_30"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_31_to_belt" [label="xyz: -0.0043 0 -0 \nrpy: 0 -0 0"]
+"cylinder_left_31_to_belt" -> "cylinder_left_31"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_4_to_belt" [label="xyz: -0.68 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_4_to_belt" -> "cylinder_left_4"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_5_to_belt" [label="xyz: -0.655 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_5_to_belt" -> "cylinder_left_5"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_6_to_belt" [label="xyz: -0.63 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_6_to_belt" -> "cylinder_left_6"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_7_to_belt" [label="xyz: -0.605 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_7_to_belt" -> "cylinder_left_7"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_8_to_belt" [label="xyz: -0.58 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_8_to_belt" -> "cylinder_left_8"
+"conveyor_belt_left_foremost_link" -> "cylinder_left_9_to_belt" [label="xyz: -0.555 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_left_9_to_belt" -> "cylinder_left_9"
+"gripper_y_left_link" -> "gripper_y_left_to_distance_sensor" [label="xyz: 0.00723 0 0.0425 \nrpy: -1.5708 0 0"]
+"gripper_y_left_to_distance_sensor" -> "distance_sensor_conveyor_left"
+"gripper_base_x_link" -> "gripper_y_right" [label="xyz: -0.337 -0.325 0.12155 \nrpy: 0 -0 0"]
+"gripper_y_right" -> "gripper_y_right_link"
+"gripper_y_right_link" -> "conveyor_belt_right" [label="xyz: 0.68001 0 -0.0182 \nrpy: 0 -0 0"]
+"conveyor_belt_right" -> "conveyor_belt_right_link"
+"gripper_y_right_link" -> "conveyor_belt_right_to_surface_foremost" [label="xyz: 0.705012 0 0 \nrpy: 0 -0 0"]
+"conveyor_belt_right_to_surface_foremost" -> "conveyor_belt_right_surface_foremost_link"
+"conveyor_belt_right_surface_foremost_link" -> "conveyor_belt_right_surface_to_foremost" [label="xyz: 0.0182 0 0 \nrpy: 0 -0 0"]
+"conveyor_belt_right_surface_to_foremost" -> "conveyor_belt_right_foremost_link"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_10_to_belt" [label="xyz: -0.53 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_10_to_belt" -> "cylinder_right_10"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_11_to_belt" [label="xyz: -0.505 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_11_to_belt" -> "cylinder_right_11"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_12_to_belt" [label="xyz: -0.48 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_12_to_belt" -> "cylinder_right_12"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_13_to_belt" [label="xyz: -0.455 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_13_to_belt" -> "cylinder_right_13"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_14_to_belt" [label="xyz: -0.43 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_14_to_belt" -> "cylinder_right_14"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_15_to_belt" [label="xyz: -0.405 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_15_to_belt" -> "cylinder_right_15"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_16_to_belt" [label="xyz: -0.38 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_16_to_belt" -> "cylinder_right_16"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_17_to_belt" [label="xyz: -0.355 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_17_to_belt" -> "cylinder_right_17"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_18_to_belt" [label="xyz: -0.33 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_18_to_belt" -> "cylinder_right_18"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_19_to_belt" [label="xyz: -0.305 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_19_to_belt" -> "cylinder_right_19"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_20_to_belt" [label="xyz: -0.28 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_20_to_belt" -> "cylinder_right_20"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_21_to_belt" [label="xyz: -0.255 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_21_to_belt" -> "cylinder_right_21"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_22_to_belt" [label="xyz: -0.23 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_22_to_belt" -> "cylinder_right_22"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_23_to_belt" [label="xyz: -0.205 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_23_to_belt" -> "cylinder_right_23"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_24_to_belt" [label="xyz: -0.18 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_24_to_belt" -> "cylinder_right_24"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_25_to_belt" [label="xyz: -0.155 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_25_to_belt" -> "cylinder_right_25"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_26_to_belt" [label="xyz: -0.13 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_26_to_belt" -> "cylinder_right_26"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_27_to_belt" [label="xyz: -0.105 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_27_to_belt" -> "cylinder_right_27"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_28_to_belt" [label="xyz: -0.08 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_28_to_belt" -> "cylinder_right_28"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_29_to_belt" [label="xyz: -0.055 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_29_to_belt" -> "cylinder_right_29"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_30_to_belt" [label="xyz: -0.03 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_30_to_belt" -> "cylinder_right_30"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_31_to_belt" [label="xyz: -0.0043 0 -0 \nrpy: 0 -0 0"]
+"cylinder_right_31_to_belt" -> "cylinder_right_31"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_4_to_belt" [label="xyz: -0.68 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_4_to_belt" -> "cylinder_right_4"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_5_to_belt" [label="xyz: -0.655 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_5_to_belt" -> "cylinder_right_5"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_6_to_belt" [label="xyz: -0.63 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_6_to_belt" -> "cylinder_right_6"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_7_to_belt" [label="xyz: -0.605 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_7_to_belt" -> "cylinder_right_7"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_8_to_belt" [label="xyz: -0.58 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_8_to_belt" -> "cylinder_right_8"
+"conveyor_belt_right_foremost_link" -> "cylinder_right_9_to_belt" [label="xyz: -0.555 0 0.005 \nrpy: 0 -0 0"]
+"cylinder_right_9_to_belt" -> "cylinder_right_9"
+"gripper_y_right_link" -> "gripper_y_right_to_distance_sensor" [label="xyz: 0.00723 0 0.0425 \nrpy: 1.5708 -0 0"]
+"gripper_y_right_to_distance_sensor" -> "distance_sensor_conveyor_right"
+}

@@ -1,0 +1,23 @@
+<package format="2">
+  <name>soto_2_1_description</name>
+  <version>0.9.2</version>
+  <description>
+    <p>URDF description package for Soto 2.1</p>
+    <p>This package contains the top level xacro file and launch files</p>
+  </description>
+
+  <author email="schimke@magazino.eu">Benjamin Schimke</author>
+  <maintainer email="lamprianidis@magazino.eu">Nick Lamprianidis</maintainer>
+
+  <license>Magazino</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>cman</exec_depend>
+  <exec_depend>urdf_utils</exec_depend>
+
+  <exec_depend>soto_backpack_5_1_description</exec_depend>
+  <exec_depend>soto_conveyor_gripper_1_2_description</exec_depend>
+  <exec_depend>soto_drive_base_2_1_description</exec_depend>
+  <exec_depend>soto_klt_press_1_1_description</exec_depend>
+  <exec_depend>soto_vertical_axis_2_1_description</exec_depend>
+</package>

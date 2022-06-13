@@ -1,0 +1,1154 @@
+supervised_x_motors: [gripper_base_x]
+homing_requirement_blacklist:
+    "gripper_rotate, gripper_y_left, gripper_y_right, press_jaw, backpack_tilt, gripper_base_x, "
+
+inf_max: &inf_max 999999
+inf_min: &inf_min -999999
+
+
+# ############################################
+# GRIPPER_ROTATE POSITION CONSTANTS
+# ############################################
+
+# Gripper_rotate right, centered, left and front tolerances
+
+# 1.57 +/- 0.087 (5 deg) or +/- 0.044 (2.5 deg).
+# We want more tolerance on the sides than on the center, so that we
+# can pick when the drive base is not completely parallel to the shelf
+# (SW-45935)
+gripper_rotate_right_max_5_0: &gripper_rotate_right_max_5_0 1.658  # 95 deg
+gripper_rotate_right_max_2_5: &gripper_rotate_right_max_2_5 1.614  # 92.5 deg
+gripper_rotate_right_min_2_5: &gripper_rotate_right_min_2_5 1.527  # 87.5 deg
+gripper_rotate_right_min_5_0: &gripper_rotate_right_min_5_0 1.483  # 85 deg
+
+# 0 +/- 0.05
+gripper_rotate_cent_max: &gripper_rotate_cent_max 0.05
+gripper_rotate_cent_min: &gripper_rotate_cent_min -0.05
+
+# -1.57 +/- 0.087 (5 deg) or +/- 0.044 (2.5 deg).
+# We want more tolerance on the sides than on the center, so that we
+# can pick when the drive base is not completely parallel to the shelf
+# (SW-45935)
+gripper_rotate_left_max_5_0: &gripper_rotate_left_max_5_0 -1.483  # -85 deg
+gripper_rotate_left_max_2_5: &gripper_rotate_left_max_2_5 -1.527  # -87.5 deg
+gripper_rotate_left_min_2_5: &gripper_rotate_left_min_2_5 -1.614  # -92.5 deg
+gripper_rotate_left_min_5_0: &gripper_rotate_left_min_5_0 -1.658  # -95 deg
+
+# 3.14 +/- 0.087 (5 deg) or +/- 0.044 (2.5 deg):
+gripper_rotate_front_max_5_0: &gripper_rotate_front_max_5_0 -3.054  # -175 deg
+gripper_rotate_front_max_2_5: &gripper_rotate_front_max_2_5 -3.098  # -177.5 deg
+gripper_rotate_front_max_1_0: &gripper_rotate_front_max_1_0 -3.124  # -179 deg
+gripper_rotate_front_min_1_0: &gripper_rotate_front_min_1_0 -3.159  # -181 deg
+gripper_rotate_front_min_2_5: &gripper_rotate_front_min_2_5 -3.185  # -182.5 deg
+gripper_rotate_front_min_5_0: &gripper_rotate_front_min_5_0 -3.229  # -185 deg
+
+
+# ############################################
+# GRIPPER_BASE_X POSITION CONSTANTS
+# ############################################
+
+# Maximum gripper_base_x position that allows rotation
+gripper_base_semi_retracted: &gripper_base_semi_retracted 0.05
+
+gripper_base_retracted: &gripper_base_retracted 0.01
+
+# Gripper_base position so that conveyor belt tips are
+# almost touching the backpack lowest beam
+gripper_base_with_bpk_lowest_beam: &gripper_base_with_bpk_lowest_beam 0.219
+
+# Gripper_base almost touching vertical pillars when extending towards shelf.
+# Case when gripper rotate is at[-180, -90, 90] +/- 5 deg ==
+# [-3.229, -3.054, -1.658, -1.483, 1.483, 1.658] rad
+# Corresponding measured gripper_base_x maximums (Soto 9):
+# [ 0.329,  0.328,  0.333,  0.329, 0.328, 0.327] m
+# We take the minimum and apply a safety margin
+# min() - 0.005 = 0.327 - 0.005 = 0.322 m
+gripper_base_with_pillars_5_0: &gripper_base_with_pillars_5_0 0.322
+# Case when gripper rotate is at [-180, -90, 90] +/- 2.5 deg ==
+# [-3.185, -3.098, -1.614, -1.527, 1.527, 1.614] rad
+# Corresponding measured gripper_base_x maximums (Soto 9):
+# [ 0.334,  0.334,  0.333,  0.333, 0.333, 0.333] m
+# We take the minimum and apply a safety margin
+# min() - 0.005 = 0.333 - 0.005 = 0.328 m
+gripper_base_with_pillars_2_5: &gripper_base_with_pillars_2_5 0.328
+
+# Special case for frontal grasping:
+# Case when gripper rotate is at [-180] +/- 1 deg ==
+# [-3.159, -3.124] rad
+# Corresponding measured gripper_base_x maximums (Soto 9):
+# [ 0.344,  0.344 ] m
+# We take the minimum and apply a safety margin
+# min() - 0.005 = 0.344 - 0.005 = 0.339 m
+gripper_base_with_pillars_1_0: &gripper_base_with_pillars_1_0 0.344
+
+# ############################################
+# GRIPPER_Y POSITION CONSTANTS
+# ############################################
+
+# When the gripper_base_x is extended towards the shelf,
+# the gripper_ys can't go lower than this minimum.
+# Otherwise they will crash with the side vertical axis pillars.
+# Case when gripper_rotate is at [-180, -90, 90] +/- 5 deg ==
+# [-3.229, -3.054, -1.658, -1.483, 1.483, 1.658] rad
+# Corresponding measured gripper_y minimums (Soto 9):
+# [ 0.040,  0.038,  0.021,  0.017, 0.020, 0.018] m
+# We take the maximum and apply a safety margin
+# max() + 0.005 = 0.040 + 0.005 = 0.045 m
+gripper_y_with_pillar_5_0: &gripper_y_with_pillar_5_0 0.045
+
+# Case when gripper rotate is at [-180, -90, 90] +/- 2.5 deg ==
+# [-3.185, -3.098, -1.614, -1.527, 1.527, 1.614]
+# Corresponding measured gripper_y minimums (Soto 9):
+# [ 0.012,  0.010,  0.000,  0.000, 0.000, 0.000] m
+# We take the maximum and apply a safety margin
+# max() + 0.005 = 0.012 + 0.005 = 0.017 m
+gripper_y_with_pillar_2_5: &gripper_y_with_pillar_2_5 0.017
+
+# Case when gripper_rotate is centered, at [-0.05, 0.05],
+# and the gripper_base_x is extended:
+# Corresponding measured gripper_y minimums (Soto 9):
+# [-0.05 left, -0.05 right, 0.05 left, 0.05 right]:
+# [0.0157,       0.012,      0.082,     0.000]
+# The gripper_y_left can retract less than the right one because of
+# the vertical axis energy chain.
+# gripper_y_left minimum = max(0.0157, 0.082) + 0.005 = 0.087
+gripper_y_left_with_backpack_pillar: &gripper_y_left_with_backpack_pillar 0.087
+# gripper_y_right minimum = max(0.012, 0.000) + 0.005 = 0.017
+gripper_y_right_with_backpack_pillar: &gripper_y_right_with_backpack_pillar 0.017
+
+# Minimum gripper_y position so that the gripper can rotate when
+# gripper_base_retracted <= gripper_base_x position <= gripper_base_semi_retracted,
+# so that the gripper_ys don't crash with the pillars or light curtains.
+# The worst case are the side light curtains and second worse is
+# the rear left pillar with the cables.
+# With gripper_base_x in 0.05 (semi_retracted),
+# the minimum gripper_y_left position allowed to rotate
+# so that the left conveyor doesn't crash with the vertical axis energy chain is 0.076
+# (measured in Soto 9, long conveyors). Plus 0.005 m tolerance: 0.081
+gripper_y_with_pillars_base_semi_retracted: &gripper_y_with_pillars_base_semi_retracted 0.081
+
+# If the gripper_base_x is more retracted, we can open the gripper_ys more:
+# Minimum gripper_y position so that the gripper can rotate when the
+# gripper_base_x position is <= gripper_base_retracted,
+# so that the gripper_ys don't crash with the pillars.
+# Deactivated until conveyors get longer, no collision as of 2021.10.27
+gripper_y_with_pillars_base_retracted: &gripper_y_with_pillars_base_retracted 0.0
+
+# ############################################
+# VERTICAL AXIS POSITION CONSTANTS
+# ############################################
+
+# Maximum vertical axis position so that the gripper depth camera
+# won't touch the KLT press jaws for any gripper_rotate or press_jaw position
+vert_axis_cam_press: &vert_axis_cam_press 1.88
+
+# Vertical axis position when conveyor belt bottom is almost
+# touching top of backpack lowest beam
+vert_axis_with_bpk_lowest_beam: &vert_axis_with_bpk_lowest_beam 0.42
+
+# Vertical axis position when gripper rear cover is almost
+# touching top of backpack lower cover
+vert_axis_with_bpk_lower_cover: &vert_axis_with_bpk_lower_cover 0.42
+
+# Vertical axis position when conveyor belt bottom is almost
+# touching top of drive base front wheels cover
+vert_axis_with_front_party_top: &vert_axis_with_front_party_top 0.46
+
+# Minimum height to be able to rotate retracted gripper
+# The limit is the gripper rear cover with the front party cover
+vert_axis_to_rotate_gripper: &vert_axis_to_rotate_gripper 0.52
+
+
+depending_joint_limits:
+    # ############################################
+    # Rules that block gripper_rotate movements
+    # ############################################
+    gripper_rotate_cam_with_paddles:
+        # Prevent the gripper depth camera from crashing with KLT press
+        # paddles if the vertical axis is high enough
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *vert_axis_cam_press
+                max: *inf_max
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *inf_max
+
+    # Depending on the gripper_base_x and gripper_ys position,
+    # we may or may not be able to rotate.
+    # For gripper_base_x positions higher than gripper_base_semi_retracted,
+    # no rotation is allowed:
+    rotation_with_extended_gripper_base:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *inf_max
+
+    # For gripper_base_x position smaller than gripper_base_semi_retracted,
+    # we only allow to rotate if the gripper_ys are retracted.
+    # For gripper_base_x between gripper_base_retracted and gripper_base_semi_retracted:
+    rotation_with_base_semi_retracted_without_retracting_gripper_y_left:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_base_x:
+                min: *gripper_base_retracted
+                max: *gripper_base_semi_retracted
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillars_base_semi_retracted
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *inf_max
+
+    rotation_with_base_semi_retracted_without_retracting_gripper_y_right:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_base_x:
+                min: *gripper_base_retracted
+                max: *gripper_base_semi_retracted
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillars_base_semi_retracted
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *inf_max
+
+    # For gripper_base_x retracted, the gripper_ys can be a bit lower:
+    rotation_with_base_retracted_without_retracting_gripper_y_left:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_base_x:
+                min: *inf_min
+                max: *gripper_base_retracted
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillars_base_retracted
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *inf_max
+
+    rotation_with_base_retracted_without_retracting_gripper_y_right:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_base_x:
+                min: *inf_min
+                max: *gripper_base_retracted
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillars_base_retracted
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *inf_max
+
+    # Rules preventing gripper rotation when vertical_axis is too low.
+    # Requirements:
+    # 1. Gripper can rotate slightly when front, left or right to
+    #    compensate drive base docking angular error (SW-45935)
+    # 2. toru_tower_control can drive gripper_rotate from approx. 0 to 0.0
+    #    during call_homing after homing gripper_rotate if the initial
+    #    vertical axis position is lower than vert_axis_to_rotate_gripper
+    # 3. gripper_rotate can't rotate from one sector
+    #    (front, left, center or right) to another
+    rotation_in_vert_min_front_sector_pos:
+        # Don't allow rotating from outside the sector into the sector,
+        # positive driving direction
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_front_min_5_0
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_min_5_0
+                max: *gripper_rotate_front_max_5_0
+
+    rotation_in_vert_min_front_sector_neg:
+        # Don't allow rotating from outside the sector into the sector,
+        # negative driving direction
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+            gripper_rotate:
+                min: *gripper_rotate_front_max_5_0
+                max: *inf_max
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_min_5_0
+                max: *gripper_rotate_front_max_5_0
+
+    rotation_in_vert_min_left_sector_pos:
+        # Don't allow rotating from outside the sector into the sector,
+        # positive driving direction
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_left_min_5_0
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_min_5_0
+                max: *gripper_rotate_left_max_5_0
+
+    rotation_in_vert_min_left_sector_neg:
+        # Don't allow rotating from outside the sector into the sector,
+        # negative driving direction
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+            gripper_rotate:
+                min: *gripper_rotate_left_max_5_0
+                max: *inf_max
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_min_5_0
+                max: *gripper_rotate_left_max_5_0
+
+    rotation_in_vert_min_center_sector_pos:
+        # Don't allow rotating from outside the sector into the sector,
+        # positive driving direction
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_cent_min
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_min
+                max: *gripper_rotate_cent_max
+
+    rotation_in_vert_min_center_sector_neg:
+        # Don't allow rotating from outside the sector into the sector,
+        # negative driving direction
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+            gripper_rotate:
+                min: *gripper_rotate_cent_max
+                max: *inf_max
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_min
+                max: *gripper_rotate_cent_max
+
+    rotation_in_vert_min_right_sector_pos:
+        # Don't allow rotating from outside the sector into the sector,
+        # positive driving direction
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_right_min_5_0
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_min_5_0
+                max: *gripper_rotate_right_max_5_0
+
+    rotation_in_vert_min_right_sector_neg:
+        # Don't allow rotating from outside the sector into the sector,
+        # negative driving direction
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+            gripper_rotate:
+                min: *gripper_rotate_right_max_5_0
+                max: *inf_max
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_min_5_0
+                max: *gripper_rotate_right_max_5_0
+
+    # Don't allow driving into the space between sectors
+    rotation_in_vert_min_pos_front_right:
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+        blocked_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_front_min_5_0
+
+    rotation_in_vert_min_pos_front_left:
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_max_5_0
+                max: *gripper_rotate_left_min_5_0
+
+    rotation_in_vert_min_pos_rear_left:
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_max_5_0
+                max: *gripper_rotate_cent_min
+
+    rotation_in_vert_min_pos_rear_right:
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_max
+                max: *gripper_rotate_right_min_5_0
+
+    rotation_in_vert_min_pos_front_right_2:
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+        blocked_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_max_5_0
+                max: *inf_max
+
+    # ############################################
+    # Rules that block gripper_base_x movements
+    # ############################################
+    gripper_base_extension_with_incomplete_rotation_front_right:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_front_min_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+
+    gripper_base_extension_with_incomplete_rotation_front_left:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_max_5_0
+                max: *gripper_rotate_left_min_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+
+    gripper_base_extension_with_incomplete_rotation_rear_left:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_max_5_0
+                max: *gripper_rotate_cent_min
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+
+    gripper_base_extension_with_incomplete_rotation_rear_right:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_max
+                max: *gripper_rotate_right_min_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+
+    gripper_base_extension_with_incomplete_rotation_front_right_2:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_max_5_0
+                max: *inf_max
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_to_rotate_gripper
+
+    # gripper_base_extension_into_backpack: not limited
+
+    gripper_base_extension_under_backpack:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_min
+                max: *gripper_rotate_cent_max
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_with_bpk_lowest_beam
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_bpk_lowest_beam
+                max: *inf_max
+
+    gripper_base_extension_into_front_party:
+        ignore_at_homing: True
+        trigger_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_with_front_party_top
+            gripper_rotate:
+                min: *gripper_rotate_front_min_5_0
+                max: *gripper_rotate_front_max_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_into_front_window_left_pillar_5_0:
+        # Although the gripper base crashes with the left pillar,
+        # the gripper is pointing to the right one
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_min_5_0
+                max: *gripper_rotate_front_min_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_5_0
+                max: *inf_max
+
+    gripper_base_extension_into_front_window_left_pillar_2_5:
+        # Although the gripper base crashes with the left pillar,
+        # the gripper is pointing to the right one
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_min_2_5
+                max: *gripper_rotate_front_min_1_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_2_5
+                max: *inf_max
+
+    gripper_base_extension_into_front_window_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_min_1_0
+                max: *gripper_rotate_front_max_1_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_1_0
+                max: *inf_max
+
+    gripper_base_extension_into_front_window_right_pillar_2_5:
+        # Although the gripper base crashes with the right pillar,
+        # the gripper is pointing to the left one
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_max_1_0
+                max: *gripper_rotate_front_max_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_2_5
+                max: *inf_max
+
+    gripper_base_extension_into_front_window_right_pillar_5_0:
+        # Although the gripper base crashes with the right pillar,
+        # the gripper is pointing to the left one
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_max_2_5
+                max: *gripper_rotate_front_max_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_5_0
+                max: *inf_max
+
+    gripper_base_extension_into_left_window_left_pillar:
+        # It's the left pillar that crashes with the gripper base,
+        # but the gripper is pointing to the right one
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_min_5_0
+                max: *gripper_rotate_left_min_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_5_0
+                max: *inf_max
+
+    gripper_base_extension_into_left_window_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_min_2_5
+                max: *gripper_rotate_left_max_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_2_5
+                max: *inf_max
+
+    gripper_base_extension_into_left_window_right_pillar:
+        # It's the right pillar that crashes with the gripper base,
+        # but the gripper is pointing to the left one
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_max_2_5
+                max: *gripper_rotate_left_max_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_5_0
+                max: *inf_max
+
+    gripper_base_extension_into_right_window_left_pillar:
+        # It's the left pillar that crashes with the gripper base,
+        # but the gripper is pointing to the right one
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_min_5_0
+                max: *gripper_rotate_right_min_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_5_0
+                max: *inf_max
+
+    gripper_base_extension_into_right_window_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_min_2_5
+                max: *gripper_rotate_right_max_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_2_5
+                max: *inf_max
+
+    gripper_base_extension_into_right_window_right_pillar:
+        # It's the left pillar that crashes with the gripper base,
+        # but the gripper is pointing to the right one
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_max_2_5
+                max: *gripper_rotate_right_max_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_with_pillars_5_0
+                max: *inf_max
+
+    # Rules preventing gripper_ys crashing with the pillars
+    # when extending gripper_base_x,
+    # ordered from min to max gripper rotation angle.
+    # Front window:
+    gripper_base_extension_gripper_y_right_with_front_window_right_pillar_5_0:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+            gripper_rotate:
+                min: *gripper_rotate_front_min_5_0  #TODO test also these rules
+                max: *gripper_rotate_front_min_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_right_with_front_window_right_pillar_2_5:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_2_5
+            gripper_rotate:
+                min: *gripper_rotate_front_min_2_5
+                max: *gripper_rotate_front_max_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_left_with_front_window_left_pillar_2_5:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_2_5
+            gripper_rotate:
+                min: *gripper_rotate_front_min_2_5
+                max: *gripper_rotate_front_max_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_left_with_front_window_left_pillar_5_0:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+            gripper_rotate:
+                min: *gripper_rotate_front_max_2_5
+                max: *gripper_rotate_front_max_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    # Left window:
+    gripper_base_extension_gripper_y_right_with_left_window_right_pillar_5_0:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+            gripper_rotate:
+                min: *gripper_rotate_left_min_5_0
+                max: *gripper_rotate_left_min_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_right_with_left_window_right_pillar_2_5:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_2_5
+            gripper_rotate:
+                min: *gripper_rotate_left_min_2_5
+                max: *gripper_rotate_left_max_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_left_with_left_window_left_pillar_2_5:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_2_5
+            gripper_rotate:
+                min: *gripper_rotate_left_min_2_5
+                max: *gripper_rotate_left_max_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_left_with_left_window_left_pillar_5_0:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+            gripper_rotate:
+                min: *gripper_rotate_left_max_2_5
+                max: *gripper_rotate_left_max_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    # Rear window (backpack):
+    gripper_base_extension_gripper_y_right_with_rear_window_right_pillar:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_right_with_backpack_pillar
+            gripper_rotate:
+                # We want the rule to trigger also in the limits of
+                # the central window, so we increase the range:
+                min: *gripper_rotate_left_max_5_0
+                max: *gripper_rotate_right_min_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_left_with_rear_window_left_pillar:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_left_with_backpack_pillar
+            gripper_rotate:
+                # We want the rule to trigger also in the limits of
+                # the central window, so we increase the range:
+                min: *gripper_rotate_left_max_5_0
+                max: *gripper_rotate_right_min_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    # Right window:
+    gripper_base_extension_gripper_y_right_with_right_window_right_pillar_5_0:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+            gripper_rotate:
+                min: *gripper_rotate_right_min_5_0
+                max: *gripper_rotate_right_min_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_right_with_right_window_right_pillar_2_5:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_2_5
+            gripper_rotate:
+                min: *gripper_rotate_right_min_2_5
+                max: *gripper_rotate_right_max_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_left_with_right_window_left_pillar_2_5:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_2_5
+            gripper_rotate:
+                min: *gripper_rotate_right_min_2_5
+                max: *gripper_rotate_right_max_2_5
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+    gripper_base_extension_gripper_y_left_with_right_window_left_pillar_5_0:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+            gripper_rotate:
+                min: *gripper_rotate_right_max_2_5
+                max: *gripper_rotate_right_max_5_0
+        blocked_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+
+
+    # ############################################
+    # Rules that block gripper_y movements
+    # ############################################
+
+    # Collision with pillars when extended through windows,
+    # in increasing gripper_rotate order:
+
+    gripper_ys_with_front_window_right_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_min_5_0
+                max: *gripper_rotate_front_min_2_5
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+        blocked_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+
+    gripper_ys_with_front_window_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_min_2_5
+                max: *gripper_rotate_front_max_2_5
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+        blocked_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_2_5
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_2_5
+
+    gripper_ys_with_front_window_left_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_max_2_5
+                max: *gripper_rotate_front_max_5_0
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+        blocked_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+
+    gripper_ys_with_left_window_right_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_min_5_0
+                max: *gripper_rotate_left_min_2_5
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+        blocked_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+
+    # gripper_ys_with_left_window_pillars:
+    # When gripper_rotate is between *gripper_rotate_left_min_2_5
+    # and *gripper_rotate_left_max_2_5, gripper_ys can move to 0
+    # without crashing. This is only valid for the left and right windows,
+    # not for the front or rear ones.
+
+    gripper_ys_with_left_window_left_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_max_2_5
+                max: *gripper_rotate_left_max_5_0
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+        blocked_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+
+    gripper_ys_with_rear_window_pillars:  # aka backpack
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                # We want the rule to trigger also in the limits of
+                # the central window, so we increase the range:
+                min: *gripper_rotate_left_max_5_0
+                max: *gripper_rotate_right_min_5_0
+        blocked_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_left_with_backpack_pillar
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_right_with_backpack_pillar
+
+    gripper_ys_with_right_window_right_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_min_5_0
+                max: *gripper_rotate_right_min_2_5
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+        blocked_joints:
+            gripper_y_right:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+
+    # gripper_ys_with_right_window_pillars:
+    # When gripper_rotate is between *gripper_rotate_right_min_2_5
+    # and *gripper_rotate_right_max_2_5, gripper_ys can move to 0
+    # without crashing. This is only valid for the left and right windows,
+    # not for the front or rear ones.
+
+    gripper_ys_with_right_window_left_pillars:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_max_2_5
+                max: *gripper_rotate_right_max_5_0
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+        blocked_joints:
+            gripper_y_left:
+                min: *inf_min
+                max: *gripper_y_with_pillar_5_0
+
+
+    # ############################################
+    # Rules that block vertical axis movements
+    # ############################################
+    # Note: not all are here, some are shared with other joints,
+    # for example gripper_base_extension_with_incomplete_rotation_front_right
+    extended_gripper_base_collision_with_front_party_vertical:
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_base_x:
+                min: *gripper_base_semi_retracted
+                max: *inf_max
+            gripper_rotate:
+                # This could be
+                # from min: gripper_rotate_front_min_5_0
+                # to max: gripper_rotate_front_max_5_0,
+                # but then the rule won't be activated if gripper_rotate
+                # position is = (gripper_rotate_front_min_5_0 or
+                # gripper_rotate_front_max_5_0) +/- 5e-4.
+                # This tolerance limit is set by the s_epsilon_trigger constant
+                # in book_gripper_safety_filter/src/canopen_com.cpp
+                min: *inf_min
+                max: *gripper_rotate_left_min_5_0
+        blocked_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_with_front_party_top
+
+    extended_gripper_base_collision_with_backpack_drive_vertical:
+        # Prevent collision with backpack lowest beam
+        # when the gripper is extended into the backpack and
+        # vertical axis is driving downwards
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_max_5_0
+                max: *gripper_rotate_right_min_5_0
+            gripper_base_x:
+                min: *gripper_base_with_bpk_lowest_beam
+                max: *inf_max
+        blocked_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_with_bpk_lowest_beam
+
+    gripper_rear_cover_with_backpack_lower_cover_vertical:
+        # Prevent collision between gripper rear cover and
+        # backpack lower cover when the gripper is facing front
+        # and vertical axis drives downwards
+        # See SW-53764
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_left_min_5_0
+        blocked_joints:
+            vertical_axis:
+                min: *inf_min
+                max: *vert_axis_with_bpk_lower_cover
+
+    vert_axis_paddle_with_cam_on_front_right_rotation:
+        # Prevent the KLT press paddles from hitting the
+        # gripper_depth camera when driving upwards
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *inf_min
+                max: *gripper_rotate_front_min_5_0
+        blocked_joints:
+            vertical_axis:
+                min: *vert_axis_cam_press
+                max: *inf_max
+
+    vert_axis_paddle_with_cam_on_front_left_rotation:
+        # Prevent the KLT press paddles from hitting the
+        # gripper_depth camera when driving upwards
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_front_max_5_0
+                max: *gripper_rotate_left_min_5_0
+        blocked_joints:
+            vertical_axis:
+                min: *vert_axis_cam_press
+                max: *inf_max
+
+    vert_axis_paddle_with_cam_on_rear_left_rotation:
+        # Prevent the KLT press paddles from hitting the
+        # gripper_depth camera when driving upwards
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_left_max_5_0
+                max: *gripper_rotate_cent_min
+        blocked_joints:
+            vertical_axis:
+                min: *vert_axis_cam_press
+                max: *inf_max
+
+    vert_axis_paddle_with_cam_on_rear_right_rotation:
+        # Prevent the KLT press paddles from hitting the
+        # gripper_depth camera when driving upwards
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_cent_max
+                max: *gripper_rotate_right_min_5_0
+        blocked_joints:
+            vertical_axis:
+                min: *vert_axis_cam_press
+                max: *inf_max
+
+    vert_axis_paddle_with_cam_on_front_right_positive_rotation:
+        # Prevent the KLT press paddles from hitting the
+        # gripper_depth camera when driving upwards
+        ignore_at_homing: True
+        trigger_joints:
+            gripper_rotate:
+                min: *gripper_rotate_right_max_5_0
+                max: *inf_max
+        blocked_joints:
+            vertical_axis:
+                min: *vert_axis_cam_press
+                max: *inf_max

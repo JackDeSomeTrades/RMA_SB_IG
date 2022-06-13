@@ -1,0 +1,6 @@
+---
+drive_base: soto_drive_base_2_1_description
+vertical_axis: soto_vertical_axis_2_1_description
+gripper: soto_conveyor_gripper_1_2_description
+klt_press: soto_klt_press_1_1_description
+backpack: soto_backpack_5_1_description

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="soto_backpack_5_1_description" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find urdf_utils)/urdf/properties/defaults.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/limit.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/origin.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/parent.xacro" />
+
+  <xacro:include filename="$(find soto_backpack_layer_1_0_description)/urdf/300/description.xacro" />
+  <xacro:include filename="$(find soto_backpack_layer_1_0_description)/urdf/400/description.xacro" />
+  <xacro:include filename="$(find soto_backpack_layer_1_0_description)/urdf/600/description.xacro" />
+
+  <xacro:property
+    name="cman_config"
+    value="${load_cman('soto_backpack_5_1_description', 'soto_backpack_5_1_description.yaml', '')}" />
+
+  <xacro:property name="backpack_base_to_layer_x_offset" value="-0.068" />
+  <xacro:property name="backpack_base_to_bar_z_offset" value="0.055" />
+  <xacro:property name="layer_mount_to_layer_axis_z_offset" value="-0.03" />
+  <xacro:property name="base_layer_z_offset" value="${backpack_base_to_bar_z_offset + layer_mount_to_layer_axis_z_offset}" />
+
+  <xacro:arg name="standalone" default="false" />
+  <xacro:property name="standalone" value="$(arg standalone)" />
+
+  <xacro:unless value="${standalone}">
+    <joint name="base_to_backpack_base" type="fixed">
+      <origin xyz="-0.26582 0.045 0.1535" rpy="0 0 0" />
+      <parent link="base_link" />
+      <child link="backpack_base_link" />
+    </joint>
+  </xacro:unless>
+
+  <link name="backpack_base_link">
+    <inertial>
+      <origin xyz="-0.335579 -0.131711 0.841435" rpy="0 0 0" />
+      <mass value="119.3" />
+      <inertia
+        ixx="151.492794"
+        ixy="4.538259"
+        ixz="-34.246278"
+        iyy="153.595002"
+        iyz="-15.803417"
+        izz="39.692906" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_backpack_5_1_description/meshes/backpack_base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://soto_backpack_5_1_description/meshes/backpack_base_link_col.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="backpack_tilt_link">
+    <xacro:point_inertial mass="1" />
+  </link>
+  <joint name="backpack_tilt" type="revolute">
+    <origin xyz="-0.45075 0.0005 0.0685" rpy="0 0 0" />
+    <parent link="backpack_base_link" />
+    <child link="backpack_tilt_link" />
+    <axis xyz="0 1 0" />
+    <xacro:limit_from_config config="${cman_config}" joint_name="backpack_tilt" />
+  </joint>
+
+  <!-- ====== START OF LAYERS ====== -->
+
+  <xacro:macro
+    name="backpack_layer"
+    params="layer_index cman_config:=^ backpack_base_to_layer_x_offset:=^ base_layer_z_offset:=^">
+    <xacro:property name="layer_name" value="layer_${layer_index}" />
+    <xacro:property name="layer_config" value="${cman_config['layer_configuration'][layer_name]}" />
+    <xacro:property name="layer_z_offset" value="${layer_config['z_offset']}" />
+    <xacro:property name="compartment_width" value="${layer_config['compartment_1']['width']}" />
+
+    <xacro:if value="${compartment_width == 0.3}" >
+      <xacro:layer_300
+        layer_index="${layer_index}"
+        xyz="${backpack_base_to_layer_x_offset} 0 ${base_layer_z_offset + layer_z_offset}" />
+    </xacro:if>
+    <xacro:if value="${compartment_width == 0.4}" >
+      <xacro:layer_400
+        layer_index="${layer_index}"
+        xyz="${backpack_base_to_layer_x_offset} 0 ${base_layer_z_offset + layer_z_offset}" />
+    </xacro:if>
+    <xacro:if value="${compartment_width == 0.6}" >
+      <xacro:layer_600
+        layer_index="${layer_index}"
+        xyz="${backpack_base_to_layer_x_offset} 0 ${base_layer_z_offset + layer_z_offset}" />
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:property
+    name="number_of_layers"
+    value="${cman_config['layer_configuration']['number_of_layers']}" />
+
+  <xacro:if value="${number_of_layers > 0}">
+    <xacro:backpack_layer layer_index="1" />
+  </xacro:if>
+  <xacro:if value="${number_of_layers > 1}">
+    <xacro:backpack_layer layer_index="2" />
+  </xacro:if>
+  <xacro:if value="${number_of_layers > 2}">
+    <xacro:backpack_layer layer_index="3" />
+  </xacro:if>
+  <xacro:if value="${number_of_layers > 3}">
+    <xacro:backpack_layer layer_index="4" />
+  </xacro:if>
+  <xacro:if value="${number_of_layers > 4}">
+    <xacro:backpack_layer layer_index="5" />
+  </xacro:if>
+  <xacro:if value="${number_of_layers > 5}">
+    <xacro:backpack_layer layer_index="6" />
+  </xacro:if>
+  <xacro:if value="${number_of_layers > 6}">
+    <xacro:backpack_layer layer_index="7" />
+  </xacro:if>
+
+  <!-- ====== END OF LAYERS ====== -->
+
+  <link name="charger_connector">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="2.5" />
+      <inertia
+        ixx="0.02604167"
+        ixy="0"
+        ixz="0"
+        iyy="0.01308413"
+        iyz="0"
+        izz="0.01308413" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_backpack_5_1_description/meshes/charger_connector.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0 0.4510 0.8275 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="backpack_base_to_charger_connector" type="fixed">
+    <origin xyz="-0.41931 0.48443 0.17425" rpy="-1.5708 0 1.5708" />
+    <parent link="backpack_base_link" />
+    <child link="charger_connector" />
+  </joint>
+
+  <link name="nav_depth_camera_rear_link">
+    <inertial>
+      <origin xyz="-0.025274 0.00013854 -0.023398" rpy="0 0 0" />
+      <mass value="1.0" />
+      <inertia
+        ixx="0.00081667"
+        ixy="0"
+        ixz="0"
+        iyy="0.00094167"
+        iyz="0"
+        izz="0.00094167" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_backpack_5_1_description/meshes/nav_depth_camera_rear_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0 0.292 0.403 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0125 -0.01475 -0.035" rpy="0 0 0" />
+      <geometry>
+        <box size="0.08 0.07 0.07" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="nav_depth_camera_rear" type="fixed">
+    <xacro:origin_from_config config="${cman_config}" joint_name="nav_depth_camera_rear" />
+    <xacro:parent_from_config config="${cman_config}" joint_name="nav_depth_camera_rear" />
+    <child link="nav_depth_camera_rear_link" />
+  </joint>
+
+  <link name="light_curtain_emitter_rear_link">
+    <inertial>
+      <origin xyz="-0.013451 0 0" rpy="0 0 0" />
+      <mass value="0.63959" />
+      <inertia
+        ixx="0.03084176"
+        ixy="0"
+        ixz="0"
+        iyy="0.00013446"
+        iyz="0"
+        izz="0.03082808" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_backpack_5_1_description/meshes/light_curtain_emitter_rear_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.9780 0.8557 0 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.015 0 0" rpy="1.5708 0 0" />
+      <geometry>
+        <cylinder radius="0.015" length="0.7625" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_to_light_curtain_emitter_rear" type="fixed">
+    <origin xyz="-0.777 -0.046458 1.6655" rpy="3.1416 1.5708 0" />
+    <parent link="backpack_base_link" />
+    <child link="light_curtain_emitter_rear_link" />
+  </joint>
+
+  <link name="light_curtain_receiver_rear_link">
+    <inertial>
+      <origin xyz="-0.013451 0.00046065 0" rpy="0 0 0" />
+      <mass value="0.63959" />
+      <inertia
+        ixx="0.03084176"
+        ixy="0"
+        ixz="0"
+        iyy="0.00013446"
+        iyz="0"
+        izz="0.03082808" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_backpack_5_1_description/meshes/light_curtain_receiver_rear_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.9780 0.8557 0 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.015 0 0" rpy="1.5708 0 0" />
+      <geometry>
+        <cylinder radius="0.015" length="0.7625" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_to_light_curtain_receiver_rear" type="fixed">
+    <origin xyz="-0.777 -0.04594 -0.00093012" rpy="0 -1.5708 0" />
+    <parent link="backpack_base_link" />
+    <child link="light_curtain_receiver_rear_link" />
+  </joint>
+
+  <link name="blue_spot_rear_link" />
+  <joint name="blue_spot_rear" type="fixed">
+    <origin xyz="-0.77839 -0.1632 1.74081" rpy="0 2.32129 0" />
+    <parent link="backpack_base_link" />
+    <child link="blue_spot_rear_link" />
+  </joint>
+</robot>

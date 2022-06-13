@@ -1,0 +1,69 @@
+drivetrains:
+  backpack_tilt:  # backpack layers angle
+    limits:
+      # In CAD:
+      # Vertical distance from lower backpack frame to mechanical stop
+      # when the backpack layers are horizontal: 0.04684 m
+      # Distance between both backpack layer joints: 0.370 m
+      # The joint nearest to the mechanical limit has to move
+      # the same vertical distance as the trigger plate to get
+      # to the homing switch center. Therefore:
+      # Minimum position is: sin^(-1)(0.04684/0.370) = 7.27 deg = 0.13 rad
+      min: -0.1269  # - 7.27 deg
+      max: 0.1269
+      # So that we have 1mm buffer between endstop and frame:
+      # sin^(-1)(0.04584/0.370) = 7.12 deg = 0.124 rad
+      # But measured in Soto 9, the angle so that we have 1mm distance to 
+      # minimum limit is -0.115 rad
+      urdf_min: -0.115  # - 6.59 deg
+      urdf_max: 0.115
+      # Vertical distance from homing switch circle center to trigger plate edge
+      # when the backpack layers are horizontal: 0.01391 - 0.00893 = 0.00498
+      # Distance between both backpack layer joints: 0.370
+      # The joint nearest to the homing switch has to move
+      # the same distance as the trigger plate to get
+      # to the homing switch center. Therefore:
+      # Homing position is: sin^(-1)(0.00498/0.370) = 0 rad
+      home_offset: 0.01346
+    limit_switch:
+      class: IFM
+      type: IQ2012  # IQ23008BAPKG/K1/2M/PUR
+      trigger_material: steel
+      # Distance between homing switch and target
+      distance: 0.0041
+      # Distance from the lowest resting cylinder near the gripper
+      # to the homing switch center.
+      # The homing switch is not activated by the rotating layer,
+      # so the calculations won't be exact.
+      distance_from_rotational_axis: 0.43181
+    mechanical_tolerances:  # Not verified
+      cad_motion_range: [0.03]
+      home_offset: [0.03]
+      limit_switch_distance: [5.0e-4]
+    positions:
+      neutral: 0
+    predef_loads:  # Copied from Soto 2.0, to be updated once layers are released:
+      # Motor needs to lift up 800 N / 9.8 N/kg = 81.6 kg (empty backpack) at
+      # a distance of 0.39 m from the center of rotation:
+      inertia: 12.4  # kg * m^2  = 81.6 * 0.39 * 0.39
+      # Assuming 7 * 20 kg punctual boxes at a distance of 0.425m from the center of rotation
+      # And 7 * 20 kg punctual boxes at a distance of 0.225m
+      # (2 boxes per backpack compartment in a 7 compartment configuration)
+      payload: 32.375  # kg * m^2  = 6 * 20 kg * (0.425 m)^2 + 6 * 20 kg * (0.225 m)^2
+      axis: rotational
+    params:
+      inverted_polarity: false
+      homing_switch_edge_in_positive_direction: falling
+      homing_movement_finish_direction: negative
+      max_acceleration: 0.05  # Reduced acceleration to avoid gear damage
+      state_from_pick: true
+      max_jerk: 100
+      special_ios_override: 2
+    parts:
+      - part: Motor
+        type: ECI_63_60
+        name: backpack_tilt
+      - part: Gear
+        type: PerfomaxPlus63.1-5.0
+      - part: Gear
+        type: backpack_soto_5_1_motor_to_layer

@@ -1,0 +1,23 @@
+version: 2.1
+power_supply_lines:
+  drive_base:  # Not an actual device
+    power: [pcw_sto]
+    brake: [pcw_quickstop]
+  vertical_axis:
+    power: [manipulator_sto]
+  gripper_rotate:
+    power: [manipulator_sto]
+  conveyor_belt_right:
+    power: [manipulator_sto]
+  conveyor_belt_left:
+    power: [manipulator_sto]
+  gripper_base_x:
+    power: [manipulator_sto]
+  gripper_y_right:
+    power: [manipulator_sto]
+  gripper_y_left:
+    power: [manipulator_sto]
+  press_jaw:
+    power: [manipulator_sto]
+  backpack_tilt:
+    power: [backpack_sto]

@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="soto_drive_base_2_1_description" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find urdf_utils)/urdf/origin.xacro" />
+
+  <xacro:property
+    name="cman_config"
+    value="${load_cman('soto_drive_base_2_1_description', 'soto_drive_base_2_1_description.yaml', '')}" />
+
+  <link name="base_footprint" />
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0.01 -0.01 0.02" rpy="0 0 0" />
+      <mass value="167.45" />
+      <inertia
+        ixx="18.33"
+        ixy="-6.02"
+        ixz="1.41"
+        iyy="88.5"
+        iyz="-0.08"
+        izz="104.26" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_drive_base_2_1_description/meshes/base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.52941 0.54902 0.54902 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://soto_drive_base_2_1_description/meshes/base_link_col.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_footprint_to_base" type="fixed">
+    <origin xyz="0 0 0.1665" rpy="0 0 0" />
+    <parent link="base_footprint" />
+    <child link="base_link" />
+  </joint>
+
+  <xacro:macro name="pcw_base" params="link joint parent:=base_link xyz rpy">
+    <link name="${link}">
+      <inertial>
+        <origin xyz="0 0.03925 -0.038" rpy="0 0 0" />
+        <mass value="13.5" />
+        <inertia
+          ixx="0.07596928"
+          ixy="0"
+          ixz="0"
+          iyy="0.0390105"
+          iyz="0"
+          izz="0.10198378" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0.03925 -0.038" rpy="0 0 0" />
+        <geometry>
+          <box size="0.17 0.2485 0.076" />
+        </geometry>
+        <material name="">
+          <color rgba="0.79216 0.81961 0.93333 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0.03925 -0.038" rpy="0 0 0" />
+        <geometry>
+          <box size="0.17 0.2485 0.076" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${joint}" type="fixed">
+      <origin xyz="${xyz}" rpy="${rpy}" />
+      <parent link="${parent}" />
+      <child link="${link}" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:pcw_base
+    link="pcw_front_right_base_link"
+    joint="base_to_pcw_front_right"
+    xyz="0.92259 -0.305 0.038"
+    rpy="0 0 0" />
+  <xacro:pcw_base
+    link="pcw_rear_left_base_link"
+    joint="base_to_pcw_rear_left"
+    xyz="-0.60082 0.301 0.038"
+    rpy="0 0 -1.5708" />
+  
+  <xacro:macro name="pcw_steer" params="link joint parent xyz:='0 0 -0.0765' rpy:='0 0 0'">
+    <link name="${link}">
+      <inertial>
+        <origin xyz="0 0.03975 -0.0545" rpy="0 0 0" />
+        <mass value="2" />
+        <inertia
+          ixx="${10*0.00222671}"
+          ixy="0"
+          ixz="0"
+          iyy="${10*0.00399683}"
+          iyz="0"
+          izz="${10*0.00219021}" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0.03975 -0.0545" rpy="0 0 0" />
+        <geometry>
+          <box size="0.109 0.0355 0.11" />
+        </geometry>
+        <material name="">
+          <color rgba="0.79216 0.81961 0.93333 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0.03975 -0.0545" rpy="0 0 0" />
+        <geometry>
+          <box size="0.109 0.0355 0.11" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${joint}" type="continuous">
+      <origin xyz="${xyz}" rpy="${rpy}" />
+      <parent link="${parent}" />
+      <child link="${link}" />
+      <axis xyz="0 0 1" />
+      <dynamics damping="1.0" friction="0.0" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:pcw_steer
+    link="pcw_front_right_steer_link"
+    joint="pcw_front_right_steer"
+    parent="pcw_front_right_base_link" />
+  <xacro:pcw_steer
+    link="pcw_rear_left_steer_link"
+    joint="pcw_rear_left_steer"
+    parent="pcw_rear_left_base_link"
+    rpy="0 0 ${pi/2}" />
+
+  <xacro:macro name="pcw_drive" params="link joint parent xyz:='0 0 -0.055502' rpy:='0 0 0'">
+    <link name="${link}">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="1.5" />
+        <inertia
+          ixx="${10*0.00217109}"
+          ixy="0"
+          ixz="0"
+          iyy="${10*0.00394219}"
+          iyz="0"
+          izz="${10*0.00217109}" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+        <geometry>
+          <cylinder radius="0.0725" length="0.04" />
+        </geometry>
+        <material name="">
+          <color rgba="0.79216 0.81961 0.93333 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+        <geometry>
+          <cylinder radius="0.0725" length="0.04" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${joint}" type="continuous">
+      <origin xyz="${xyz}" rpy="${rpy}" />
+      <parent link="${parent}" />
+      <child link="${link}" />
+      <axis xyz="0 1 0" />
+      <dynamics damping="1.0" friction="0.0" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:pcw_drive
+    link="pcw_front_right_wheel_link"
+    joint="pcw_front_right_drive"
+    parent="pcw_front_right_steer_link" />
+  <xacro:pcw_drive
+    link="pcw_rear_left_wheel_link"
+    joint="pcw_rear_left_drive"
+    parent="pcw_rear_left_steer_link" />
+
+  <xacro:macro name="caster" params="link joint parent:=base_link xyz rpy">
+    <link name="${link}">
+      <inertial>
+        <origin xyz="-0.02 0 0.02" rpy="0 0 0" />
+        <mass value="3.1" />
+        <inertia
+          ixx="0.01"
+          ixy="0"
+          ixz="0"
+          iyy="0.01"
+          iyz="0"
+          izz="0.01" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="package://soto_drive_base_2_1_description/meshes/caster_base_link.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="1 1 1 1" />
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <sphere radius="0.04052" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${joint}" type="fixed">
+      <origin xyz="${xyz}" rpy="${rpy}" />
+      <parent link="${parent}" />
+      <child link="${link}" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:caster
+    link="caster_front_left_base_link"
+    joint="base_to_caster_front_left"
+    xyz="0.94959 0.28625 -0.1248"
+    rpy="0 0 0" />
+  <xacro:caster
+    link="caster_rear_right_base_link"
+    joint="base_to_caster_rear_right"
+    xyz="-0.60075 -0.229 -0.1248"
+    rpy="0 0 ${pi/2}" />
+
+  <xacro:macro name="laser_scanner" params="link joint parent:=base_link xyz rpy">
+    <link name="${link}">
+      <inertial>
+        <origin xyz="-0.0030205 0 -0.042173" rpy="0 0 0" />
+        <mass value="1.45" />
+        <inertia
+          ixx="0.0031605"
+          ixy="0"
+          ixz="0"
+          iyy="0.0030628"
+          iyz="0"
+          izz="0.0018952" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="package://soto_drive_base_2_1_description/meshes/laser_scanner_link.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="1 1 0 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 -0.0353" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="0.05" length="0.150512" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${joint}" type="fixed">
+      <origin xyz="${xyz}" rpy="${rpy}" />
+      <parent link="${parent}" />
+      <child link="${link}" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:laser_scanner
+    link="laser_scanner_base_front_link"
+    joint="base_to_laser_scanner_front"
+    xyz="1.0013 0 -0.04574"
+    rpy="3.1416 0 0" />
+  <xacro:laser_scanner
+    link="laser_scanner_base_rear_right_link"
+    joint="base_to_laser_scanner_rear_right"
+    xyz="-0.86928 -0.37856 -0.045761"
+    rpy="3.1416 0 -2.3562" />
+  <xacro:laser_scanner
+    link="laser_scanner_base_rear_left_link"
+    joint="base_to_laser_scanner_rear_left"
+    xyz="-0.86908 0.37856 -0.045761"
+    rpy="3.1416 0 2.3562" />
+
+  <link name="light_curtain_receiver_front_link">
+    <inertial>
+      <origin xyz="-0.013451 0.00046065 0" rpy="0 0 0" />
+      <mass value="0.63959" />
+      <inertia
+        ixx="0.03084176"
+        ixy="0"
+        ixz="0"
+        iyy="0.00013446"
+        iyz="0"
+        izz="0.03082808" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_drive_base_2_1_description/meshes/light_curtain_receiver_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.9780 0.8557 0 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.015 0 0" rpy="1.5708 0 0" />
+      <geometry>
+        <cylinder radius="0.015" length="0.7625" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_to_light_curtain_receiver_front" type="fixed">
+    <origin xyz="0.9249 0 0.24363" rpy="3.1416 -1.5708 3.1416" />
+    <parent link="base_link" />
+    <child link="light_curtain_receiver_front_link" />
+  </joint>
+
+  <link name="imu_link">
+    <inertial>
+      <origin xyz="0 0.00119 -0.00078463" rpy="0 0 0" />
+      <mass value="0.022358" />
+      <inertia
+        ixx="2.7765E-06"
+        ixy="1.8814E-21"
+        ixz="-3.6866E-25"
+        iyy="2.4313E-06"
+        iyz="9.4639E-09"
+        izz="4.9161E-06" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_drive_base_2_1_description/meshes/imu_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.1 0.1 0.1 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="base_to_imu" type="fixed">
+    <xacro:origin_from_config config="${cman_config}" joint_name="imu_link" />
+    <parent link="base_link" />
+    <child link="imu_link" />
+  </joint>
+</robot>

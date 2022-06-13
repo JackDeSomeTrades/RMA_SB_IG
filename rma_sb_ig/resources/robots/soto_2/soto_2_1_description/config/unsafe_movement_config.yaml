@@ -1,0 +1,51 @@
+homing_sequence:
+  - home_press:
+      - press_jaw:
+          pos: min
+  - generator_conveyor_gripper:
+      type: conveyor_gripper_1_0
+      joints:
+        - gripper_base_x:
+            pos: &gripper_base_x_threshold /book_gripper_safety_filter/gripper_base_min
+        - gripper_y_right:
+            threshold: /book_gripper_safety_filter/gripper_y_left_with_backpack_pillar
+            # Minimum position to move gripper_ys without collision
+            # for any rotation window:
+            # /book_gripper_safety_filter/gripper_y_left_with_backpack_pillar + 0.001
+            pos: &gripper_y_threshold 0.088
+        - gripper_y_left:
+            threshold: /book_gripper_safety_filter/gripper_y_left_with_backpack_pillar
+            pos: *gripper_y_threshold
+  - home_backpack:
+      # We need to move backpack up before driving the vertical axis
+      # so that the gripper cover doesn't crash with the boxes in the backpack
+      - backpack_tilt:
+          pos: min
+  - home_vertical_axis:
+      # Move vertical axis to a height where the gripper can be rotated
+      - vertical_axis:
+          pos: /book_gripper_safety_filter/vert_axis_to_rotate_gripper
+  - home_rotate:
+      - gripper_rotate:
+          pos: 0.0
+retract_gripper_sequence:
+  - generator_retract_conveyor_gripper:
+      type: retract_conveyor_gripper_1_0
+      joints:
+        - gripper_base_x:
+            pos: *gripper_base_x_threshold
+        - gripper_y_right:
+            pos: *gripper_y_threshold
+        - gripper_y_left:
+            pos: *gripper_y_threshold
+homing_timeout: 180
+move_tower:
+  rotational_joint: gripper_rotate
+  vertical_joint: vertical_axis
+  reference_frame: gripper_surface_tip_link
+  safety:
+    check_docked_state: false
+  constrained_rotation:
+    vertical_threshold: /book_gripper_safety_filter/vert_axis_to_rotate_gripper
+    vertical_frontal_limit: /book_gripper_safety_filter/vert_axis_with_bpk_lower_cover
+stop_at_transition_point: false

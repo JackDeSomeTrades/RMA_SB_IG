@@ -1,0 +1,11 @@
+--- !extends:soto_klt_press_1_1_description/soto_klt_press_1_1_urdf.yaml
+press_depth_camera:
+  translation:
+    x: 0.00014582
+    y: -0.018369
+    z: 0.00575
+  rotation:
+    r: 0.0
+    p: 1.5708
+    y: 0.0
+  parent: press_base_link

@@ -1,0 +1,7 @@
+drivetrains:
+  - gripper_rotate
+  - gripper_base_x
+  - gripper_y_left
+  - gripper_y_right
+  - conveyor_belt_left
+  - conveyor_belt_right

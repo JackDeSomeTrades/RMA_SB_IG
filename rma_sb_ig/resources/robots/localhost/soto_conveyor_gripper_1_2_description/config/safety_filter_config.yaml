@@ -1,0 +1,5 @@
+number_of_can_motors: 0
+homing_requirement_blacklist: " "
+supervised_x_motors: [] # empty for CG, as there are no rotating components
+depending_joint_limits:
+    !include:soto_conveyor_gripper_1_2_description/safety_rules.yaml:depending_joint_limits

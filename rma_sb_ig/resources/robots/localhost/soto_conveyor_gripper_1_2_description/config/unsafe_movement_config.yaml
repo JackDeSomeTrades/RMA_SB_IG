@@ -1,0 +1,17 @@
+# This homing sequence is meant to be used only
+# during production testing of the gripper.
+homing_sequence:
+    - gripper_ys_neutral_pos:
+        - gripper_y_left:
+            pos: 0.1
+        - gripper_y_right:
+            pos: 0.1
+    - retract_base:
+        - gripper_base_x:
+            pos: 0.05
+    - center_rotation:
+        - gripper_rotate:
+            pos: 0.0
+
+# This is needed just to avoid an error: 'NoneType' object is not iterable
+retract_gripper_sequence: []

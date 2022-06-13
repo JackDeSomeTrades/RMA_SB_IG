@@ -1,0 +1,31 @@
+--- !extends:soto_conveyor_gripper_1_2_description/soto_conveyor_gripper_1_2_urdf.yaml
+gripper_depth_camera:
+  translation:
+    x: -0.4116
+    y: -0.02347
+    z: 0.27414
+  rotation:
+    r: 0.0
+    p: -0.279253
+    y: 0.0
+  parent: gripper_base_link
+gripper_barcode_camera:
+  translation:
+    x: -0.4145
+    y: 0.0
+    z: 0.17802
+  rotation:
+    r: -1.291543
+    p: 0.0
+    y: -1.5708
+  parent: gripper_base_link
+press_calibration:
+  translation:
+    x: -0.25725
+    y: -0.12
+    z: 0.006
+  rotation:
+    r: 0.0
+    p: 0.0
+    y: 0.0
+  parent: gripper_base_x_link

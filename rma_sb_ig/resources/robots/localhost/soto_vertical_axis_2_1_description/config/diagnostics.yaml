@@ -1,0 +1,36 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      vertical_axis_operational:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: vertical_axis
+        analyzers:
+          vertical_axis:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: vertical_axis
+            find_and_remove_prefix: 'hw_diagnostics:motor:vertical_axis'
+      camera:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: camera
+        analyzers:
+          navigation:
+            type: reactive_diagnostic_aggregator/AnalyzerGroup
+            path: navigation
+            analyzers:
+              depth_front:
+                type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+                threshold: 1
+                path: depth_front  # /availability
+                find_and_remove_prefix: 'nav_depth_camera_front: camera_'
+  sw_diagnostics:
+    analyzers:
+      vertical_axis_operational:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: vertical_axis
+        analyzers:
+          vertical_axis:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: vertical_axis
+            find_and_remove_prefix: 'sw_diagnostics:motor:vertical_axis'

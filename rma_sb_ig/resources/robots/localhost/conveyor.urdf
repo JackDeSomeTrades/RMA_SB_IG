@@ -1,0 +1,1519 @@
+
+  <link name="cylinder_left_4">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_4_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_4"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.68 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+
+	<link name="cylinder_left_5">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_5_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_5"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.655 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_6">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_6_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_6"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.63 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_7">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_7_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_7"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.605 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_8">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_8_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_8"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.5800000000000001 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_9">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_9_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_9"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.555 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_10">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_10_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_10"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.53 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_11">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_11_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_11"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.505 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_12">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_12_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_12"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.48 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_13">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_13_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_13"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.455 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_14">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_14_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_14"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.43 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_15">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_15_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_15"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.405 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_16">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_16_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_16"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.38 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_17">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_17_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_17"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.355 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_18">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_18_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_18"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.33 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_19">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_19_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_19"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.305 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_20">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_20_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_20"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.28 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_21">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_21_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_21"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.255 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_22">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_22_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_22"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.22999999999999998 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_23">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_23_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_23"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.20499999999999996 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_24">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_24_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_24"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.17999999999999994 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_25">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_25_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_25"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.15500000000000003 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_26">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_26_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_26"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.13 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_27">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_27_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_27"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.10499999999999998 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_28">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_28_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_28"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.07999999999999996 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_29">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_29_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_29"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.05499999999999994 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_30">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_30_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_30"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.030000000000000027 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_left_31">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_left_31_to_belt" type="revolute">
+		<parent link="conveyor_belt_left_foremost_link"/>
+		<child link="cylinder_left_31"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.0043 0.0 -0.006"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+
+
+
+
+  <link name="cylinder_right_4">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_4_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_4"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.68 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+
+	<link name="cylinder_right_5">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_5_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_5"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.655 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_6">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_6_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_6"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.63 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_7">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_7_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_7"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.605 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_8">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_8_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_8"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.5800000000000001 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_9">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_9_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_9"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.555 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_10">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_10_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_10"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.53 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_11">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_11_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_11"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.505 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_12">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_12_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_12"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.48 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_13">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_13_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_13"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.455 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_14">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_14_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_14"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.43 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_15">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_15_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_15"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.405 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_16">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_16_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_16"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.38 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_17">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_17_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_17"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.355 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_18">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_18_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_18"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.33 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_19">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_19_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_19"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.305 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_20">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_20_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_20"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.28 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_21">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_21_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_21"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.255 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_22">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_22_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_22"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.22999999999999998 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_23">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_23_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_23"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.20499999999999996 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_24">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_24_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_24"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.17999999999999994 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_25">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_25_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_25"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.15500000000000003 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_26">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_26_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_26"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.13 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_27">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_27_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_27"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.10499999999999998 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_28">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_28_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_28"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.07999999999999996 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_29">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_29_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_29"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.05499999999999994 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_30">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_30_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_30"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.030000000000000027 0.0 0.00"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
+	<link name="cylinder_right_31">
+		<visual>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<material name="black"/>
+		</visual>
+		<collision>
+			<geometry>
+				<cylinder length="0.05" radius="0.003"/>
+			</geometry>
+			<origin rpy="-1.57075 -1.57075 0"/>
+		</collision>
+		<inertial>
+			<origin rpy="-1.57075 -1.57075 0"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.4" ixy="0" ixz="0" iyy="0.4" iyz="0.0" izz="0.2"/>
+		</inertial>
+	</link>
+	<joint name="cylinder_right_31_to_belt" type="revolute">
+		<parent link="conveyor_belt_right_foremost_link"/>
+		<child link="cylinder_right_31"/>
+		<axis xyz="0 1 0"/>
+		<origin xyz="-0.0043 0.0 -0.006"/>
+		<limit effort="100" lower="-100" upper="100" velocity="100"/>
+	</joint>
