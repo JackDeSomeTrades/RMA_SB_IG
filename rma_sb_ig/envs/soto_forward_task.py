@@ -480,7 +480,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         """
         print(self.contact_forces)
         self.reset_buf = torch.any(torch.norm(self.contact_forces[:, 0, :], dim=-1) > 1.,
-                                   dim=1)
+                                   dim=0)
 
         self.box_out_buffer = (self.contact_forces[:, -1, 2] < 0.05)
         test = torch.norm(self.box_pos[:,:2]-self.box_init_pos[:,:2],dim=-1) > 0.4
