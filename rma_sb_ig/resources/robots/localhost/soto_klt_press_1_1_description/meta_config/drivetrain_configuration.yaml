@@ -1,0 +1,54 @@
+drivetrains:
+  press_jaw:
+    limits:
+      min: 0
+      # Distance between sled and pillar +
+      # distance between sled and camera holder:
+      # 0.1225 + 0.11187 = 0.23437
+      max: 0.23437
+      urdf_min: 0.001
+      urdf_max: 0.229
+      # Distance between sled and pillar -
+      # (distance between trigger plate and homing switch edge
+      # + distance between homing switch edge and center)
+      # 0.1125 - (0.08951 + 0.00993)
+      home_offset: 0.01306
+      homing_stopping_distance: 0.005
+    limit_switch:
+      class: IFM
+      type: IQ2012
+      trigger_material: aluminum
+      distance: 0.0024
+    mechanical_tolerances:
+      # Not reviewed, probably wrong:
+      cad_motion_range: [0.6e-3]
+      home_offset: [0.9e-3]
+      limit_switch_distance: [5.0e-3]
+    predef_loads:
+      # Taken from klt press 1.0 as this shouldn't be too far off
+      # TODO (Olli): Needs to investigate exact value (HWS-1888)
+      inertia: 18
+      # [kg]
+      payload: 20
+      axis: horizontal
+    params:
+      max_acceleration: 1.0  # Originally 9.2, makes speed curve overshoot (see SW-44538)
+      max_jerk: 100
+      inverted_polarity: false
+      # Use peak current for torque limit calculation
+      allow_peak_torque: true
+    overrides:
+      homing_params:
+        special_ios: 0
+      drive_params:
+        following_error_window: 1.0 # deactivates following error so it can be used for squeezing
+    parts:
+      - part: Motor
+        type: "ECI42.40-24V-Hall"
+        name: "press_jaw"
+      - part: Brake
+        type: "BFK-457-01"
+      - part: Gear
+        type: "ECP42.3-54"
+      - part: Spindle
+        type: "hefel-osp-e20"

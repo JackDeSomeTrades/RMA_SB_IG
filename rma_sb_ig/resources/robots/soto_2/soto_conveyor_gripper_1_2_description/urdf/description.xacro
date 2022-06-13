@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="soto_conveyor_gripper_1_2_description" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find urdf_utils)/urdf/properties/defaults.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/limit.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/origin.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/parent.xacro" />
+
+  <xacro:property
+    name="cman_joints"
+    value="${load_cman('soto_conveyor_gripper_1_2_description', 'soto_conveyor_gripper_1_2_description.yaml', '')}" />
+
+  <xacro:arg name="standalone" default="false" />
+  <xacro:property name="standalone" value="$(arg standalone)" />
+
+  <xacro:arg name="simulation" default="false" />
+  <xacro:property name="simulation" value="$(arg simulation)" />
+
+  <xacro:if value="${standalone}">
+    <link name="vertical_axis_link" />
+  </xacro:if>
+
+  <link name="gripper_base_link">
+    <inertial>
+      <origin xyz="0 -0.003906 0.071229" rpy="0 0 0" />
+      <mass value="22.11" />
+      <inertia
+        ixx="1.434512"
+        ixy="0.01329"
+        ixz="-0.275856"
+        iyy="1.610174"
+        iyz="-0.0066"
+        izz="2.705717" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/gripper_base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.75294 0.75294 0.75294 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/gripper_base_link_col.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gripper_rotate" type="revolute">
+    <origin xyz="0 0 0.1205" rpy="0 0 3.1416" />
+    <parent link="vertical_axis_link" />
+    <child link="gripper_base_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="12.0" friction="0.0" />
+    <xacro:limit_from_config config="${cman_joints}" joint_name="gripper_rotate" />
+  </joint>
+
+  <link name="gripper_base_x_link">
+    <inertial>
+      <origin xyz="-0.10693 -0.020943 0.010393" rpy="0 0 0" />
+      <mass value="8.27" />
+      <inertia
+        ixx="0.439749"
+        ixy="0.029672"
+        ixz="-0.0008"
+        iyy="0.203588"
+        iyz="0.00403"
+        izz="0.632283" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/gripper_base_x_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/gripper_base_x_link_col.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gripper_base_x" type="prismatic">
+    <origin xyz="0 0 0.08655" rpy="0 0 0" />
+    <parent link="gripper_base_link" />
+    <child link="gripper_base_x_link" />
+    <axis xyz="1 0 0" />
+    <dynamics damping="200.0" friction="10.0" />
+    <xacro:limit_from_config config="${cman_joints}" joint_name="gripper_base_x" />
+  </joint>
+
+  <xacro:macro name="gripper_y" params="link joint distance_sensor reflect sensor_rpy">
+    <xacro:unless value="${simulation}">
+      <xacro:property name="gripper_y_mesh" value="${link}_with_belt" />
+    </xacro:unless>
+    <xacro:if value="${simulation}">
+      <xacro:property name="gripper_y_mesh" value="${link}" />
+    </xacro:if>
+
+    <link name="${link}">
+      <inertial>
+        <origin xyz="0.31885 ${reflect*0.0033569} -0.031557" rpy="0 0 0" />
+        <mass value="4.7" />
+        <inertia
+          ixx="0.017352"
+          ixy="${-reflect*0.011281}"
+          ixz="-0.039727"
+          iyy="0.535979"
+          iyz="${reflect*0.000597}"
+          izz="0.530221" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/${gripper_y_mesh}.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="0.75294 0.75294 0.75294 1" />
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/${gripper_y_mesh}_col.STL" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${joint}" type="prismatic">
+      <origin xyz="-0.337 ${-reflect*0.325} 0.12155" rpy="0 0 0" />
+      <parent link="gripper_base_x_link" />
+      <child link="${link}" />
+      <axis xyz="0 ${reflect} 0" />
+      <dynamics damping="300.0" friction="80.0" />
+      <xacro:limit_from_config config="${cman_joints}" joint_name="${joint}" />
+    </joint>
+
+    <link name="${distance_sensor}">
+      <inertial>
+        <origin xyz="-0.026935 0 -0.00089453" rpy="0 0 0" />
+        <mass value="0.035209" />
+        <inertia
+          ixx="7.5071E-06"
+          ixy="-4.8531E-10"
+          ixz="-1.4593E-07"
+          iyy="1.0074E-05"
+          iyz="6.5654E-10"
+          izz="5.2155E-06" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/distance_sensor.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="1 1 1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="-0.029073 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.0308 0.0225 0.049" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${joint}_to_distance_sensor" type="fixed">
+      <origin xyz="0.00723 0 0.025" rpy="${sensor_rpy}" />
+      <parent link="${link}" />
+      <child link="${distance_sensor}" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:gripper_y
+    link="gripper_y_right_link"
+    joint="gripper_y_right"
+    distance_sensor="distance_sensor_conveyor_right"
+    reflect="1"
+    sensor_rpy="1.5708 -0.0261799 0" />
+  <xacro:gripper_y
+    link="gripper_y_left_link"
+    joint="gripper_y_left"
+    distance_sensor="distance_sensor_conveyor_left"
+    reflect="-1"
+    sensor_rpy="${-1.5708-0.174533} -0.0261799 0" />
+
+  <xacro:macro name="conveyor_belt" params="link joint parent">
+    <link name="${link}">
+      <xacro:point_inertial mass="0.5" />
+    </link>
+    <joint name="${joint}" type="prismatic">
+      <origin xyz="0.68001 0 -0.0182" rpy="0 0 0" />
+      <parent link="${parent}" />
+      <child link="${link}" />
+      <axis xyz="-1 0 0" />
+      <limit
+        lower="-9999999999"
+        upper="9999999999"
+        effort="${cman_joints[joint]['limit']['effort']}"
+        velocity="${cman_joints[joint]['limit']['velocity']}" />
+    </joint>
+
+    <link name="${joint}_surface_foremost_link">
+      <xacro:point_mass_inertial />
+    </link>
+    <joint name="${joint}_to_surface_foremost" type="fixed">
+      <origin xyz="0.7050115 0 0" rpy="0 0 0" />
+      <parent link="${parent}" />
+      <child link="${joint}_surface_foremost_link" />
+    </joint>
+
+    <link name="${joint}_foremost_link" />
+    <joint name="${joint}_surface_to_foremost" type="fixed">
+      <origin xyz="0.0182 0 0" rpy="0 0 0" />
+      <parent link="${joint}_surface_foremost_link" />
+      <child link="${joint}_foremost_link" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:conveyor_belt
+    link="conveyor_belt_right_link"
+    joint="conveyor_belt_right"
+    parent="gripper_y_right_link" />
+  <xacro:conveyor_belt
+    link="conveyor_belt_left_link"
+    joint="conveyor_belt_left"
+    parent="gripper_y_left_link" />
+
+  <link name="gripper_depth_camera_link">
+    <inertial>
+      <origin xyz="-0.025274 0.00013854 -0.023398" rpy="0 0 0" />
+      <mass value="0.69" />
+      <inertia
+        ixx="0.000887"
+        ixy="0"
+        ixz="0.000438"
+        iyy="0.00153"
+        iyz="0"
+        izz="0.001364" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/gripper_depth_camera_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.03 0.0235 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.0631 0.0996 0.0806" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gripper_depth_camera" type="fixed">
+    <xacro:origin_from_config config="${cman_joints}" joint_name="gripper_depth_camera" />
+    <xacro:parent_from_config config="${cman_joints}" joint_name="gripper_depth_camera" />
+    <child link="gripper_depth_camera_link" />
+  </joint>
+
+  <link name="gripper_barcode_camera">
+    <inertial>
+      <origin xyz="-0.399914 0 0.166337" rpy="0 0 0" />
+      <mass value="0.3" />
+      <inertia
+        ixx="0.008384"
+        ixy="0"
+        ixz="-0.01991"
+        iyy="0.056698"
+        iyz="0"
+        izz="0.048367" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/gripper_barcode_camera.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.0405 0.0405 0.123" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gripper_barcode_camera" type="fixed">
+    <xacro:origin_from_config config="${cman_joints}" joint_name="gripper_barcode_camera" />
+    <xacro:parent_from_config config="${cman_joints}" joint_name="gripper_barcode_camera" />
+    <child link="gripper_barcode_camera" />
+  </joint>
+
+  <link name="reflective_sensor_gripper">
+    <inertial>
+      <origin xyz="-0.010172 6.0056E-07 0.00078646" rpy="0 0 0" />
+      <mass value="0.02" />
+      <inertia
+        ixx="1.0016E-06"
+        ixy="-7.2534E-12"
+        ixz="1.4276E-09"
+        iyy="1.1697E-06"
+        iyz="1.4704E-10"
+        izz="4.3881E-07" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/reflective_sensor.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.01 0 0.0015" rpy="0 0 0" />
+      <geometry>
+        <box size="0.02 0.0136 0.032" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gripper_base_to_reflective_sensor" type="fixed">
+    <origin xyz="-0.44819 0.096981 0.18475" rpy="1.5708 0 -0.058124" />
+    <parent link="gripper_base_link" />
+    <child link="reflective_sensor_gripper" />
+  </joint>
+
+  <link name="distance_sensor_gripper_safety">
+    <inertial>
+      <origin xyz="-0.026935 0 -0.00089453" rpy="0 0 0" />
+      <mass value="0.035209" />
+      <inertia
+        ixx="7.5071E-06"
+        ixy="-4.8531E-10"
+        ixz="-1.4593E-07"
+        iyy="1.0074E-05"
+        iyz="6.5654E-10"
+        izz="5.2155E-06" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/distance_sensor.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.029073 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.0308 0.0225 0.049" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gripper_base_to_distance_sensor" type="fixed">
+    <origin xyz="-0.42364 0.093946 0.2058" rpy="1.5708 0 -0.058124" />
+    <parent link="gripper_base_link" />
+    <child link="distance_sensor_gripper_safety" />
+  </joint>
+
+  <link name="gripper_surface_tip_link" />
+  <joint name="gripper_base_x_to_surface_tip" type="fixed">
+    <origin xyz="0.3862115 0 0.12155" rpy="0 0 0" />
+    <parent link="gripper_base_x_link" />
+    <child link="gripper_surface_tip_link" />
+  </joint>
+
+  <link name="barcode_search_frame" />
+  <joint name="barcode_search_joint" type="fixed">
+    <origin xyz="0.1 0 0.1" rpy="0 0 0" />
+    <parent link="gripper_surface_tip_link" />
+    <child link="barcode_search_frame" />
+  </joint>
+
+  <link name="press_calibration_link">
+    <xacro:point_mass_inertial />
+    <visual>
+      <origin xyz="0.09 0.12 -0.0015" rpy="0 0 0" />
+      <geometry>
+        <box size="0.21 0.297 0.003" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.09 0.12 -0.0015" rpy="0 0 0" />
+      <geometry>
+        <box size="0.21 0.297 0.003" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="press_calibration" type="fixed">
+    <xacro:origin_from_config config="${cman_joints}" joint_name="press_calibration" />
+    <xacro:parent_from_config config="${cman_joints}" joint_name="press_calibration" />
+    <child link="press_calibration_link" />
+  </joint>
+</robot>

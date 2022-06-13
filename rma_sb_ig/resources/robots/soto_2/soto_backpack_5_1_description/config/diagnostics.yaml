@@ -1,0 +1,36 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      backpack_operational:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: backpack
+        analyzers:
+          backpack_tilt:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: backpack_tilt
+            find_and_remove_prefix: 'hw_diagnostics:motor:backpack_tilt'
+      camera:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: camera
+        analyzers:
+          navigation:
+            type: reactive_diagnostic_aggregator/AnalyzerGroup
+            path: navigation
+            analyzers:
+              depth_rear:
+                type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+                threshold: 1
+                path: depth_rear  # /availability
+                find_and_remove_prefix: 'nav_depth_camera_rear: camera_'
+  sw_diagnostics:
+    analyzers:
+      backpack_operational:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: backpack
+        analyzers:
+          backpack_tilt:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: backpack_tilt
+            find_and_remove_prefix: 'sw_diagnostics:motor:backpack_tilt'

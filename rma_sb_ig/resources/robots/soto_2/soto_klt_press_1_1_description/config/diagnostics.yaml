@@ -1,0 +1,36 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      klt_press_operational:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: klt_press
+        analyzers:
+          press_jaw:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: press_jaw
+            find_and_remove_prefix: 'hw_diagnostics:motor:press_jaw'
+      camera:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: camera
+        analyzers:
+          manipulation:
+            type: reactive_diagnostic_aggregator/AnalyzerGroup
+            path: manipulation
+            analyzers:
+              depth_press:
+                type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+                threshold: 1
+                path: depth_press  # /availability
+                find_and_remove_prefix: 'press_depth_camera/press_depth_camera_node: camera_'
+  sw_diagnostics:
+    analyzers:
+      klt_press_operational:
+        type: reactive_diagnostic_aggregator/AnalyzerGroup
+        path: klt_press
+        analyzers:
+          press_jaw:
+            type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+            threshold: 1
+            path: press_jaw
+            find_and_remove_prefix: 'sw_diagnostics:motor:press_jaw'

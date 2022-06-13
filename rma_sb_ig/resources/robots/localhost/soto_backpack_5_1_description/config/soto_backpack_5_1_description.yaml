@@ -1,0 +1,56 @@
+--- !extends:soto_backpack_5_1_description/soto_backpack_5_1_urdf.yaml
+nav_depth_camera_rear:
+  translation:
+    x: -0.77839
+    y: -0.0572
+    z: 1.74081
+  rotation:
+    r: -2.32129
+    p: 0.0
+    y: 1.57080
+  parent: backpack_base_link
+
+layer_configuration:
+  padding_y: 0.2  # normal distance between frame origin and shelf adapter
+  board_height: 0.01
+  number_of_layers: 4
+  layer_1:
+    number_of_compartments: 2
+    z_offset: 0.243
+    height: 0.34
+    layer_link: backpack_layer_1_link
+    compartment_1:
+      width: 0.3
+      depth: 0.81
+      compartment_link: backpack_layer_1_compartment_1_link
+    compartment_2:
+      width: 0.3
+      depth: 0.81
+      compartment_link: backpack_layer_1_compartment_2_link
+  layer_2:
+    number_of_compartments: 1
+    z_offset: 0.643
+    height: 0.34
+    layer_link: backpack_layer_2_link
+    compartment_1:
+      width: 0.4
+      depth: 0.81
+      compartment_link: backpack_layer_2_compartment_1_link
+  layer_3:
+    number_of_compartments: 1
+    z_offset: 1.043
+    height: 0.34
+    layer_link: backpack_layer_3_link
+    compartment_1:
+      width: 0.6
+      depth: 0.81
+      compartment_link: backpack_layer_3_compartment_1_link
+  layer_4:
+    number_of_compartments: 1
+    z_offset: 1.443
+    height: 0.30
+    layer_link: backpack_layer_4_link
+    compartment_1:
+      width: 0.6
+      depth: 0.81
+      compartment_link: backpack_layer_4_compartment_1_link

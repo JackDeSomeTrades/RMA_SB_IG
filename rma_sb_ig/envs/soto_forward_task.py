@@ -429,7 +429,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.dof_vel_tensor[env_ids] = 0.
         #
         env_ids_int32 = env_ids.to(dtype=torch.int32)
-        self.gym.set_dof_state_tensor_indexed(self.sim,gymtorch.unwrap_tensor(self.dof_state))
+        self.gym.set_dof_state_tensor(self.sim,gymtorch.unwrap_tensor(self.dof_state))
     def _reset_root_states(self, env_ids):
         """ Resets ROOT states position and velocities of selected environmments
             Sets base position based on the curriculum
@@ -442,7 +442,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.soto_root_state[env_ids] = self.soto_init_state[env_ids]
 
         env_ids_int32 = env_ids.to(dtype=torch.int32)
-        self.gym.set_actor_root_state_tensor(self.sim,
+        self.gym.set_actor_root_state_tensor_indexed(self.sim,
                                                      gymtorch.unwrap_tensor(self.root_states),
                                                      gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
 

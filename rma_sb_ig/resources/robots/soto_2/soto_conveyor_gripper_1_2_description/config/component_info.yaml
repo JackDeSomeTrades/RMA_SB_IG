@@ -1,0 +1,5 @@
+version: 1.2
+conveyor_belt_linear_length: 0.67282  # [m]
+conveyor_belt_roller_radius: 0.0182  # [m]
+conveyor_belt_width: 0.05  # [m]
+conveyor_gripper_width: 0.06  # [m]

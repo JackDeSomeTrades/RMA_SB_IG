@@ -1,0 +1,60 @@
+drivetrains:
+  vertical_axis:
+    limits:
+      min: 0.37967
+      # Max height at which the camera can't crash with the gripper paddles: 1.909
+      # Max height at which the belt sensors can't crash with the gripper paddles: 1.93
+      # Assuming the camera is not crashing with the KLT press paddles
+      # (safety rules should prevent that),
+      # the max vertical axis height that allows the gripper to rotate
+      # without crashing the belt sensors with the KLT press paddles is:
+      max: 1.93
+      urdf_min: &urdf_min 0.385
+      urdf_max: 1.925
+      homing_stopping_distance: 0.053  # Homing_offset - 10 mm = 0.06301 m - 0.010 m
+      # Instead of distance from homing position to minimum limit,
+      # we take the distance from homing position to 0 position.
+      # min + length of metal sheet - sensor radius = 0.37967 + 0.161 - 0.00805
+      home_offset: 0.53262
+    limit_switch:
+      class: IFM
+      type: IQ2012
+      trigger_material: aluminum
+      distance: 0.002
+    mechanical_tolerances:
+      cad_motion_range: [0.01]
+      home_offset: [0.01]
+      limit_switch_distance: [1.0e-3]
+    positions:
+      neutral: *urdf_min
+    predef_loads:
+      inertia: 87.98  # kg
+      payload: 20  # kg
+      axis: vertical
+    params:
+      inverted_polarity: true
+      homing_switch_edge_in_positive_direction: falling
+      homing_movement_finish_direction: positive
+      max_acceleration: 0.5        # Original value 1.6 causes oscillations in the velocity curve. See SW-43056
+      state_from_pick: true
+      max_jerk: 100
+      special_ios_override: 2
+    parts:
+      - part: Motor
+        type: APBA80L048030-EB-Micontrol_overdrive
+        name: vertical_axis
+      - part: Brake
+        type: APBA80L048030-EB-Micontrol-Brake
+      - part: Gear
+        type: PLFN064-16
+      - part: Belt
+        type: va_2_1_connection_belt
+        belt_pretension: 1900.0
+      - part: Spindle
+        type: vertical_axis_2_1
+        # Safety limits the speed to 0.5 m/s. So we should drive with a maximum of 0.45 m/s
+        # See https://magazino.atlassian.net/browse/SW-46590
+      - part: EngineeringLimit
+        type: "SafetyLimit"
+        linear: true
+        max_vel: 0.40  # SW-55652

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="backpack_layer_300" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find urdf_utils)/urdf/limit.xacro" />
+  
+  <xacro:macro name="layer_300" params="layer_index xyz cman_config:=^">
+
+    <joint name="backpack_base_to_layer_${layer_index}" type="revolute">
+      <origin xyz="${xyz}" rpy="0 0 0" />
+      <parent link="backpack_base_link" />
+      <child link="backpack_layer_${layer_index}_base_link" />
+      <axis xyz="0 1 0" />
+      <xacro:limit_from_config config="${cman_config}" joint_name="backpack_tilt" />
+      <mimic joint="backpack_tilt" multiplier="1" offset="0" />
+    </joint>
+
+    <link name="backpack_layer_${layer_index}_base_link">
+      <inertial>
+        <origin xyz="0 0.040533 0" rpy="0 0 0" />
+        <mass value="12.78" />
+        <inertia
+          ixx="0.775256"
+          ixy="0"
+          ixz="0"
+          iyy="1.530399"
+          iyz="0"
+          izz="0.847638" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="package://soto_backpack_layer_1_0_description/meshes/300/backpack_layer_base_link.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="0.75294 0.75294 0.75294 1" />
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://soto_backpack_layer_1_0_description/meshes/300/backpack_layer_base_link_col.STL" />
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="backpack_layer_${layer_index}_link" />
+    <joint name="backpack_layer_${layer_index}_base_to_layer" type="fixed">
+      <origin xyz="0.0466 0 -0.15456" rpy="0 0 -1.5708" />
+      <parent link="backpack_layer_${layer_index}_base_link" />
+      <child link="backpack_layer_${layer_index}_link" />
+    </joint>
+
+    <link name="backpack_layer_${layer_index}_compartment_1_link" />
+    <joint name="backpack_layer_${layer_index}_to_compartment_1" type="fixed">
+      <origin xyz="-0.174 0 0" rpy="0 0 0" />
+      <parent link="backpack_layer_${layer_index}_link" />
+      <child link="backpack_layer_${layer_index}_compartment_1_link" />
+    </joint>
+
+    <link name="backpack_layer_${layer_index}_compartment_1_reference_1_link" />
+    <joint name="backpack_layer_${layer_index}_compartment_1_to_reference_1" type="fixed">
+      <origin xyz="-0.000749999999994533 0.10885 0.00142948789310615" rpy="0 0 0" />
+      <parent link="backpack_layer_${layer_index}_compartment_1_link" />
+      <child link="backpack_layer_${layer_index}_compartment_1_reference_1_link" />
+    </joint>
+
+    <link name="backpack_layer_${layer_index}_compartment_2_link" />
+    <joint name="backpack_layer_${layer_index}_to_compartment_2" type="fixed">
+      <origin xyz="0.174000000000006 0 0" rpy="0 0 0" />
+      <parent link="backpack_layer_${layer_index}_link" />
+      <child link="backpack_layer_${layer_index}_compartment_2_link" />
+    </joint>
+
+    <link name="backpack_layer_${layer_index}_compartment_2_reference_1_link" />
+    <joint name="backpack_layer_${layer_index}_compartment_2_to_reference_1" type="fixed">
+      <origin xyz="0.000749999999994394 0.10885 0.00142948789310616" rpy="0 0 0" />
+      <parent link="backpack_layer_${layer_index}_compartment_2_link" />
+      <child link="backpack_layer_${layer_index}_compartment_2_reference_1_link" />
+    </joint>
+
+  </xacro:macro>
+
+</robot>

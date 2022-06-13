@@ -1,0 +1,8 @@
+analyzers:
+  hw_diagnostics:
+    analyzers:
+      drive_base:
+        type: reactive_diagnostic_aggregator/ThresholdGenericAnalyzer
+        path: drive_base
+        threshold: 1
+        find_and_remove_prefix: 'hw_diagnostics:drive_base:'

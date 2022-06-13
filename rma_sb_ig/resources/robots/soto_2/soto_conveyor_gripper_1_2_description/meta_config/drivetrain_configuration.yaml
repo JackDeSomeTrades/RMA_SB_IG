@@ -1,0 +1,198 @@
+drivetrains:
+    gripper_base_x:
+        limits:
+            min: 0
+            max: 0.353
+            urdf_min: 0.002
+            urdf_max: 0.351
+        mechanical_tolerances:
+            cad_motion_range: [1e-3]
+        params:
+            max_acceleration: 0.8  # Reduced for smoother movement
+            max_jerk: 15.0
+            inverted_polarity: True
+            use_external_encoder: True
+        predef_loads:
+            inertia: 21.9
+            payload: 20
+            axis: horizontal
+        parts:
+            - part: Motor
+              type: "ECI42.40-24V"
+              name: "gripper_base_x"
+            - part: Gear
+              type: "ECP42.3-54"
+            - part: Clutch
+              type: "RW-EKL-5-A"
+              rel_installation_depth: 1.0
+            - part: RackPinion
+              type: "module_1_5_rack_25_teeth"
+
+    gripper_y_right:
+        limits:
+            min: 0
+            # Assuming we can't drive over the other gripper_y:
+            # 0.045 + 0.410 + 0.045 = 0.5 m
+            # But the distance sensor cables crash earlier,
+            # if the sum of both joint positions is higher than 0.491,
+            # in Soto 9. It can be less for other robots.
+            max: 0.491
+            urdf_min: 0.002
+            urdf_max: 0.489
+        mechanical_tolerances:
+            cad_motion_range: [2e-3]
+        params:
+            max_acceleration: 1.0  # Reduced for smoother movement
+            inverted_polarity: True
+            max_jerk: 15.0
+            use_external_encoder: True
+        predef_loads:
+            inertia: 6.0
+            payload: 12.5
+            axis: horizontal
+        parts:
+            - part: Motor
+              type: "ECI42.40-24V"
+              name: "gripper_y_right"
+            - part: Gear
+              type: "PerfomaxPlus42.2"
+            - part: RackPinion
+              type: "module_1_5_rack_25_teeth"
+
+    gripper_y_left:
+        limits:
+            min: 0
+            # Assuming we can't drive over the other gripper_y:
+            # 0.045 + 0.410 + 0.045 = 0.5 m
+            # But the distance sensor cables crash earlier,
+            # if the sum of both joint positions is higher than 0.491,
+            # in Soto 9. It can be less for other robots.
+            max: 0.491
+            urdf_min: 0.002
+            urdf_max: 0.489
+        mechanical_tolerances:
+            cad_motion_range: [2e-3]
+        params:
+            max_acceleration: 1.0  # Reduced for smoother movement
+            max_jerk: 15.0
+            use_external_encoder: True
+        predef_loads:
+            inertia: 6.0
+            payload: 12.5
+            axis: horizontal
+        parts:
+            - part: Motor
+              type: "ECI42.40-24V"
+              name: "gripper_y_left"
+            - part: Gear
+              type: "PerfomaxPlus42.2"
+            - part: RackPinion
+              type: "module_1_5_rack_25_teeth"
+
+    conveyor_belt_right:
+        predef_loads:
+            inertia: 2.0
+            payload: 20.0 / 2.0
+            # friction: 0.2
+            axis: horizontal
+        params:
+            max_acceleration: 0.6  # Reduced for a smoother movement
+            max_jerk: 15.0
+            inverted_polarity: False
+            config_file_prefix: canopen_conveyor
+        parts:
+            - part: Motor
+              type: "ECI42.40-24V"
+              name: "conveyor_belt_right"
+            - part: Gear
+              type: "ECP42.3-54"
+            - part: Belt
+              type: "conveyor_gripper_1_2_small_belt"
+              belt_pretension: 600.0 # HW-707 additional bearing
+            - part: Wheel
+              type: "deflection-pulley-31-8"
+
+    conveyor_belt_left:
+        predef_loads:
+            inertia: 2.0
+            payload: 20.0 / 2.0
+            #friction: 0.2
+            axis: horizontal
+        params:
+            max_acceleration: 0.6  # Reduced for a smoother movement
+            max_jerk: 15.0
+            inverted_polarity: True
+            config_file_prefix: canopen_conveyor
+        parts:
+            - part: Motor
+              type: "ECI42.40-24V"
+              name: "conveyor_belt_left"
+            - part: Gear
+              type: "ECP42.3-54"
+            - part: Belt
+              type: "conveyor_gripper_1_2_small_belt"
+              belt_pretension: 600.0 # HW-707 additional bearing
+            - part: Wheel
+              type: "deflection-pulley-31-8"
+
+    gripper_rotate:
+        limits:
+            # Limits from CAD: (approximate, gripper needs to be
+            # rotated manually until collision in order to measure this)
+            min: -191*math.pi/180.0
+            max: 101*math.pi/180.0
+            # URDF limits:
+            # We want 5 degrees more than -90/+180 deg to compensate
+            # for drive base docking misalignment.
+            urdf_min: -185*math.pi/180.0
+            urdf_max: 95*math.pi/180.0
+            home_offset: 0.0
+            # in order to limit homing speed to be more precise:
+            homing_stopping_distance: 2*math.pi/180.0
+        limit_switch:
+            class: IFM
+            type: IFS289  # IFB3004BBPKG/K1/US-104
+            trigger_material: aluminum
+            distance: 0.005  # Value from CAD
+            distance_from_rotational_axis: 0.082
+        mechanical_tolerances:
+            cad_motion_range: [math.pi*2/180.0]
+            home_offset: [math.pi*1/180.0]
+            limit_switch_distance: [1.0e-3]
+        positions:
+            neutral: 0.0
+        predef_loads:
+            inertia: 5.53  # kg*m^2 as of 01.10.2021
+            payload: 0.73  # kg*m^2 (1.3 for centered 35kg box, 0.73 for centered 20kg box)
+            axis: rotational
+        params:
+            inverted_polarity: true
+            homing_switch_edge_in_positive_direction: rising
+            homing_movement_finish_direction: positive
+            max_jerk: 15.0
+            max_acceleration: 2.0 # Reduced for smoother movement
+            state_from_pick: True
+            brushless_dc_motor: False
+        parts:
+            - part: Motor
+              type: "Maxon-EC-90-500266"
+              name: gripper_rotate
+            - part: Gear
+              type: "HarmonicDrive-CPU-32A-50-M"
+              # The motor can use up to 48A 
+              # However, the fuse is limit to 10A (otherwise the cable goes brr brr)
+              # Normal rotation requires ~6A so we will never use those 48A
+            - part: EngineeringLimit
+              type: "FuseLimit"
+              linear: false
+              peak_torque: 43.0 # [Nm] resolves to ~9.7 A peak motor current
+            - part: EngineeringLimit
+              type: "MotorBurnLimit"
+              linear: false
+              nominal_torque: 26.52 # [Nm] resolves to 6 A nominal motor current
+        overrides:
+            homing_params:
+                special_ios: 2  # Set homing switch to DI 2
+            motor_params:
+                # increased to compensate for reduced peak and nominal torque limit
+                peak_current_max_duration: 5.0

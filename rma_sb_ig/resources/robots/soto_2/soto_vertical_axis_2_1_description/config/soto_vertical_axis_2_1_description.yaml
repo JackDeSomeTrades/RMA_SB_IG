@@ -1,0 +1,11 @@
+--- !extends:soto_vertical_axis_2_1_description/soto_vertical_axis_2_1_urdf.yaml
+nav_depth_camera_front:
+  translation:
+    x: 0.70999
+    y: 0.0135
+    z: 1.92162
+  rotation:
+    r: -2.3213
+    p: 0.0
+    y: -1.5708
+  parent: manipulator_base_link

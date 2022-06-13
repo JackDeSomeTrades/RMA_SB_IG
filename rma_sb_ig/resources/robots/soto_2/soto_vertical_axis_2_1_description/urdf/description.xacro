@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="soto_vertical_axis_2_1_description" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find urdf_utils)/urdf/limit.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/origin.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/parent.xacro" />
+
+  <xacro:property
+    name="cman_joints"
+    value="${load_cman('soto_vertical_axis_2_1_description', 'soto_vertical_axis_2_1_description.yaml', '')}" />
+
+  <xacro:arg name="standalone" default="false" />
+  <xacro:property name="standalone" value="$(arg standalone)" />
+
+  <xacro:property name="vertical_axis_to_conveyor_surface" value="0.3286" />
+
+  <xacro:unless value="${standalone}">
+    <joint name="base_to_manipulator_base" type="fixed">
+      <origin xyz="0.33418 0 -0.02188" rpy="0 0 0" />
+      <parent link="base_link" />
+      <child link="manipulator_base_link" />
+    </joint>
+  </xacro:unless>
+
+  <link name="manipulator_base_link">
+    <inertial>
+      <origin xyz="0.0083951 0.00056472 0.83616" rpy="0 0 0" />
+      <mass value="133" />
+      <inertia
+        ixx="233.82"
+        ixy="1.4667"
+        ixz="-2.4067"
+        iyy="235.13"
+        iyz="-1.5083"
+        izz="48.653" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_vertical_axis_2_1_description/meshes/manipulator_base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.89804 0.91765 0.92941 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://soto_vertical_axis_2_1_description/meshes/manipulator_base_link_col.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="vertical_axis_link">
+    <inertial>
+      <origin xyz="-0.017005 -0.012942 0.048502" rpy="0 0 0" />
+      <mass value="36.13" />
+      <inertia
+        ixx="1.196522"
+        ixy="0.120705"
+        ixz="-0.048934"
+        iyy="1.700861"
+        iyz="-0.036322"
+        izz="2.566171" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_vertical_axis_2_1_description/meshes/vertical_axis_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://soto_vertical_axis_2_1_description/meshes/vertical_axis_link_col.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="vertical_axis" type="prismatic">
+    <origin
+      xyz="0 0 ${-0.14423-vertical_axis_to_conveyor_surface}"
+      rpy="0 0 0" />
+    <parent link="manipulator_base_link" />
+    <child link="vertical_axis_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="4000.0" friction="0.0" />
+    <xacro:limit_from_config config="${cman_joints}" joint_name="vertical_axis" />
+  </joint>
+
+  <xacro:macro name="light_curtain_emitter" params="link joint xyz rpy">
+    <link name="${link}">
+      <inertial>
+        <origin xyz="-0.013451 0 0" rpy="0 0 0" />
+        <mass value="0.63959" />
+        <inertia
+          ixx="0.03084176"
+          ixy="0"
+          ixz="0"
+          iyy="0.00013446"
+          iyz="0"
+          izz="0.03082808" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="package://soto_vertical_axis_2_1_description/meshes/light_curtain_emitter_link.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="0.9780 0.8557 0 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="-0.015 0 0" rpy="1.5708 0 0" />
+        <geometry>
+          <cylinder radius="0.015" length="0.7625" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${joint}" type="fixed">
+      <origin xyz="${xyz}" rpy="${rpy}" />
+      <parent link="manipulator_base_link" />
+      <child link="${link}" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:light_curtain_emitter
+    link="light_curtain_emitter_right_link"
+    joint="base_to_light_curtain_emitter_right"
+    xyz="0.0012921 -0.505 1.9279"
+    rpy="1.5708 1.5708 0" />
+  <xacro:light_curtain_emitter
+    link="light_curtain_emitter_left_link"
+    joint="base_to_light_curtain_emitter_left"
+    xyz="-0.0012921 0.505 1.9279"
+    rpy="1.5708 1.5708 0" />
+
+  <xacro:macro name="light_curtain_receiver" params="link joint xyz rpy">
+    <link name="${link}">
+      <inertial>
+        <origin xyz="-0.013451 0.00046065 0" rpy="0 0 0" />
+        <mass value="0.63959" />
+        <inertia
+          ixx="0.03084176"
+          ixy="0"
+          ixz="0"
+          iyy="0.00013446"
+          iyz="0"
+          izz="0.03082808" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="package://soto_vertical_axis_2_1_description/meshes/light_curtain_receiver_link.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="0.9780 0.8557 0 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="-0.015 0 0" rpy="1.5708 0 0" />
+        <geometry>
+          <cylinder radius="0.015" length="0.7625" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${joint}" type="fixed">
+      <origin xyz="${xyz}" rpy="${rpy}" />
+      <parent link="manipulator_base_link" />
+      <child link="${link}" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:light_curtain_receiver
+    link="light_curtain_receiver_right_link"
+    joint="base_to_light_curtain_receiver_right"
+    xyz="0.00181 -0.505 0.0954"
+    rpy="0 -1.5708 1.5708" />
+  <xacro:light_curtain_receiver
+    link="light_curtain_receiver_left_link"
+    joint="base_to_light_curtain_receiver_left"
+    xyz="-0.00081 0.505 0.0954"
+    rpy="1.5708 -1.5708 0" />
+
+  <link name="nav_depth_camera_front_link">
+    <inertial>
+      <origin xyz="-0.025274 0.00013854 -0.023398" rpy="0 0 0" />
+      <mass value="1.0" />
+      <inertia
+        ixx="0.00081667"
+        ixy="0"
+        ixz="0"
+        iyy="0.00094167"
+        iyz="0"
+        izz="0.00094167" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_vertical_axis_2_1_description/meshes/nav_depth_camera_front_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0 0.292 0.403 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0125 -0.01475 -0.035" rpy="0 0 0" />
+      <geometry>
+        <box size="0.08 0.07 0.07" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="nav_depth_camera_front" type="fixed">
+    <xacro:origin_from_config config="${cman_joints}" joint_name="nav_depth_camera_front" />
+    <xacro:parent_from_config config="${cman_joints}" joint_name="nav_depth_camera_front" />
+    <child link="nav_depth_camera_front_link" />
+  </joint>
+
+  <link name="blue_spot_front_link" />
+  <joint name="blue_spot_front" type="fixed">
+    <origin xyz="0.70999 0.117 1.92162" rpy="0 2.3213 0" />
+    <parent link="manipulator_base_link" />
+    <child link="blue_spot_front_link" />
+  </joint>
+</robot>

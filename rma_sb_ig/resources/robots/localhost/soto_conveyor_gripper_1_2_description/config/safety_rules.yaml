@@ -1,0 +1,62 @@
+inf_min: &inf_min -999999
+inf_max: &inf_max 999999
+
+# Minimum gripper_base_x position that still allows gripper_y left and right to
+# extend completely without crashing with the casing:
+gripper_base_min: &gripper_base_min 0.033
+
+# Minimum gripper_y left or right position that still allows gripper_base_x to retract completely
+gripper_y_min: &gripper_y_min 0.0475
+
+depending_joint_limits:
+  gripper_y_casing_collision:
+    ignore_at_homing: true
+    trigger_joints:
+      gripper_base_x:
+        min: *inf_min
+        max: *gripper_base_min
+    blocked_joints:
+      gripper_y_left:
+        min: *inf_min
+        max: *gripper_y_min
+      gripper_y_right:
+        min: *inf_min
+        max: *gripper_y_min
+
+  gripper_y_left_with_gripper_y_right:
+    # To prevent collision between gripper_y_left and gripper_y_right
+    # we limit the sum of both
+    ignore_at_homing: true
+    trigger_joints:
+      # This could be any joint, we need at least a
+      # trigger joint for the rule to work
+      gripper_y_left:
+        min: *inf_min
+        max: *inf_max
+    summed_blocked_joints:
+      summed_y:
+        summed_joints: ["gripper_y_left", "gripper_y_right"]
+        min: 0.491  # Conveyor belt distance sensor cables crash
+        max: *inf_max
+
+  gripper_base_x_casing_collision_left:
+    ignore_at_homing: true
+    trigger_joints:
+      gripper_y_left:
+        min: *inf_min
+        max: *gripper_y_min
+    blocked_joints:
+      gripper_base_x:
+        min: *inf_min
+        max: *gripper_base_min
+
+  gripper_base_x_casing_collision_right:
+    ignore_at_homing: true
+    trigger_joints:
+      gripper_y_right:
+        min: *inf_min
+        max: *gripper_y_min
+    blocked_joints:
+      gripper_base_x:
+        min: *inf_min
+        max: *gripper_base_min

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="design_elements_description" xmlns:xacro="http://ros.org/wiki/xacro">
+  <link name="design_elements_link">
+    <inertial>
+      <origin xyz="0.10328 -0.024946 1.1175" rpy="0 0 0" />
+      <mass value="54.496" />
+      <inertia
+        ixx="107.138"
+        ixy="0.583689"
+        ixz="6.542658"
+        iyy="128.01832"
+        iyz="-1.172259"
+        izz="39.539432" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_2_1_description/meshes/design_elements_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.69804 0.69804 0.69804 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="base_to_design_elements" type="fixed">
+    <parent link="base_link" />
+    <child link="design_elements_link" />
+  </joint>
+</robot>

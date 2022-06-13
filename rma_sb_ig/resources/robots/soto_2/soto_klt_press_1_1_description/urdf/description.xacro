@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="soto_klt_press_1_1_description" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find urdf_utils)/urdf/limit.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/origin.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/parent.xacro" />
+  <xacro:include filename="$(find urdf_utils)/urdf/properties/defaults.xacro" />
+
+  <xacro:property
+    name="cman_joints"
+    value="${load_cman('soto_klt_press_1_1_description', 'soto_klt_press_1_1_description.yaml', '')}" />
+
+  <xacro:arg name="standalone" default="false" />
+  <xacro:property name="standalone" value="$(arg standalone)" />
+
+  <xacro:unless value="${standalone}">
+    <joint name="manipulator_base_to_press_base" type="fixed">
+      <origin xyz="0 0 1.92058" rpy="0 0 0" />
+      <parent link="manipulator_base_link" />
+      <child link="press_base_link" />
+    </joint>
+  </xacro:unless>
+
+  <link name="press_base_link">
+    <inertial>
+      <origin xyz="0.040186 -0.023445 0.040704" rpy="0 0 0" />
+      <mass value="21.5" />
+      <inertia
+        ixx="2.637865"
+        ixy="-0.29078"
+        ixz="0.028211"
+        iyy="3.376731"
+        iyz="0.021101"
+        izz="5.886895" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_klt_press_1_1_description/meshes/press_base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://soto_klt_press_1_1_description/meshes/press_base_link_col.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="press_jaw_link">
+    <inertial>
+      <origin xyz="0 -0.017586 0.057801" rpy="0 0 0" />
+      <mass value="1.77" />
+      <inertia
+        ixx="0.009458"
+        ixy="0"
+        ixz="0"
+        iyy="0.118996"
+        iyz="-0.00189"
+        izz="0.111931" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_klt_press_1_1_description/meshes/press_jaw_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://soto_klt_press_1_1_description/meshes/press_jaw_link_col.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="press_jaw" type="prismatic">
+    <origin xyz="0.32832 0 -0.085582" rpy="0 0 1.5708" />
+    <parent link="press_base_link" />
+    <child link="press_jaw_link" />
+    <axis xyz="0 1 0" />
+    <dynamics damping="20.0" friction="0.0" />
+    <xacro:limit_from_config config="${cman_joints}" joint_name="press_jaw" />
+  </joint>
+
+  <xacro:macro name="press_jaw_mimic" params="link joint xyz rpy **geometry">
+    <link name="${link}">
+      <inertial>
+        <origin xyz="0 -0.017586 0.057801" rpy="0 0 0" />
+        <mass value="1.77" />
+        <inertia
+          ixx="0.009458"
+          ixy="0"
+          ixz="0"
+          iyy="0.118996"
+          iyz="-0.00189"
+          izz="0.111931" />
+      </inertial>
+      <xacro:insert_block name="geometry" />
+    </link>
+    <joint name="${joint}" type="prismatic">
+      <origin xyz="${xyz}" rpy="${rpy}" />
+      <parent link="press_base_link" />
+      <child link="${link}" />
+      <axis xyz="0 1 0" />
+      <xacro:limit_from_config config="${cman_joints}" joint_name="press_jaw" />
+      <mimic joint="press_jaw" multiplier="1" offset="0" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:press_jaw_mimic
+    link="press_jaw_front_link"
+    joint="press_jaw_front"
+    xyz="0.32832 0 -0.085582"
+    rpy="0 0 1.5708">
+    <geometry>
+    </geometry>
+  </xacro:press_jaw_mimic>
+  <xacro:press_jaw_mimic
+    link="press_jaw_rear_link"
+    joint="press_jaw_rear"
+    xyz="-0.32832 0 -0.085582"
+    rpy="0 0 -1.5708">
+    <geometry>
+      <visual>
+        <geometry>
+          <mesh filename="package://soto_klt_press_1_1_description/meshes/press_jaw_link.STL" />
+        </geometry>
+        <material name="">
+          <color rgba="0.25098 0.25098 0.25098 1" />
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://soto_klt_press_1_1_description/meshes/press_jaw_link_col.STL" />
+        </geometry>
+      </collision>
+    </geometry>
+  </xacro:press_jaw_mimic>
+
+  <link name="press_depth_camera_link">
+    <inertial>
+      <origin xyz="-0.025274 0.00013854 -0.023398" rpy="0 0 0" />
+      <mass value="0.69" />
+      <inertia
+        ixx="0.000887"
+        ixy="0"
+        ixz="0.000438"
+        iyy="0.00153"
+        iyz="0"
+        izz="0.001364" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_klt_press_1_1_description/meshes/press_depth_camera_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="press_depth_camera" type="fixed">
+    <xacro:origin_from_config config="${cman_joints}" joint_name="press_depth_camera" />
+    <xacro:parent_from_config config="${cman_joints}" joint_name="press_depth_camera" />
+    <child link="press_depth_camera_link" />
+  </joint>
+
+  <link name="light_curtain_emitter_front_link">
+    <inertial>
+      <origin xyz="-0.013451 -5.8672E-05 1.2777E-05" rpy="0 0 0" />
+      <mass value="0.63959" />
+      <inertia
+        ixx="0.031871"
+        ixy="-7.2138E-06"
+        ixz="9.5339E-08"
+        iyy="8.6079E-05"
+        iyz="-2.9432E-06"
+        izz="0.03186" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_klt_press_1_1_description/meshes/light_curtain_emitter_front_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.9780 0.8557 0 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.015 0 0" rpy="1.5708 0 0" />
+      <geometry>
+        <cylinder radius="0.015" length="0.7625" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_to_light_curtain_emitter_front" type="fixed">
+    <origin xyz="0.5907 -0.00019206 -0.033932" rpy="0 1.5708 0" />
+    <parent link="press_base_link" />
+    <child link="light_curtain_emitter_front_link" />
+  </joint>
+
+  <link name="reflective_sensor_klt_press">
+    <inertial>
+      <origin xyz="-0.010172 6.2215E-07 0.00078641" rpy="0 0 0" />
+      <mass value="0.009132" />
+      <inertia
+        ixx="1.0016E-06"
+        ixy="0"
+        ixz="0"
+        iyy="1.1697E-06"
+        iyz="0"
+        izz="4.3882E-07" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="package://soto_klt_press_1_1_description/meshes/reflective_sensor.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.01 0 0.0015" rpy="0 0 0" />
+      <geometry>
+        <box size="0.02 0.0136 0.032" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="press_base_to_reflective_sensor" type="fixed">
+    <origin xyz="-0.57294 -0.29461 -0.098022" rpy="0 0 0.63705" />
+    <parent link="press_base_link" />
+    <child link="reflective_sensor_klt_press" />
+  </joint>
+
+  <link name="reflective_tape_klt_press">
+    <xacro:point_inertial mass="0.005" />
+    <visual>
+      <geometry>
+        <box size="0.001 0.03 0.03" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.001 0.03 0.03" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="press_base_to_reflective_tape" type="fixed">
+    <origin xyz="0.3845 0.43 -0.098" rpy="0 0 0" />
+    <parent link="press_base_link" />
+    <child link="reflective_tape_klt_press" />
+  </joint>
+
+  <link name="press_upper_limit_link" />
+  <joint name="press_base_to_upper_limit" type="fixed">
+    <origin xyz="0 0 -0.005" rpy="0 0 0" />
+    <parent link="press_base_link" />
+    <child link="press_upper_limit_link" />
+  </joint>
+</robot>
