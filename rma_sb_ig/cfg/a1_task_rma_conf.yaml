@@ -9,6 +9,7 @@ task_config:
     env_spacing: 3.  # not used with heightfields/trimeshes
     send_timeouts: True # send time out information to the algorithm
     episode_length_s: 30
+    type: 'static'  # 'static' or 'variant'
     # episode length in seconds
 
   terrain:

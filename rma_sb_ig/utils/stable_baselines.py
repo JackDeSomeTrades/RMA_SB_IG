@@ -1,6 +1,8 @@
 from rma_sb_ig.envs.a1task_rma import A1LeggedRobotTask
 from rma_sb_ig.envs.v0_task_rma import V0LeggedRobotTask
 from rma_sb_ig.envs.v0six_task_rma import V0SixLeggedRobotTask
+from rma_sb_ig.envs.v0var_task_rma import V0VarLeggedRobotTask
+
 from rma_sb_ig.envs.Sototask_rma import SotoRobotTask
 from stable_baselines3.common.vec_env import VecEnv
 from abc import abstractmethod
@@ -89,7 +91,7 @@ class RMAV0TaskVecEnvStableBaselineGym(V0LeggedRobotTask, StableBaselinesVecEnvA
         V0LeggedRobotTask.__init__(self, *args, **kwargs)
 
 
-@register("v0Six")
+@register("v0six")
 class RMAV0SixTaskVecEnvStableBaselineGym(V0SixLeggedRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):
         V0SixLeggedRobotTask.__init__(self, *args, **kwargs)
@@ -99,3 +101,8 @@ class RMAV0SixTaskVecEnvStableBaselineGym(V0SixLeggedRobotTask, StableBaselinesV
 class RMASotoTaskVecEnvStableBaseLineGym(SotoRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):  # args : tuple / kwargs : dictionnary
         SotoRobotTask.__init__(self, *args, **kwargs)
+
+@register("v0var")
+class RMAV0VarTaskVecEnvStableBaselineGym(V0VarLeggedRobotTask, StableBaselinesVecEnvAdapter):
+    def __init__(self, *args, **kwargs):
+        V0VarLeggedRobotTask.__init__(self, *args, **kwargs)

@@ -16,7 +16,6 @@ from stable_baselines3 import PPO
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    # -> devient args.config
     parser.add_argument('--cfg', '-c', type=str, default='a1_task_rma')
     parser.add_argument('--savedir', '-s', type=str, default='experiments/')
     parser.add_argument('--dsetsavedir', '-k', type=str, default='output/')

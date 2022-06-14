@@ -65,8 +65,16 @@ class VariableRobotDescriptor:
     def write_xacro(self, variant_name):
         # make xml elements for xacro:leg
         for val, legpos in enumerate(self.legspos):
-            reflect_val = random.choice([-1, 1])
-            leg_template = ET.Element('{'+f'{self.xacrons}'+'}'+'leg', attrib={'name': f'l{val+1}', 'reflect': f'{reflect_val}'}, nsmap=self.ns)
+            if val % 2 == 0:
+                reflect_val = 1
+                leg_prefix = 'l'
+            else:
+                reflect_val = -1
+                leg_prefix = 'r'
+            # reflect_val = random.choice([-1, 1])
+            # if reflect_val == -1: leg_prefix = 'r'
+            # elif reflect_val == 1: leg_prefix = 'l'
+            leg_template = ET.Element('{'+f'{self.xacrons}'+'}'+'leg', attrib={'name': f'{leg_prefix}{val+1}', 'reflect': f'{reflect_val}'}, nsmap=self.ns)
             leg_desc = ET.SubElement(leg_template, 'origin', attrib={'xyz': self._stringify_value(legpos), 'rpy': '0 0 0'})
             self.root.append(leg_template)
 
@@ -105,7 +113,7 @@ if __name__ == '__main__':
         'modifyNbLegs': False
     }
 
-    NB_GENERATED = 20
+    NB_GENERATED = 32
 
     for i in range(NB_GENERATED):
         gen_flname = f'v0_{configDict["robotDef"]["num_legs"]}l_{i}'
