@@ -207,13 +207,15 @@ class SotoRobotTask(SotoForwardTask):
 
     def _reward_turn(self):
         value = torch.remainder(self.commands.squeeze(-1)-self.box_angle,torch.pi)
-        angle_error = torch.square(torch.pi/2-value)
-
-        return torch.exp(-angle_error / self.cfg.rewards.tracking_angle)
+        angle_error = torch.square(value)
+        print(value.mean())
+        reward = torch.exp(-angle_error / self.cfg.rewards.tracking_angle)
+        print(reward.mean())
+        return reward
 
 
     def _reward_distance_min(self):
-        reward = torch.exp(-(torch.square(self.distance_sensors[:,0] +0.2)+torch.square(self.distance_sensors[:,1] +0.2)) / self.cfg.rewards.tracking_distance)
+        reward = torch.exp(-(torch.square(self.distance_sensors[:,0] +0.15)+torch.square(self.distance_sensors[:,1] +0.2)) / self.cfg.rewards.tracking_distance)
         return reward
 
     # def _reward_geometric_center(self):

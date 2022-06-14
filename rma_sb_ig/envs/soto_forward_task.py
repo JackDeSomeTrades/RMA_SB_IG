@@ -28,6 +28,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         SotoEnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device,
                               headless=args.headless, sim_params=sim_params)
+        set_seed(config.seed)
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
         self.reward_scales = self.cfg.rewards.scales.to_dict()
@@ -477,17 +478,17 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
     def check_termination(self):
         """ Check if environments need to be reset. Sets up the dones for the return values of step.
         """
-        self.reset_buf = torch.any(torch.norm(self.contact_forces[:, [0], :],dim = -1) > 1.,dim=1)
+        test1 = self.box_pos[:, 2] < 0.70
+        test2 = self.box_pos[:, 2] > 3
+        test3 = self.distance_sensors[:,0] < -1.3
+        test4 = self.distance_sensors[:,1] < -1.3
+        self.reset_buf = torch.logical_or(test1,test2)
+        self.distance_reset = torch.logical_and(test3, test4)
 
-        self.box_out_buffer = (self.contact_forces[:, -1, 2] < 0.05)
-        test = torch.norm(self.box_pos[:,:2]-self.box_init_pos[:,:2],dim=-1) > 0.4
-        test1 = self.box_pos[:,2] < 0.85
-        test2 = self.box_pos[:,2] > 3
-        self.box_out_buffer = torch.logical_and(self.box_out_buffer,test)
-        self.box_out_buffer = torch.logical_or(torch.logical_or(self.box_out_buffer,test1),test2)
+
         self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
         self.reset_buf |= self.time_out_buf
-        self.reset_buf |= self.box_out_buffer
+        self.reset_buf |= self.distance_reset
 
 
 
