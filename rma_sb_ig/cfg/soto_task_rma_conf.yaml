@@ -82,10 +82,10 @@ task_config:
   control:
     # PD Drive parameters:
     control_type: 'P' # P: position, V: velocity, T: torques
-    stiffness: { 'cylinder': 20. }  # [N*m/rad]
-    damping: { 'cylinder': 0.5 }  # [N*m*s/rad]
+    stiffness: { 'cylinder': 20. , 'joints' : 10.}  # [N*m/rad]
+    damping: { 'cylinder': 0.5, 'joints' : 1. }  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
-    action_scale: 0.25
+    action_scale: 1.0
     # decimation: Number of control action updates @ sim DT per policy DT
     decimation: 2
 
@@ -107,12 +107,12 @@ task_config:
     friction_range : [1.0,4]
 
     randomize_base_mass: True
-    mass_box: [-0.1, 0.1]
-    length_box : [0.35,0.40]
-    width_box : [0.5,0.55]
+    mass_box: [-0.2, 1.0]
+    length_box : [0.40,0.40]
+    width_box : [0.6,0.6]
     height_box : [0.15,0.2]
     randomize_com : True
-    com_distribution_range : [-0.05,0.05]
+    com_distribution_range : [-0.15,0.15]
     push_robot : False
     push_interval : [0.1,0.3]
 
@@ -187,13 +187,13 @@ task_config:
 rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
-  num_iterations_p1: 15000
+  num_iterations_p1: 100000
   n_timesteps: 1800000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
   ppo:
-    n_steps: 24 # TODO: adapt to your setting
+    n_steps: 50 # TODO: adapt to your setting
     batch_size: 600 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95

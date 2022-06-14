@@ -4,7 +4,7 @@ from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
 
 import torch
-
+CUDA_LAUNCH_BLOCKING=1
 # import torch
 # from torch import Tensor
 # from typing import Tuple, Dict
@@ -442,9 +442,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.soto_root_state[env_ids] = self.soto_init_state[env_ids]
 
         env_ids_int32 = env_ids.to(dtype=torch.int32)
-        self.gym.set_actor_root_state_tensor_indexed(self.sim,
-                                                     gymtorch.unwrap_tensor(self.root_states),
-                                                     gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
+        self.gym.set_actor_root_state_tensor(self.sim,gymtorch.unwrap_tensor(self.root_states))
 
     def _resample_commands(self, env_ids):
         """ Randommly select commands of some environments
@@ -478,9 +476,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
     def check_termination(self):
         """ Check if environments need to be reset. Sets up the dones for the return values of step.
         """
-        print(self.contact_forces)
-        self.reset_buf = torch.any(torch.norm(self.contact_forces[:, 0, :], dim=-1) > 1.,
-                                   dim=0)
+        self.reset_buf = torch.any(torch.norm(self.contact_forces[:, [0], :],dim = -1) > 1.,dim=1)
 
         self.box_out_buffer = (self.contact_forces[:, -1, 2] < 0.05)
         test = torch.norm(self.box_pos[:,:2]-self.box_init_pos[:,:2],dim=-1) > 0.4
@@ -492,10 +488,8 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.reset_buf |= self.time_out_buf
         self.reset_buf |= self.box_out_buffer
 
-        print("z position of reseted", self.box_pos[self.reset_buf,2])
-        print("norm of reseted", torch.norm(self.box_pos[self.reset_buf,:2]-self.box_init_pos[self.reset_buf,:2],dim=-1))
-        print("contact of reseted", self.contact_forces[self.reset_buf, -1, 2])
-        print()
+
+
     def _get_depth_sensor_tensor(self):
         self.depth_sensors = [[gymtorch.wrap_tensor(
             self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[i], self.distance_handles[i][0],gymapi.IMAGE_DEPTH))[0][0],
@@ -505,7 +499,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
 
         self.tensor2 = torch.cat([self.depth_sensors[0][0].unsqueeze(-1),self.depth_sensors[1][0].unsqueeze(-1)])
-        print("hello")
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.
