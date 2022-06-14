@@ -139,6 +139,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
                     self.p_gains[i] = self.cfg.control.stiffness[dof_name]
                     self.d_gains[i] = self.cfg.control.damping[dof_name]
                     found = True
+                    break
             if not found:
                 self.p_gains[i] = 0.
                 self.d_gains[i] = 0.

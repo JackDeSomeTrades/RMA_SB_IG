@@ -82,10 +82,10 @@ task_config:
   control:
     # PD Drive parameters:
     control_type: 'P' # P: position, V: velocity, T: torques
-    stiffness: { 'cylinder': 20. , 'joints' : 10.}  # [N*m/rad]
-    damping: { 'cylinder': 0.5, 'joints' : 1. }  # [N*m*s/rad]
+    stiffness: { 'cylinder': 20. , 'joints' : 20.}  # [N*m/rad]
+    damping: { 'cylinder': 0.5, 'joints' : 2.0. }  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
-    action_scale: 1.0
+    action_scale: 0.25
     # decimation: Number of control action updates @ sim DT per policy DT
     decimation: 2
 
@@ -104,7 +104,7 @@ task_config:
 
   domain_rand:
     randomize_friction : True
-    friction_range : [1.0,4]
+    friction_range : [0.5,3.0]
 
     randomize_base_mass: True
     mass_box: [-0.2, 1.0]
@@ -127,17 +127,17 @@ task_config:
 
   rewards:
     only_positive_rewards: False # if true negative total rewards are clipped at zero (avoids early termination problems)
-    tracking_sigma: 0.25 # tracking reward: exp(-error^2/sigma)
+    tracking_angle: 0.2 # tracking reward: exp(-error^2/sigma)
+    tracking_distance : 0.5
     soft_dof_vel_limit: 1.
     soft_torque_limit: 1.
     max_contact_force: 100. # forces above this value are penalized
     soft_dof_pos_limit: 0.9 # percentage of urdf limits, values above this limit are penalized
-    base_height_target: 0.42
     scales:
       #        termination: -10.0   # 0.0
       #forward: 10
       #distance_equal: -10.0
-      turn: 40
+      turn: 20
       distance_min : 2
       #geometric_center : -1.0
       #work: -0.005
@@ -175,14 +175,14 @@ task_config:
     add_noise: True
     noise_level: 1.0 # scales other values
     noise_scales:
-       dof_pos: 0.01
-       dof_vel: 0.1
-       lin_vel: 0.1
-       ang_vel: 0.1
+       dof_pos: 0.05
+       dof_vel: 0.05
+       lin_vel: 0.05
+       ang_vel: 0.05
        gravity: 0.05
-       action : 0.1
-       distance_measurements: 0.1
-       motor_strength: 0.05
+       action : 0.05
+       distance_measurements: 0.05
+       motor_strength: 0.01
 
 rl_config:
   device: 'cuda:0'
@@ -193,17 +193,17 @@ rl_config:
   logging:
     dir: '{ROOT_DIR}/logs/'
   ppo:
-    n_steps: 50 # TODO: adapt to your setting
-    batch_size: 600 # TODO: adapt to your setting
+    n_steps: 25 # TODO: adapt to your setting
+    batch_size: 625 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
     n_epochs: 10
     ent_coef: 0.01
-    lr: 1e-3
+    lr: 5e-3
     clip_range: 0.2
     max_grad_norm: 1.0
-    vf_coef: 1.0
+    vf_coef: 2.0
     # use_sde: False
     # sde_sample_freq: 4
 
