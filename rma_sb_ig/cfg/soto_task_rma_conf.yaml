@@ -60,7 +60,7 @@ task_config:
     penalize_contacts_on: [] # important to provide the sidebar links all around the end effector
     terminate_after_contacts_on: ["base_link"]
     self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
-    disable_gravity: False
+    disable_gravity: True
     armature : 0.01
     collapse_fixed_joints: True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
     fix_base_link: True # so the base shouldn't be allowed to move no matter what 
@@ -83,9 +83,9 @@ task_config:
     # PD Drive parameters:
     control_type: 'P' # P: position, V: velocity, T: torques
     stiffness: { 'cylinder': 20. , 'joints' : 20.}  # [N*m/rad]
-    damping: { 'cylinder': 0.5, 'joints' : 2.0. }  # [N*m*s/rad]
+    damping: { 'cylinder': 1.0, 'joints' : 1.0 }  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
-    action_scale: 0.25
+    action_scale: 0.5
     # decimation: Number of control action updates @ sim DT per policy DT
     decimation: 2
 
@@ -138,11 +138,11 @@ task_config:
       #forward: 10
       #distance_equal: -10.0
       turn: 20
-      distance_min : 2
+      #distance_min : 0.5
       #geometric_center : -1.0
       #work: -0.005
       #turning_velocity : 1.0
-      z_position : -1.0
+      #z_position : -1.0
       #maintain_forward : 10
       #tracking_lin_vel: 20.0
       #tracking_ang_vel: 10.0
@@ -187,23 +187,23 @@ task_config:
 rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
-  num_iterations_p1: 100000
+  num_iterations_p1: 15000
   n_timesteps: 1800000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
   ppo:
-    n_steps: 25 # TODO: adapt to your setting
-    batch_size: 625 # TODO: adapt to your setting
+    n_steps: 20 # TODO: adapt to your setting
+    batch_size: 100 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
-    gamma: 0.99
-    n_epochs: 10
-    ent_coef: 0.01
+    gamma: 0.80
+    n_epochs: 5
+    ent_coef: 0.1
     lr: 5e-3
     clip_range: 0.2
     max_grad_norm: 1.0
-    vf_coef: 2.0
+    vf_coef: 1.0
     # use_sde: False
     # sde_sample_freq: 4
 
