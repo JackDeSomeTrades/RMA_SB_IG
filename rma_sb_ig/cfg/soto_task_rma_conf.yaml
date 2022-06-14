@@ -112,7 +112,7 @@ task_config:
     width_box : [0.6,0.6]
     height_box : [0.15,0.2]
     randomize_com : True
-    com_distribution_range : [-0.15,0.15]
+    com_distribution_range : [-0.10,0.10]
     push_robot : False
     push_interval : [0.1,0.3]
 
