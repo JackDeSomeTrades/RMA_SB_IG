@@ -380,7 +380,6 @@ class SotoEnvScene:
 
             dist1 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
             dist2 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
-            print(distance_sensor)
             # get index of pieces in rigid body state tensor
             dist1_idx = self.gym.find_actor_rigid_body_index(
                 self.envs[i], self.soto_handle, "conveyor_belt_left_link", gymapi.DOMAIN_ENV)

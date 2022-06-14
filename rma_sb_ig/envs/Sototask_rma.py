@@ -212,7 +212,6 @@ class SotoRobotTask(SotoForwardTask):
         return reward
     def _reward_distance_min(self):
         reward = torch.where(torch.logical_and(self.distance_sensors[:,0] < -0.1, self.distance_sensors[:,1] < -0.1),1.,0.)
-        print("reward distance", torch.mean(reward))
         return reward
 
     # def _reward_geometric_center(self):
@@ -227,11 +226,9 @@ class SotoRobotTask(SotoForwardTask):
     #     return reward
     def _reward_z_position(self):
         reward = torch.abs(self.box_pos[:,2] - self.box_init_pos[:,2])
-        print('reward Z', torch.mean(reward))
         return reward
     def _reward_turning_velocity(self):
         reward = self.box_root_state[:,12]
-        print("reward Turning velocity",torch.mean(reward))
         return reward
     #
     # def _reward_maintain_forward(self):

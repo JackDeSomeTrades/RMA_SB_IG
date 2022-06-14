@@ -1,11 +1,10 @@
 .idea/
 */*/__pycache__
-rma_sb_ig/logs/*
-rma_sb_ig/output/*
 rma_sb_ig.egg-info/*
 rma_sb_ig/experiments/*
+rma_sb_ig/logs/*
+rma_sb_ig/output/*
 rma_sb_ig/resources/robots/soto_gripper/
-rma_sb_ig/resources/robots/soto_2/
 .vscode/
 rma_sb_ig/TODO.md
 rma_sb_ig/test.py
