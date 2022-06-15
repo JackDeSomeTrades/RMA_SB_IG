@@ -117,41 +117,24 @@ class SotoEnvScene:
 
         self.soto_asset = self.gym.load_asset(self.sim, asset_root,asset_file,asset_options)
         # # configure soto dofs
-
+        self.dof_names = self.gym.get_asset_dof_names(self.soto_asset)
         # # self.default_dof_pos = np.zeros(self.soto_num_dofs, dtype=np.float32) #way to initialize dofs
         self.num_dofs = self.gym.get_asset_dof_count(self.soto_asset)
         self.num_bodies = self.gym.get_asset_rigid_body_count(self.soto_asset)
         # dof_props_asset = self.gym.get_asset_dof_properties(self.soto_asset)
 
-        self.dof_usefull_names = list(
-            filter(lambda i: not 'cylinder' in i, self.gym.get_asset_dof_names(self.soto_asset)))
-        self.dof_usefull_names += ["cylinder_left_4_to_belt", "cylinder_right_4_to_belt"]
-
-
-        self.dof_left_cylinders = list(filter(lambda i: 'cylinder_left' in i, self.gym.get_asset_dof_names(self.soto_asset)))
-        self.dof_right_cylinders = list(filter(lambda i: 'cylinder_right' in i, self.gym.get_asset_dof_names(self.soto_asset)))
-
-        self.cylinder_left_id = self.dof_usefull_names.index("cylinder_left_4_to_belt")
-        self.cylinder_right_id = self.dof_usefull_names.index("cylinder_right_4_to_belt")
-
-        self.dof_usefull_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_usefull_names])
-        self.dof_left_cylinders_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_left_cylinders])
-        self.dof_right_cylinders_id = np.array([self.gym.get_asset_dof_names(self.soto_asset).index(i) for i in self.dof_right_cylinders])
-
-
         self.soto_dof_props = self.gym.get_asset_dof_properties(self.soto_asset)
-        self.num_usefull_dofs = len(self.dof_usefull_id)
         self.lower_bounds_joints = self.soto_dof_props["lower"]
         self.upper_bounds_joints = self.soto_dof_props["upper"]
-        self.lower_bounds_joint_tensor  = torch.tensor(self.lower_bounds_joints[self.dof_usefull_id], dtype = torch.float,device = self.device).expand(self.num_envs,np.size(self.dof_usefull_id))
-        self.upper_bounds_joint_tensor  = torch.tensor(self.upper_bounds_joints[self.dof_usefull_id], dtype = torch.float,device = self.device).expand(self.num_envs,np.size(self.dof_usefull_id))
+        self.lower_bounds_joint_tensor  = torch.tensor(self.lower_bounds_joints, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
+        self.upper_bounds_joint_tensor  = torch.tensor(self.upper_bounds_joints, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
 
 
         self.motor_strength = self.soto_dof_props["effort"]
-        self.torque_force_bound = torch.tensor(self.motor_strength[self.dof_usefull_id], dtype = torch.float,device = self.device).expand(self.num_envs,np.size(self.dof_usefull_id))
+        self.torque_force_bound = torch.tensor(self.motor_strength, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
         
         self.joint_velocity = self.soto_dof_props["velocity"]
-        self.joint_velocity_bound  = torch.tensor(self.joint_velocity[self.dof_usefull_id], dtype = torch.float,device = self.device).expand(self.num_envs,np.size(self.dof_usefull_id))
+        self.joint_velocity_bound  = torch.tensor(self.joint_velocity, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
         self.soto_mids = 0.5*(self.upper_bounds_joints +self.lower_bounds_joints)
 
         self.default_dof_pos = self.soto_mids
@@ -253,10 +236,6 @@ class SotoEnvScene:
                 env, self.soto_handle, self.default_dof_state, gymapi.DOMAIN_ENV)
 
             # add box
-            conveyor_left = self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, "conveyor_belt_left", gymapi.DOMAIN_ENV)
-            conveyor_right = self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, "conveyor_belt_right", gymapi.DOMAIN_ENV)
             self.gripper_x_id = self.gym.find_actor_rigid_body_index(
                 env, self.soto_handle, "gripper_base_x", gymapi.DOMAIN_ENV)
             body_states = self.gym.get_actor_rigid_body_states(env, self.soto_handle, gymapi.DOMAIN_ENV)
@@ -337,7 +316,7 @@ class SotoEnvScene:
         # randomize base mass
         if self.cfg.domain_rand.randomize_base_mass:
             rng = self.cfg.domain_rand.mass_box
-            props[0].mass += np.random.uniform(rng[0], rng[1])
+            props[0].mass = np.random.uniform(rng[0], rng[1])
         if self.cfg.domain_rand.randomize_com:
             rng_2 = self.cfg.domain_rand.com_distribution_range
             props[0].com.x += np.random.uniform(rng_2[0], rng_2[1])
