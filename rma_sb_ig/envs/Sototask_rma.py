@@ -16,76 +16,76 @@ class SotoRobotTask(SotoForwardTask):
     def __init__(self, *args):
 
         super(SotoRobotTask, self).__init__(*args)
-        self.distance_sensors = self._get_distance_sensors()
+        self._get_distance_sensors()
     def _init_observation_space(self):
-        """
-        Observation consists of : 43
-            intrinsic
-                        dof_pos - 7 + 2 cylinders
-                        dof_vel - 7 + 2 cylinders
-                        previous_action - 7 + 2 cylinders
-                        distance_btw_conveyors - 1
-            extrinsic
-                        friction box/belt - 2
-                        dynamic friction - 2
-                        Mass_box - 1
-                        COM_x - 1
-                        COM_y - 1
-                        GC_x - 1
-                        GC_y - 1
-                        width-length-height_box - 3
-                        distance sensors feedback(d1,d2) - 2
-                        box_angle - 1
-        :return: obs_space
-        """
-        self.right_arm_index = self.dof_usefull_names.index('gripper_y_right')
-        self.left_arm_index = self.dof_usefull_names.index('gripper_y_left')
+        # Observation consists of : 43
+        #     intrinsic
+        #                 dof_pos - 7 + 2 cylinders
+        #                 dof_vel - 7 + 2 cylinders
+        #                 distance_btw_conveyors - 1
+        #     extrinsic
+        #                 friction box/belt - 2
+        #                 dynamic friction - 2
+        #                 Mass_box - 1
+        #                 COM_x - 1
+        #                 COM_y - 1
+        #                 GC_x - 1
+        #                 GC_y - 1
+        #                 width-length-height_box - 3
+        #                 distance sensors feedback(d1,d2) - 2
+        #                 box_angle - 1
+
+        # + previous_action - 7 + 2 cylinders
+        # :return: obs_space
+        self.right_arm_index = self.dof_names.index('gripper_y_right')
+        self.left_arm_index = self.dof_names.index('gripper_y_left')
         dist_max = self.upper_bounds_joints[self.right_arm_index] - self.lower_bounds_joints[self.right_arm_index]
+
         limits_low = np.array(
-            list(self.lower_bounds_joints[self.dof_usefull_id]) +
+            list(self.lower_bounds_joints) +
             [0] * 9 +    # minimum values of joint velocities
             [0] +
-            list(self.lower_bounds_joints[self.dof_usefull_id]) +
+            list(self.lower_bounds_joints) +
 
 
             [self.cfg.domain_rand.friction_range[0]]*2 +
             [self.cfg.domain_rand.friction_range[0]]*2 +
             [self.cfg.domain_rand.mass_box[0]] +
-            [0] +
-            [0] +
-            [0] +
-            [0] +
+            [-1.5] +
+            [-1.5] +
+            [-1.5] +
+            [-1.5] +
             [self.cfg.domain_rand.width_box[0]] +
             [self.cfg.domain_rand.length_box[0]] +
             [self.cfg.domain_rand.height_box[0]] +
 
-            [0]*2 +
+            [-1.5]*2 +
             [0]
         )
 
         limits_high = np.array(
-            list(self.upper_bounds_joints[self.dof_usefull_id]) +
-            list(self.joint_velocity[self.dof_usefull_id]) +    # maximum values of joint velocities
+            list(self.upper_bounds_joints) +
+            list(self.joint_velocity)+    # maximum values of joint velocities
             # distance max btw 2 conveyors +
             [dist_max] +
-            list(self.upper_bounds_joints[self.dof_usefull_id]) +
+            list(self.upper_bounds_joints) +
 
 
             [self.cfg.domain_rand.friction_range[1]]*2 +
             [self.cfg.domain_rand.friction_range[1]]*2 +
             [self.cfg.domain_rand.mass_box[1]] +
 
-            [self.cfg.domain_rand.length_box[1]] +
-            [self.cfg.domain_rand.width_box[1]] +
+            [1.5] +
+            [1.5] +
 
-            [self.cfg.domain_rand.length_box[1]] +
-            [self.cfg.domain_rand.width_box[1]] +
+            [1.5] +
+            [1.5] +
 
             [self.cfg.domain_rand.width_box[1]] +
             [self.cfg.domain_rand.length_box[1]] +
             [self.cfg.domain_rand.height_box[1]] +
 
-            [1.5]*2 +  # supposed length of grippers
+            [-0.025]*2 +  # supposed length of grippers
             [2*np.pi]
         )
 
@@ -101,8 +101,10 @@ class SotoRobotTask(SotoForwardTask):
 
         :return: act_space -> gym.space.Box
         """
-        lb = np.array(self.lower_bounds_joints[self.dof_usefull_id])
-        ub = np.array(self.upper_bounds_joints[self.dof_usefull_id])
+
+
+        ub = np.array(self.joint_velocity)
+        lb = np.zeros_like(ub)
         act_space = gymspace.Box(lb, ub, dtype=np.float32)
         return act_space
 
@@ -130,12 +132,12 @@ class SotoRobotTask(SotoForwardTask):
             noise_level * self.obs_scales.action
 
 
-        noise_vec[28:32] = 0.05 #friction
+        noise_vec[28:32] = 0.1 #friction
         noise_vec[32:37] = 0.  # Mass and COM and GC
         noise_vec[37:40] = 0. #box dimensions
         noise_vec[40:42] = noise_scales.distance_measurements * \
             noise_level
-        noise_vec[42:43] = 0.05
+        noise_vec[42:43] = 0.1
 
         return noise_vec
 
@@ -160,8 +162,8 @@ class SotoRobotTask(SotoForwardTask):
         # + previous_action - 7 + 2 cylinders
         # :return: obs_space
 
-        distance = self._get_distance_sensors()
-        self.distance_sensors = torch.clip(distance, -1.5, -0.025)
+        self._get_distance_sensors()
+        self.distance_sensors = torch.clip(self.distance_sensors, -1.5, -0.025)
         distance_btw_arms = torch.abs(self.dof_pos[:,self.right_arm_index] -(0.7-self.dof_pos[:,self.left_arm_index]))
         self.X_t = torch.cat((self.dof_pos,
                               self.dof_vel,
@@ -192,9 +194,10 @@ class SotoRobotTask(SotoForwardTask):
     def _get_distance_sensors(self):
         self.gym.render_all_camera_sensors(self.sim)
         self.gym.start_access_image_tensors(self.sim)
-        depth = torch.as_tensor(self.depth_sensors, device = self.device)
+        for i in range(self.num_envs) :
+            self.distance_sensors[i][0] = self.depth_sensors[i][0]
+            self.distance_sensors[i][1] = self.depth_sensors[i][1]
         self.gym.end_access_image_tensors(self.sim)
-        return depth
 
     # def _reward_forward(self):
     #     forward = quat_apply(self.gripper_quat, self.forward_vec)
@@ -208,15 +211,19 @@ class SotoRobotTask(SotoForwardTask):
     def _reward_turn(self):
         value = torch.remainder(self.commands.squeeze(-1)-self.box_angle,torch.pi)
         angle_error = torch.square(value)
-        print(value.mean())
         reward = torch.exp(-angle_error / self.cfg.rewards.tracking_angle)
-        print(reward.mean())
+        print(value.mean())
         return reward
 
 
     def _reward_distance_min(self):
-        reward = torch.exp(-(torch.square(self.distance_sensors[:,0] +0.15)+torch.square(self.distance_sensors[:,1] +0.2)) / self.cfg.rewards.tracking_distance)
+        reward = torch.exp(-(torch.abs(self.distance_sensors[:,0] +0.15)+torch.abs(self.distance_sensors[:,1] +0.15)) / self.cfg.rewards.tracking_distance)
+
         return reward
+
+    def _reward_dof_acc(self):
+        # Penalize dof accelerations
+        return torch.sum(torch.square((self.last_dof_vel - self.dof_vel) / self.dt), dim=1)
 
     # def _reward_geometric_center(self):
     #     reward = torch.norm(self.box_pos - self.box_init_pos,dim=1)
