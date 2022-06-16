@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 10
+    num_envs: 100
     num_observations: 43
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 9
@@ -14,12 +14,11 @@ task_config:
     dt : 0.01
     use_gpu : True
     substep : 1
-    solver_type : 1
-    num_position_iterations : 8
+    num_position_iterations : 4
     num_velocity_iterations  : 1
     rest_offset  : 0.0
     contact_offset  : 0.01
-    friction_offset_threshold  : 0.01
+    friction_offset_threshold  : 0.001
     friction_correlation_distance  : 0.0005
     num_threads  : 0
     use_gpu_physx  : True
@@ -41,7 +40,7 @@ task_config:
     lin_vel: [ 0.0, 0.0, 0.0 ]  # x,y,z [m/s]
     ang_vel: [ 0.0, 0.0, 0.0 ]  # x,y,z [rad/s]
     pos: [ 0.0, 0.0, 0.42 ]  # x,y,z [m]
-    angle : -1.59
+    angle : -1.57
     default_joint_init: { #: target angles [rad] when action: 0.0
       'vertical_axis' : 1.0,
       'gripper_rotate' : -3.14,
@@ -61,16 +60,16 @@ task_config:
     penalize_contacts_on: [] # important to provide the sidebar links all around the end effector
     terminate_after_contacts_on: ["base_link"]
     self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
-    disable_gravity: True
+    disable_gravity: False
     armature : 0.01
     collapse_fixed_joints: True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
     fix_base_link: True # so the base shouldn't be allowed to move no matter what 
     default_dof_drive_mode: 3 # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
-    replace_cylinder_with_capsule: True
+    replace_cylinder_with_capsule: False
     flip_visual_attachments: False # imp: this is the flag that was giving us issues.
     override_inertia : False #overide inertia properties (might be wrong)
     override_com : False #overide inertia properties (might be wrong)
-
+    restitution : 0.1
   distance_sensor :
     fov : 3 #degrés
     near_plane : 0.025
@@ -82,7 +81,7 @@ task_config:
 
   control:
     # PD Drive parameters:
-    control_type: 'P' # P: position, V: velocity, T: torques
+    control_type: 'V' # P: position, V: velocity, T: torques
     stiffness: { 'joint': 20.}  # [N*m/rad]
     damping: { 'joint': 1.0}  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
@@ -105,15 +104,15 @@ task_config:
 
   domain_rand:
     randomize_friction : True
-    friction_range : [0.5,3.0]
+    friction_range : [0.7,0.9]
 
     randomize_base_mass: True
-    mass_box: [0.5, 3.0]
+    mass_box: [1.0, 3.0]
     length_box : [0.40,0.40]
     width_box : [0.6,0.6]
     height_box : [0.15,0.2]
     randomize_com : True
-    com_distribution_range : [-0.10,0.10]
+    com_distribution_range : [-0.00,0.00]
     push_robot : False
     push_interval : [0.1,0.3]
 
@@ -128,7 +127,7 @@ task_config:
 
   rewards:
     only_positive_rewards: False # if true negative total rewards are clipped at zero (avoids early termination problems)
-    tracking_angle: 0.2 # tracking reward: exp(-error^2/sigma)
+    tracking_angle: 0.1 # tracking reward: exp(-error^2/sigma)
     tracking_distance : 0.5
     soft_dof_vel_limit: 1.
     soft_torque_limit: 1.
@@ -140,7 +139,8 @@ task_config:
       #distance_equal: -10.0
       turn: 20
       distance_min : 1
-      dof_acc : -2
+      velocity : 10
+      #dof_acc : -2
       #geometric_center : -1.0
       #work: -0.005
       #turning_velocity : 1.0
@@ -196,7 +196,7 @@ rl_config:
     dir: '{ROOT_DIR}/logs/'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
-    batch_size: 250 # TODO: adapt to your setting
+    batch_size: 2500 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99

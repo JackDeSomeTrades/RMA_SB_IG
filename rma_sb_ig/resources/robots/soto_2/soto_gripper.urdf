@@ -440,8 +440,8 @@
 			</geometry>
 		</collision>
 		<inertial>
-			<mass value="2.0"/>
-			<inertia ixx="0.004" ixy="0" ixz="0" iyy="150" iyz="0.0" izz="150"/>
+			<mass value="5.0"/>
+			<inertia ixx="0.0002" ixy="0" ixz="0" iyy="00" iyz="0.0" izz="00"/>
 		</inertial>
 	</link>
 
@@ -450,7 +450,7 @@
 		<parent link="conveyor_belt_left_foremost_link"/>
 		<child link="left_conveyor_belt"/>
 		<axis xyz="1 0 0"/>
-		<limit effort="1500" lower="-5" upper="+5" velocity="0.50"/>
+		<limit effort="150000" lower="-5" upper="+5" velocity="1"/>
 	</joint>
 
 	<link name="right_conveyor_belt">
@@ -466,9 +466,10 @@
 			</geometry>
 		</collision>
 		<inertial>
-			<mass value="2.0"/>
-			<inertia ixx="0.004" ixy="0" ixz="0" iyy="150" iyz="0.0" izz="150"/>
+			<mass value="5.0"/>
+			<inertia ixx="0.0002" ixy="0" ixz="0" iyy="150" iyz="0.0" izz="00"/>
 		</inertial>
+		<dynamics damping="10.0" friction="0.3"/>
 	</link>
 
 	<joint name="conveyor_right_to_belt" type="prismatic">
@@ -476,7 +477,8 @@
 		<parent link="conveyor_belt_right_foremost_link"/>
 		<child link="right_conveyor_belt"/>
 		<axis xyz="1 0 0"/>
-		<limit effort="1500" lower="-5" upper="5" velocity="0.50"/>
+		<dynamics damping="1.0" friction="0.3"/>
+		<limit effort="150000" lower="-5" upper="5" velocity="1"/>
 	</joint>
 
 	

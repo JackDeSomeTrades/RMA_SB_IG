@@ -84,7 +84,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.box_rpy = get_euler_xyz(self.box_quat)
         self.box_angle = self.box_rpy[2]
         self.box_init_angle = self.box_angle[0]
-        self.gripper_init_yaw = self.gripper_yaw_orientation[:]
+        self.gripper_init_yaw = torch.clone(self.gripper_yaw_orientation)
         self.box_lin_vel = self.box_root_state[..., 7:10]
         self.box_pos = self.box_root_state[..., 0:3]
         self.box_init_pos = torch.clone(self.box_pos[:])
@@ -137,15 +137,16 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             found = False
 
             for dof_name in self.cfg.control.stiffness.keys():
-                if dof_name in name:
+
+                if dof_name in name :
                     self.p_gains[i] = self.cfg.control.stiffness[dof_name]
                     self.d_gains[i] = self.cfg.control.damping[dof_name]
                     found = True
             if not found:
-                self.p_gains[i] = 0.
-                self.d_gains[i] = 0.
+                self.p_gains[i] = self.cfg.control.stiffness['joint']
+                self.d_gains[i] = self.cfg.control.damping['joint']
                 if self.cfg.control.control_type in ["P", "V"]:
-                    print(f"PD gain of joint {name} were not defined, setting them to zero")
+                    print(f"PD gain of joint {name} were not defined, setting them to joint default values")
 
         # initialise reward functions here
         self._prepare_reward_function()

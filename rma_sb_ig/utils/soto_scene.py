@@ -27,8 +27,6 @@ class SotoEnvScene:
 
         self.device = sim_device if self.sim_params.use_gpu_pipeline else 'cpu'
         self.graphics_device_id = self.sim_device_id
-        if self.headless:
-            self.graphics_device_id = -1
         # configure sim
         self._adjust_sim_param()
 
@@ -36,18 +34,22 @@ class SotoEnvScene:
         self.enable_viewer_sync = True
         self.sim = self.gym.create_sim(
             self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
-        self.create_sim()
 
-        # point camera at middle env
         if not self.headless:
             # subscribe to keyboard shortcuts
             self.viewer = self.gym.create_viewer(
                 self.sim, gymapi.CameraProperties())
-            self.gym.subscribe_viewer_keyboard_event(
-                self.viewer, gymapi.KEY_ESCAPE, "QUIT")
-            self.gym.subscribe_viewer_keyboard_event(
-                self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
+            if self.viewer is None:
+                print("*** Failed to create viewer")
+                quit()
+        else :
+            self.viewer = None
+
+        self.create_sim()
+        if not self.headless :
             self._define_viewer()
+        # point camera at middle env
+
         self.gym.prepare_sim(self.sim)  # TODO : ATTENTION FAIT TOUT PLANTER avec set actor dof state
 
 
@@ -73,13 +75,8 @@ class SotoEnvScene:
         self.sim_params.substeps = self.cfg.sim_param.substep
         self.sim_params.use_gpu_pipeline = self.cfg.sim_param.use_gpu
         if self.physics_engine == gymapi.SIM_PHYSX:
-            self.sim_params.physx.solver_type = self.cfg.sim_param.solver_type
             self.sim_params.physx.num_position_iterations = self.cfg.sim_param.num_position_iterations
             self.sim_params.physx.num_velocity_iterations = self.cfg.sim_param.num_velocity_iterations
-            self.sim_params.physx.rest_offset = self.cfg.sim_param.rest_offset
-            self.sim_params.physx.contact_offset = self.cfg.sim_param.contact_offset
-            self.sim_params.physx.friction_offset_threshold = self.cfg.sim_param.friction_offset_threshold
-            self.sim_params.physx.friction_correlation_distance = self.cfg.sim_param.friction_correlation_distance
             self.sim_params.physx.num_threads = self.cfg.sim_param.num_threads
             self.sim_params.physx.use_gpu = self.cfg.sim_param.use_gpu_physx
         else:
@@ -96,25 +93,22 @@ class SotoEnvScene:
 
         asset_options = gymapi.AssetOptions()
         asset_options.density = 10
-        self.box_dimensions = [self._get_random_boxes(*box_limits) for i in range(self.num_envs)]
-        self.l_boxes_asset = [self.gym.create_box(self.sim, *dim, asset_options) for dim in self.box_dimensions]
-
         # load soto asset
 
         asset_file = os.path.basename(asset_path)
-
         asset_options.armature = self.cfg.asset.armature
-        asset_options.fix_base_link = self.cfg.asset.fix_base_link
         asset_options.disable_gravity = self.cfg.asset.disable_gravity
-        asset_options.flip_visual_attachments = self.cfg.asset.flip_visual_attachments
         asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
         asset_options.default_dof_drive_mode = self.cfg.asset.default_dof_drive_mode
         asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints
+
+        self.box_dimensions = [self._get_random_boxes(*box_limits) for i in range(self.num_envs)]
+        self.l_boxes_asset = [self.gym.create_box(self.sim, *dim, asset_options) for dim in self.box_dimensions]
+
         asset_options.override_com = self.cfg.asset.override_com
-        asset_options.override_inertia = self.cfg.asset.override_inertia
         asset_options.vhacd_enabled = True
-
-
+        asset_options.override_inertia = self.cfg.asset.override_inertia
+        asset_options.fix_base_link = self.cfg.asset.fix_base_link
         self.soto_asset = self.gym.load_asset(self.sim, asset_root,asset_file,asset_options)
         # # configure soto dofs
         self.dof_names = self.gym.get_asset_dof_names(self.soto_asset)
@@ -156,7 +150,10 @@ class SotoEnvScene:
         self.box_pose = gymapi.Transform()
 
         self.body_names = self.gym.get_asset_rigid_body_names(self.soto_asset)
+        self.right_conv_belt_id = self.dof_names.index("conveyor_right_to_belt")
+        self.left_conv_belt_id = self.dof_names.index("conveyor_left_to_belt")
         self.feet_names = [s for s in self.body_names if self.cfg.asset.foot_name in s]
+
         self.penalized_contact_names = []
         for name in self.cfg.asset.penalize_contacts_on:
             self.penalized_contact_names.extend(
@@ -169,6 +166,9 @@ class SotoEnvScene:
         self._initialize_env()
 
     def render(self, sync_frame_time=True):
+        if self.device != 'cpu':
+            self.gym.fetch_results(self.sim, True)
+            self.gym.step_graphics(self.sim)
         if self.viewer:
             # check for window closed
             if self.gym.query_viewer_has_closed(self.viewer):
@@ -181,13 +181,8 @@ class SotoEnvScene:
                 elif evt.action == "toggle_viewer_sync" and evt.value > 0:
                     self.enable_viewer_sync = not self.enable_viewer_sync
 
-            # fetch results
-            if self.device != 'cpu':
-                self.gym.fetch_results(self.sim, True)
-
             # step graphics
             if self.enable_viewer_sync:
-                self.gym.step_graphics(self.sim)
                 self.gym.draw_viewer(self.viewer, self.sim, True)
                 if sync_frame_time:
                     self.gym.sync_frame_time(self.sim)
@@ -200,6 +195,7 @@ class SotoEnvScene:
         spacing = self.cfg.terrain.border_size
         self.env_lower = gymapi.Vec3(-spacing, -spacing, 0.0)
         self.env_upper = gymapi.Vec3(spacing, spacing, spacing)
+
         print("Creating %d environments" % self.num_envs)
         self.envs = []
         self.box_masses = []
@@ -210,6 +206,7 @@ class SotoEnvScene:
         self.box_handles = []
         self.soto_fric = []
         self.box_fric = []
+
         for i in range(self.num_envs):
             # create env
             env = self.gym.create_env(
@@ -253,9 +250,6 @@ class SotoEnvScene:
             r = gymapi.Quat.from_axis_angle(gymapi.Vec3(0.,0.,1.),np.pi)
 
             self.box_pose.r = gymapi.Quat(*body_states["pose"][self.gripper_x_id][1])*r
-
-
-
             self.box_handle = self.gym.create_actor(env, self.l_boxes_asset[i], self.box_pose, "box", i,0,1)
             color = gymapi.Vec3(np.random.uniform(0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
             self.gym.set_rigid_body_color(env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
@@ -267,13 +261,14 @@ class SotoEnvScene:
             box_properties = self.gym.get_actor_rigid_body_properties(env, self.box_handle)
             box_properties = self._process_rigid_box_props(box_properties)
             self.gym.set_actor_rigid_body_properties(
-                env, self.box_handle, box_properties, recomputeInertia=True)
+                env, self.box_handle, box_properties)
             
             # get box id (always the same at each iteration)
             self.box_idx = self.gym.get_actor_rigid_body_index(
                 env, self.box_handle, 0, gymapi.DOMAIN_SIM)
             self.actor_handles.append(self.soto_handle)
             self.box_handles.append(self.box_handle)
+
             self.envs.append(env)
 
         self.box_masses = torch.cuda.FloatTensor(self.box_masses)
@@ -334,7 +329,7 @@ class SotoEnvScene:
             dyn_friction = np.random.uniform(rng[0], rng[1])
             for i in range(len(props)) :
                 props[i].friction = friction
-                props[i].rolling_friction = dyn_friction
+                props[i].restitution = self.cfg.asset.restitution
         if type == "soto" :
             self.soto_fric.append([friction,dyn_friction])
         elif type == "box" :
@@ -344,8 +339,6 @@ class SotoEnvScene:
         self.distance_handles = [[]]
         for i in range(self.num_envs) :
             self.distance_handles.append([])
-
-
             distance_sensor = gymapi.CameraProperties()
             distance_sensor.width = self.cfg.distance_sensor.width
             distance_sensor.height = self.cfg.distance_sensor.height
@@ -356,7 +349,6 @@ class SotoEnvScene:
             distance_sensor.use_collision_geometry = self.cfg.distance_sensor.use_collision_geometry
             distance_sensor.enable_tensors = self.cfg.distance_sensor.enable_tensors
             local_transform = gymapi.Transform()
-
             dist1 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
             dist2 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
             # get index of pieces in rigid body state tensor
