@@ -484,11 +484,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             gymtorch.wrap_tensor(self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[i],self.distance_handles[i][1],
             gymapi.IMAGE_DEPTH))[0][0]] for i in range(self.num_envs)]
 
-        self.d2 = torch.as_tensor([[gymtorch.wrap_tensor(
-            self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[i], self.distance_handles[i][0],gymapi.IMAGE_DEPTH)),
-            gymtorch.wrap_tensor(self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[i],self.distance_handles[i][1],
-            gymapi.IMAGE_DEPTH))] for i in range(self.num_envs)])
-
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.
