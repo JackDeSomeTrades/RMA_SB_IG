@@ -196,7 +196,7 @@ rl_config:
     dir: '{ROOT_DIR}/logs/'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
-    batch_size: 2500 # TODO: adapt to your setting
+    batch_size: 2350 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99

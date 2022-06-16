@@ -102,6 +102,10 @@ class SotoRobotTask(SotoForwardTask):
         :return: act_space -> gym.space.Box
         """
 
+        self.lower_bounds_joint_tensor = torch.tensor(self.lower_bounds_joints, dtype=torch.float,device=self.device).expand(self.num_envs, self.num_dofs)
+        self.upper_bounds_joint_tensor = torch.tensor(self.upper_bounds_joints, dtype=torch.float,device=self.device).expand(self.num_envs, self.num_dofs)
+        self.torque_force_bound = torch.tensor(self.motor_strength, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
+        self.joint_velocity_bound  = torch.tensor(self.joint_velocity, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
 
         ub = np.array(self.joint_velocity)
         lb = np.zeros_like(ub)

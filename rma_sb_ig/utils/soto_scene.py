@@ -92,9 +92,7 @@ class SotoEnvScene:
                       self.cfg.domain_rand.height_box)
 
         asset_options = gymapi.AssetOptions()
-        asset_options.density = 10
         # load soto asset
-
         asset_file = os.path.basename(asset_path)
         asset_options.armature = self.cfg.asset.armature
         asset_options.disable_gravity = self.cfg.asset.disable_gravity
@@ -120,17 +118,10 @@ class SotoEnvScene:
         self.soto_dof_props = self.gym.get_asset_dof_properties(self.soto_asset)
         self.lower_bounds_joints = self.soto_dof_props["lower"]
         self.upper_bounds_joints = self.soto_dof_props["upper"]
-        self.lower_bounds_joint_tensor  = torch.tensor(self.lower_bounds_joints, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
-        self.upper_bounds_joint_tensor  = torch.tensor(self.upper_bounds_joints, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
-
 
         self.motor_strength = self.soto_dof_props["effort"]
-        self.torque_force_bound = torch.tensor(self.motor_strength, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
-        
         self.joint_velocity = self.soto_dof_props["velocity"]
-        self.joint_velocity_bound  = torch.tensor(self.joint_velocity, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
         self.soto_mids = 0.5*(self.upper_bounds_joints +self.lower_bounds_joints)
-
         self.default_dof_pos = self.soto_mids
         # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
 
@@ -256,10 +247,10 @@ class SotoEnvScene:
 
             box_shape_props = self.gym.get_actor_rigid_shape_properties(env, self.box_handle)
             box_shape_props = self._process_rigid_properties(box_shape_props, "box")
-            self.gym.set_actor_rigid_shape_properties(env, self.box_handle, box_shape_props)
 
+            self.gym.set_actor_rigid_shape_properties(env, self.box_handle, box_shape_props)
             box_properties = self.gym.get_actor_rigid_body_properties(env, self.box_handle)
-            box_properties = self._process_rigid_box_props(box_properties)
+            box_properties = self._process_box_props(box_properties)
             self.gym.set_actor_rigid_body_properties(
                 env, self.box_handle, box_properties)
             
@@ -301,27 +292,6 @@ class SotoEnvScene:
         
         self._create_distance_sensors()
 
-    def _process_rigid_box_props(self, props):
-        # if env_id==0:
-        #     sum = 0
-        #     for i, p in enumerate(props):
-        #         sum += p.mass
-        #         print(f"Mass of body {i}: {p.mass} (before randomization)")
-        #     print(f"Total mass {sum} (before randomization)")
-        # randomize base mass
-        if self.cfg.domain_rand.randomize_base_mass:
-            rng = self.cfg.domain_rand.mass_box
-            props[0].mass = np.random.uniform(rng[0], rng[1])
-        if self.cfg.domain_rand.randomize_com:
-            rng_2 = self.cfg.domain_rand.com_distribution_range
-            props[0].com.x += np.random.uniform(rng_2[0], rng_2[1])
-            props[0].com.y += np.random.uniform(rng_2[0], rng_2[1])
-        self.box_masses.append(props[0].mass)
-        self.box_com_x.append(props[0].com.x)
-        self.box_com_y.append(props[0].com.y)
-        self.box_com_z.append(props[0].com.z)
-        return props
-
     def _process_rigid_properties(self, props,type):
         if self.cfg.domain_rand.randomize_friction:
             rng = self.cfg.domain_rand.friction_range
@@ -335,39 +305,23 @@ class SotoEnvScene:
         elif type == "box" :
             self.box_fric.append([friction,dyn_friction])
         return props
+
+    def _process_box_props(self,props):
+        if self.cfg.domain_rand.randomize_base_mass:
+            rng = self.cfg.domain_rand.mass_box
+            props[0].mass = np.random.uniform(rng[0], rng[1])
+        if self.cfg.domain_rand.randomize_com:
+            rng_2 = self.cfg.domain_rand.com_distribution_range
+            props[0].com.x += np.random.uniform(rng_2[0], rng_2[1])
+            props[0].com.y += np.random.uniform(rng_2[0], rng_2[1])
+        self.box_masses.append(props[0].mass)
+        self.box_com_x.append(props[0].com.x)
+        self.box_com_y.append(props[0].com.y)
+        self.box_com_z.append(props[0].com.z)
+        return props
+
     def _create_distance_sensors(self):
-        self.distance_handles = [[]]
-        for i in range(self.num_envs) :
-            self.distance_handles.append([])
-            distance_sensor = gymapi.CameraProperties()
-            distance_sensor.width = self.cfg.distance_sensor.width
-            distance_sensor.height = self.cfg.distance_sensor.height
-            # field of view in radians (cone)
-            distance_sensor.horizontal_fov = self.cfg.distance_sensor.fov
-            distance_sensor.near_plane = self.cfg.distance_sensor.near_plane
-            distance_sensor.far_plane = self.cfg.distance_sensor.far_plane
-            distance_sensor.use_collision_geometry = self.cfg.distance_sensor.use_collision_geometry
-            distance_sensor.enable_tensors = self.cfg.distance_sensor.enable_tensors
-            local_transform = gymapi.Transform()
-            dist1 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
-            dist2 = self.gym.create_camera_sensor(self.envs[i], distance_sensor)
-            # get index of pieces in rigid body state tensor
-            dist1_idx = self.gym.find_actor_rigid_body_index(
-                self.envs[i], self.soto_handle, "conveyor_belt_left_link", gymapi.DOMAIN_ENV)
-            dist2_idx = self.gym.find_actor_rigid_body_index(
-                self.envs[i], self.soto_handle, "conveyor_belt_right_link", gymapi.DOMAIN_ENV)
-
-            actor_handle = self.gym.get_actor_handle(self.envs[i], 0)
-
-            body_handle1 = self.gym.get_actor_rigid_body_handle(self.envs[i], actor_handle, dist1_idx)
-            body_handle2 = self.gym.get_actor_rigid_body_handle(self.envs[i], actor_handle, dist2_idx)
-            local_transform.p = gymapi.Vec3(-0.69, 0, 0.1)
-            self.gym.attach_camera_to_body(
-                dist1, self.envs[i], body_handle1, local_transform, gymapi.FOLLOW_TRANSFORM)
-            self.distance_handles[i].append(dist1)
-            self.gym.attach_camera_to_body(
-                dist2, self.envs[i], body_handle2,local_transform, gymapi.FOLLOW_TRANSFORM)
-            self.distance_handles[i].append(dist2)
+        self.distance_sensors = torch.zeros(self.num_envs,2,device = self.device)
 
 
     def _define_viewer(self):
