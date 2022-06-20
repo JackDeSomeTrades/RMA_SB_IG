@@ -48,8 +48,8 @@ class SotoRobotTask(SotoForwardTask):
             list(self.lower_bounds_joints) +
 
 
-            [self.cfg.domain_rand.friction_range[0]]*2 +
-            [self.cfg.domain_rand.friction_range[0]]*2 +
+            [self.cfg.domain_rand.friction_static_range[0]]*2 +
+            [self.cfg.domain_rand.friction_dynamic_range[0]]*2 +
             [self.cfg.domain_rand.mass_box[0]] +
             [-1.5] +
             [-1.5] +
@@ -71,8 +71,8 @@ class SotoRobotTask(SotoForwardTask):
             list(self.upper_bounds_joints) +
 
 
-            [self.cfg.domain_rand.friction_range[1]]*2 +
-            [self.cfg.domain_rand.friction_range[1]]*2 +
+            [self.cfg.domain_rand.friction_static_range[1]]*2 +
+            [self.cfg.domain_rand.friction_dynamic_range[1]]*2 +
             [self.cfg.domain_rand.mass_box[1]] +
 
             [1.5] +
@@ -136,9 +136,9 @@ class SotoRobotTask(SotoForwardTask):
             noise_level * self.obs_scales.action
 
 
-        noise_vec[28:32] = 0.1 #friction
-        noise_vec[32:37] = 0.  # Mass and COM and GC
-        noise_vec[37:40] = 0. #box dimensions
+        noise_vec[28:32] = 0.2 #friction
+        noise_vec[32:37] = 0.1  # Mass and COM and GC
+        noise_vec[37:40] = 0.1 #box dimensions
         noise_vec[40:42] = noise_scales.distance_measurements * \
             noise_level
         noise_vec[42:43] = 0.1
@@ -209,9 +209,13 @@ class SotoRobotTask(SotoForwardTask):
     def _reward_turn(self):
         value = torch.remainder(self.commands.squeeze(-1)-self.box_angle,torch.pi)
         angle_error = torch.square(value)
+        print(value.mean())
         reward = torch.exp(-angle_error / self.cfg.rewards.tracking_angle)
         return reward
 
+    def _reward_termination(self):
+        reward = torch.where(self.reset_buf,1,0)
+        return reward
 
     def _reward_velocity(self):
         reward = torch.abs(self.dof_vel[:,self.right_conv_belt_id]-self.dof_vel[:,self.left_conv_belt_id])

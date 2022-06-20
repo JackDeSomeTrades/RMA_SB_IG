@@ -128,10 +128,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         for i in range(self.num_dofs):
             name = self.dof_names[i]
-            if 'cylinder' in name:
-                name = 'cylinder'
             found = False
-
             for dof_name in self.cfg.control.stiffness.keys():
 
                 if dof_name in name :
@@ -449,14 +446,16 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
     def check_termination(self):
         """ Check if environments need to be reset. Sets up the dones for the return values of step.
         """
+        self.reset_indices = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1.,dim = 1)
         self.reset_buf = torch.logical_or(self.box_pos[:, 2] < 0.70,self.box_pos[:, 2] > 3)
-        self.test_pos = torch.logical_and(self.distance_sensors[:,0] > 1.3, self.distance_sensors[:,1] > 1.3)
+        self.test_pos = torch.logical_and(self.distance_sensors[:,0] > 0.7, self.distance_sensors[:,1] > 0.7)
 
 
         self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
 
         self.reset_buf |= self.time_out_buf
         self.reset_buf |= self.test_pos
+        self.reset_buf |= self.reset_indices
 
 
     def _prepare_reward_function(self):

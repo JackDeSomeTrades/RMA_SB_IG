@@ -22,7 +22,7 @@ class SotoEnvScene:
         self.is_test_mode = self.cfg.sim_param.test
         sim_device, self.sim_device_id = gymutil.parse_device_str(
             self.sim_device)
-        self.headless = True
+        self.headless = headless
         self.num_envs = cfg.env.num_envs
 
         self.device = sim_device if self.sim_params.use_gpu_pipeline else 'cpu'
@@ -92,17 +92,18 @@ class SotoEnvScene:
                       self.cfg.domain_rand.height_box)
 
         asset_options = gymapi.AssetOptions()
+        asset_options.use_mesh_materials = True
         # load soto asset
         asset_file = os.path.basename(asset_path)
         asset_options.armature = self.cfg.asset.armature
-        asset_options.disable_gravity = self.cfg.asset.disable_gravity
+
         asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
         asset_options.default_dof_drive_mode = self.cfg.asset.default_dof_drive_mode
         asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints
-
+        asset_options.density = 10
         self.box_dimensions = [self._get_random_boxes(*box_limits) for i in range(self.num_envs)]
         self.l_boxes_asset = [self.gym.create_box(self.sim, *dim, asset_options) for dim in self.box_dimensions]
-
+        asset_options.disable_gravity = self.cfg.asset.disable_gravity
         asset_options.override_com = self.cfg.asset.override_com
         asset_options.vhacd_enabled = True
         asset_options.override_inertia = self.cfg.asset.override_inertia
@@ -157,9 +158,6 @@ class SotoEnvScene:
         self._initialize_env()
 
     def render(self, sync_frame_time=True):
-        if self.device != 'cpu':
-            self.gym.fetch_results(self.sim, True)
-            self.gym.step_graphics(self.sim)
         if self.viewer:
             # check for window closed
             if self.gym.query_viewer_has_closed(self.viewer):
@@ -172,8 +170,13 @@ class SotoEnvScene:
                 elif evt.action == "toggle_viewer_sync" and evt.value > 0:
                     self.enable_viewer_sync = not self.enable_viewer_sync
 
+            # fetch results
+            if self.device != 'cpu':
+                self.gym.fetch_results(self.sim, True)
+
             # step graphics
             if self.enable_viewer_sync:
+                self.gym.step_graphics(self.sim)
                 self.gym.draw_viewer(self.viewer, self.sim, True)
                 if sync_frame_time:
                     self.gym.sync_frame_time(self.sim)
@@ -299,12 +302,17 @@ class SotoEnvScene:
 
     def _process_rigid_properties(self, props,type):
         if self.cfg.domain_rand.randomize_friction:
-            rng = self.cfg.domain_rand.friction_range
-            friction = np.random.uniform(rng[0], rng[1])
-            dyn_friction = np.random.uniform(rng[0], rng[1])
+            rng_static = self.cfg.domain_rand.friction_static_range
+            rng_dynamic = self.cfg.domain_rand.friction_dynamic_range
+            friction = np.random.uniform(rng_static[0], rng_static[1])
+            dyn_friction = np.random.uniform(rng_dynamic[0], rng_dynamic[1])
             for i in range(len(props)) :
+                props[i].compliance = 0.5
                 props[i].friction = friction
+                props[i].rolling_friction = dyn_friction
                 props[i].restitution = self.cfg.asset.restitution
+                #props[i].thickness = 0.05
+                #props[i].torsion_friction  = 0.4
         if type == "soto" :
             self.soto_fric.append([friction,dyn_friction])
         elif type == "box" :

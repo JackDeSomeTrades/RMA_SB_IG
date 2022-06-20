@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 100
+    num_envs: 256
     num_observations: 43
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 9
@@ -16,10 +16,10 @@ task_config:
     substep : 1
     num_position_iterations : 4
     num_velocity_iterations  : 1
-    rest_offset  : 0.0
-    contact_offset  : 0.01
-    friction_offset_threshold  : 0.001
-    friction_correlation_distance  : 0.0005
+#    rest_offset  : 0.0
+#    contact_offset  : 0.01
+#    friction_offset_threshold  : 0.001
+#    friction_correlation_distance  : 0.0005
     num_threads  : 0
     use_gpu_physx  : True
     test : False
@@ -29,8 +29,8 @@ task_config:
     horizontal_scale: 0.1 # [m]
     vertical_scale: 0.005 # [m]
     border_size: 1.5 # [m]
-    static_friction: 1.0
-    dynamic_friction: 1.0
+    static_friction: 0.5
+    dynamic_friction: 0.5
     restitution: 0.
     num_rows: 10 # number of terrain rows (levels)
     num_cols: 20 # number of terrain cols (types)
@@ -40,7 +40,7 @@ task_config:
     lin_vel: [ 0.0, 0.0, 0.0 ]  # x,y,z [m/s]
     ang_vel: [ 0.0, 0.0, 0.0 ]  # x,y,z [rad/s]
     pos: [ 0.0, 0.0, 0.42 ]  # x,y,z [m]
-    angle : -1.57
+    angle : 0.0
     default_joint_init: { #: target angles [rad] when action: 0.0
       'vertical_axis' : 1.0,
       'gripper_rotate' : -3.14,
@@ -60,7 +60,7 @@ task_config:
     penalize_contacts_on: [] # important to provide the sidebar links all around the end effector
     terminate_after_contacts_on: ["base_footprint"]
     self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
-    disable_gravity: False
+    disable_gravity: True
     armature : 0.01
     collapse_fixed_joints: True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
     fix_base_link: True # so the base shouldn't be allowed to move no matter what 
@@ -69,7 +69,7 @@ task_config:
     flip_visual_attachments: False # imp: this is the flag that was giving us issues.
     override_inertia : False #overide inertia properties (might be wrong)
     override_com : False #overide inertia properties (might be wrong)
-    restitution : 0.1
+    restitution : 0.0
   distance_sensor :
     fov : 1 #degrés
     near_plane : 0.025
@@ -81,9 +81,9 @@ task_config:
 
   control:
     # PD Drive parameters:
-    control_type: 'V' # P: position, V: velocity, T: torques
-    stiffness: { 'joint': 20.}  # [N*m/rad]
-    damping: { 'joint': 1.0}  # [N*m*s/rad]
+    control_type: 'P' # P: position, V: velocity, T: torques
+    stiffness: { 'joint': 20., 'conveyor_left_to_belt' : 20}  # [N/m]
+    damping: { 'joint': 1.0,'conveyor_left_to_belt' : 0.8}  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
     action_scale: 1.0
     # decimation: Number of control action updates @ sim DT per policy DT
@@ -104,15 +104,15 @@ task_config:
 
   domain_rand:
     randomize_friction : True
-    friction_range : [2.0,2.5]
-
+    friction_static_range : [0.7,0.9]
+    friction_dynamic_range : [0.8,0.9]
     randomize_base_mass: True
-    mass_box: [1.0, 3.0]
-    length_box : [0.40,0.40]
-    width_box : [0.6,0.6]
-    height_box : [0.15,0.2]
+    mass_box: [0.2, 0.5]
+    length_box : [0.30,0.30]
+    width_box : [0.4,0.4]
+    height_box : [0.1,0.1]
     randomize_com : True
-    com_distribution_range : [-0.00,0.00]
+    com_distribution_range : [-0.05,0.05]
     push_robot : False
     push_interval : [0.1,0.3]
 
@@ -134,12 +134,12 @@ task_config:
     max_contact_force: 100. # forces above this value are penalized
     soft_dof_pos_limit: 0.9 # percentage of urdf limits, values above this limit are penalized
     scales:
-      #        termination: -10.0   # 0.0
+      termination: -2   # 0.0
       #forward: 10
       #distance_equal: -10.0
-      turn: 20
-      distance_min : 1
-      velocity : 10
+      turn: 10
+      #distance_min : 1
+      #velocity : 10
       #dof_acc : -2
       #geometric_center : -1.0
       #work: -0.005
@@ -195,8 +195,8 @@ rl_config:
   logging:
     dir: '{ROOT_DIR}/logs/'
   ppo:
-    n_steps: 25 # TODO: adapt to your setting
-    batch_size: 2500 # TODO: adapt to your setting
+    n_steps: 30 # TODO: adapt to your setting
+    batch_size: 7680 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
