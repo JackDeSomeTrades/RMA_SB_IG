@@ -46,21 +46,16 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         dof_state_tensor = self.gym.acquire_dof_state_tensor(self.sim)
         net_contact_forces = self.gym.acquire_net_contact_force_tensor(self.sim)
         _rb_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
-
-        self._get_depth_sensor_tensor()
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
         self.gym.refresh_rigid_body_state_tensor(self.sim)
-        #
         self.root_states = gymtorch.wrap_tensor(actor_root_state)
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
         self.rb_state = gymtorch.wrap_tensor(_rb_states)
-
         self.rigid_body_tensor = self.rb_state.view(self.num_envs,-1,13)
         self.dof_pos = self.dof_state.view(self.num_envs, self.num_dofs, 2)[..., 0]
         self.dof_vel = self.dof_state.view(self.num_envs, self.num_dofs, 2)[..., 1]
-
         self.soto_root_state = self.root_states.view(self.num_envs,2,13)[:,0,:]
         self.box_root_state = self.root_states.view(self.num_envs,2,13)[:,1,:]
 
@@ -81,6 +76,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.base_rpy = get_euler_xyz(self.base_quat)
 
         self.box_quat = self.box_root_state[:, 3:7]
+        self.get_depth_sensors()
         self.box_rpy = get_euler_xyz(self.box_quat)
         self.box_angle = self.box_rpy[2]
         self.box_init_angle = self.box_angle[0]
@@ -182,12 +178,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
             self.gym.fetch_results(self.sim, True)
 
-            self.gym.render_all_camera_sensors(self.sim)
-            self.gym.start_access_image_tensors(self.sim)
-            depth = torch.tensor(self.depth_sensors, dtype=torch.float, device = self.device)
-            # print(depth)
-
-            self.gym.end_access_image_tensors(self.sim)
             # camera
             self.box_quat = self.box_root_state[:, 3:7]
             self.box_rpy = get_euler_xyz(self.box_quat)
@@ -196,7 +186,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
             self.gripper_quat = quat_from_angle_axis(self.gripper_yaw_orientation, self.yaw_vec)
             forward = quat_apply(self.gripper_quat, self.forward_vec)
-            #print(self.rigid_body_tensor[:,self.gripper_x_id,:3])
             for i in range(self.num_envs):
                 depth_image1 = self.gym.get_camera_image(
                     self.sim, self.envs[i], self.distance_handles[i][0], gymapi.IMAGE_DEPTH)
@@ -281,6 +270,9 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         return obs_buf, rew_buf, dones, self.infos
 
+
+
+
     def _compute_torques_forces(self, actions):
         """ Compute torques from actions.
             Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
@@ -333,19 +325,8 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.box_rpy = get_euler_xyz(self.box_quat)
         self.box_angle = self.box_rpy[2]
         self.gripper_yaw_orientation = self.dof_pos[:, self.index_rotate]
-        # env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).nonzero(as_tuple=False).flatten()
-        # self._resample_commands(env_ids) #USELESS,
-
         if self.cfg.commands.heading_command:
             self.commands[:,0] = self.command_angle + self.box_init_angle + (self.gripper_yaw_orientation - self.gripper_init_yaw)
-        #
-        # if self.cfg.domain_rand.push_robots and (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
-        #     # self._push_robots()
-        #     """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity.
-        #             """
-        #     max_vel = self.cfg.domain_rand.max_push_vel_xy
-        #     self.root_states[:, 7:9] = torch_rand_float(-max_vel, max_vel, (self.num_envs, 2), device=self.device)  # lin vel x/y
-        #     self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
 
         self.check_termination()
         self.compute_reward()
@@ -469,20 +450,13 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         """ Check if environments need to be reset. Sets up the dones for the return values of step.
         """
         self.reset_buf = torch.logical_or(self.box_pos[:, 2] < 0.70,self.box_pos[:, 2] > 3)
-        self.test_pos = torch.logical_and(self.distance_sensors[:,0] < -1.3, self.distance_sensors[:,1] < -1.3)
+        self.test_pos = torch.logical_and(self.distance_sensors[:,0] > 1.3, self.distance_sensors[:,1] > 1.3)
 
 
         self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
 
         self.reset_buf |= self.time_out_buf
         self.reset_buf |= self.test_pos
-
-
-    def _get_depth_sensor_tensor(self):
-        self.depth_sensors = [[gymtorch.wrap_tensor(
-            self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[i], self.distance_handles[i][0],gymapi.IMAGE_DEPTH))[0][0],
-            gymtorch.wrap_tensor(self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[i],self.distance_handles[i][1],
-            gymapi.IMAGE_DEPTH))[0][0]] for i in range(self.num_envs)]
 
 
     def _prepare_reward_function(self):
@@ -522,6 +496,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         obs = obs.detach().cpu().numpy()
 
         return obs
+
 
     def get_observations(self):
         pass
