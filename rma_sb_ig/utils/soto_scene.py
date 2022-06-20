@@ -22,7 +22,7 @@ class SotoEnvScene:
         self.is_test_mode = self.cfg.sim_param.test
         sim_device, self.sim_device_id = gymutil.parse_device_str(
             self.sim_device)
-        self.headless = headless
+        self.headless = True
         self.num_envs = cfg.env.num_envs
 
         self.device = sim_device if self.sim_params.use_gpu_pipeline else 'cpu'
@@ -225,15 +225,20 @@ class SotoEnvScene:
 
             # add box
             self.gripper_x_id = self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, "gripper_base_x", gymapi.DOMAIN_ENV)
+                env, self.soto_handle, "gripper_base_x_link", gymapi.DOMAIN_ENV)
+
+            self.conveyor_left_id = self.gym.find_actor_rigid_body_index(
+                env, self.soto_handle, "gripper_y_left_link", gymapi.DOMAIN_ENV)
+            self.conveyor_right_id = self.gym.find_actor_rigid_body_index(
+                env, self.soto_handle, "gripper_y_right_link", gymapi.DOMAIN_ENV)
             body_states = self.gym.get_actor_rigid_body_states(env, self.soto_handle, gymapi.DOMAIN_ENV)
 
             self.box_pose.p.x = body_states["pose"][self.gripper_x_id][0]["x"]
             self.box_pose.p.y = body_states["pose"][self.gripper_x_id][0]["y"]
-            self.box_pose.p.z = body_states["pose"][self.gripper_x_id][0]["z"] + self.box_dimensions[i][2]/2 + 0.007
+            self.box_pose.p.z = body_states["pose"][self.gripper_x_id][0]["z"] + self.box_dimensions[i][2]/2+0.132
 
 
-            vec_add = gymapi.Vec3(-self.box_dimensions[i][0]/2,-0.08,0.0)
+            vec_add = gymapi.Vec3(-self.box_dimensions[i][0]/2+0.15,0.0,0.0)
 
             quat = gymapi.Quat.from_axis_angle(gymapi.Vec3(0.,0.,1.),self.default_dof_state["pos"][index_rotate])
 
@@ -322,7 +327,9 @@ class SotoEnvScene:
 
     def _create_distance_sensors(self):
         self.distance_sensors = torch.zeros(self.num_envs,2,device = self.device)
-
+        self.box_init_axis = torch.tensor([[[1,0,0],[0,1,0],[0,0,1]]],device = self.device, dtype = torch.float32).expand(self.num_envs,-1,-1)
+        self.box_axis = torch.zeros_like(self.box_init_axis)
+        self.gripper_init_x_axis = torch.tensor([[1,0,0]],device = self.device, dtype = torch.float32).expand(self.num_envs,-1)
 
     def _define_viewer(self):
         self.cam_pos = gymapi.Vec3(4, 3, 2)

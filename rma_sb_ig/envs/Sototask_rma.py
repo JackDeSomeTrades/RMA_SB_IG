@@ -3,6 +3,7 @@ from warnings import WarningMessage
 import numpy as np
 import os
 
+import torch
 from isaacgym import gymapi
 from isaacgym.torch_utils import *
 import gym.spaces as gymspace
@@ -16,7 +17,6 @@ class SotoRobotTask(SotoForwardTask):
     def __init__(self, *args):
 
         super(SotoRobotTask, self).__init__(*args)
-        self._get_distance_sensors()
     def _init_observation_space(self):
         # Observation consists of : 43
         #     intrinsic
@@ -145,6 +145,7 @@ class SotoRobotTask(SotoForwardTask):
 
         return noise_vec
 
+
     def compute_observations(self):
         # Observation consists of : 43
         #     intrinsic
@@ -164,11 +165,11 @@ class SotoRobotTask(SotoForwardTask):
         #                 box_angle - 1
 
         # + previous_action - 7 + 2 cylinders
-        # :return: obs_space
-
-        self._get_distance_sensors()
-        self.distance_sensors = torch.clip(self.distance_sensors, -1.5, -0.025)
-        distance_btw_arms = torch.abs(self.dof_pos[:,self.right_arm_index] -(0.7-self.dof_pos[:,self.left_arm_index]))
+        # :return: obs_spaceF
+        self.get_depth_sensors()
+        self.distance_sensors = torch.clip(self.distance_sensors, 0.025, 1.5)
+        distance_btw_arms = torch.abs(
+            self.dof_pos[:, self.right_arm_index] - (0.7 - self.dof_pos[:, self.left_arm_index]))
         self.X_t = torch.cat((self.dof_pos,
                               self.dof_vel,
                               distance_btw_arms.unsqueeze(-1)
@@ -195,13 +196,6 @@ class SotoRobotTask(SotoForwardTask):
                              1) * noise
 
     # -------------- Reward functions begin below: --------------------------------#
-    def _get_distance_sensors(self):
-        self.gym.render_all_camera_sensors(self.sim)
-        self.gym.start_access_image_tensors(self.sim)
-        for i in range(self.num_envs) :
-            self.distance_sensors[i][0] = self.depth_sensors[i][0]
-            self.distance_sensors[i][1] = self.depth_sensors[i][1]
-        self.gym.end_access_image_tensors(self.sim)
 
     # def _reward_forward(self):
     #     forward = quat_apply(self.gripper_quat, self.forward_vec)
@@ -216,7 +210,6 @@ class SotoRobotTask(SotoForwardTask):
         value = torch.remainder(self.commands.squeeze(-1)-self.box_angle,torch.pi)
         angle_error = torch.square(value)
         reward = torch.exp(-angle_error / self.cfg.rewards.tracking_angle)
-        print(value.mean())
         return reward
 
 
@@ -225,7 +218,6 @@ class SotoRobotTask(SotoForwardTask):
         return reward
     def _reward_distance_min(self):
         reward = torch.exp(-(torch.abs(self.distance_sensors[:,0] +0.15)+torch.abs(self.distance_sensors[:,1] +0.15)) / self.cfg.rewards.tracking_distance)
-        print(self.distance_sensors)
         return reward
 
     def _reward_dof_acc(self):
@@ -248,165 +240,41 @@ class SotoRobotTask(SotoForwardTask):
     def _reward_turning_velocity(self):
         reward = self.box_root_state[:,12]
         return reward
-    #
-    # def _reward_maintain_forward(self):
-    #     # Rewards forward motion at limited values (v_x)
-    #     base_x_velocity = self.base_lin_vel[:, 0]
-    #     MAX_FWD_VEL = 1.0
-    #     max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
-    #     reward = torch.fmin(base_x_velocity, max_fwd_vel_tensor)
-    #     # print(" forward x vel", base_x_velocity)
-    #     # print(" forward reward", reward)
-    #     reward[reward < 0.0] = 0.0   # TODO: Check if this is right.
-    #     # print(f"forward reward * {self.cfg.rewards.scales.forward}", reward)
-    #     return reward
 
-    # def _reward_lateral_movement_rotation(self):
-    #     # penalises lateral motion (v_y) and limiting angular velocity yaw
-    #     reward = self.base_lin_vel[:, 1].pow(2).unsqueeze(-1).sum(
-    #         dim=1) + self.base_ang_vel[:, 2].pow(2).unsqueeze(-1).sum(dim=1)  # TODO check with 1
-    #     # print(f"lateral reward * {self.cfg.rewards.scales.lateral_movement_rotation}", reward)
-    #     return reward
-    #
-    # def _reward_orientation(self):
-    #     # orientation = self.projected_gravity[:, :2]
-    #     orientation = torch.stack([self.base_rpy[0], self.base_rpy[1]], dim=1)
-    #     reward = torch.sum(torch.square(orientation), dim=1)
-    #     return reward
-    #
-
-    # def _reward_ground_impact(self):
-    #     reward = torch.sum(torch.square(self.contact_forces[:, self.feet_indices, 2] -
-    #                                     self.last_contact_forces[:, self.feet_indices, 2]), dim=1)  # only taking into account the vertical reaction, might need to check if parallel ground reaction makes sense.
-    #     return reward
-    #
-    # def _reward_smoothness(self):
-    #     reward = torch.sum(torch.square(self.torques-self.last_torques), dim=1)
-    #     return reward
-    #
-    # def _reward_action_magnitude(self):
-    #     reward = torch.sum(torch.square(self.actions), dim=1)
-    #     return reward
-    #
-    # def _reward_joint_speed(self):
-    #     reward = torch.sum(torch.square(self.last_dof_vel), dim=1)
-    #     return reward
-    #
-    # def _reward_z_acceleration(self):
-    #     reward = torch.square(self.base_lin_vel[:, 2])
-    #     return reward
-    #
-    # def _reward_foot_slip(self):
-    #     reward = 0  # TODO: Fix this
-    #     return reward
-    #
-    # def _reward_lin_vel_z(self):
-    #     # Penalize z axis base linear velocity
-    #     reward = torch.square(self.base_lin_vel[:, 2])
-    #     return reward
-    #
-    # def _reward_ang_vel_xy(self):
-    #     # Penalize xy axes base angular velocity
-    #     return torch.sum(torch.square(self.base_ang_vel[:, :2]), dim=1)
-    #
-    # def _reward_base_height(self):
-    #     # Make sure the robot body maintains a minimum distance from the ground based on the z center of mass.
-    #     base_height = torch.mean(self.root_states[:, 2].unsqueeze(
-    #         1) - self.measured_heights, dim=1)
-    #     return torch.square(base_height - self.cfg.rewards.base_height_target)
-    #
-    # def _reward_torques(self):
-    #     # Penalize torques
-    #     return torch.sum(torch.square(self.torques), dim=1)
-    #
-    # def _reward_dof_vel(self):
-    #     # Penalize dof velocities
-    #     return torch.sum(torch.square(self.dof_vel), dim=1)
-    #
-    # def _reward_dof_acc(self):
-    #     # Penalize dof accelerations
-    #     return torch.sum(torch.square((self.last_dof_vel - self.dof_vel) / self.dt), dim=1)
-    #
-    # def _reward_action_rate(self):
-    #     # Penalize changes in actions
-    #     return torch.sum(torch.square(self.last_actions - self.actions), dim=1)
-    #
-    # def _reward_collision(self):
-    #     # Penalize collisions on selected bodies
-    #     return torch.sum(1. * (torch.norm(self.contact_forces[:, self.penalised_contact_indices, :], dim=-1) > 0.1),
-    #                      dim=1)
-    #
-    # def _reward_termination(self):
-    #     # Terminal reward / penalty
-    #     return self.reset_buf * ~self.time_out_buf
-    #
-    # def _reward_dof_pos_limits(self):
-    #     # Penalize dof positions too close to the limit
-    #     out_of_limits = - \
-    #         (self.dof_pos -
-    #          self.dof_pos_limits[:, 0]).clip(max=0.)  # lower limit
-    #     out_of_limits += (self.dof_pos -
-    #                       self.dof_pos_limits[:, 1]).clip(min=0.)
-    #     return torch.sum(out_of_limits, dim=1)
-    #
-    # def _reward_dof_vel_limits(self):
-    #     # Penalize dof velocities too close to the limit
-    #     # clip to max error = 1 rad/s per joint to avoid huge penalties
-    #     return torch.sum(
-    #         (torch.abs(self.dof_vel) - self.dof_vel_limits *
-    #          self.cfg.rewards.soft_dof_vel_limit).clip(min=0., max=1.),
-    #         dim=1)
-    #
-    # def _reward_tracking_lin_vel(self):
-    #     # Tracking of linear velocity commands (xy axes)
-    #     lin_vel_error = torch.sum(torch.square(
-    #         self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
-    #     reward = torch.exp(-lin_vel_error / self.cfg.rewards.tracking_sigma)
-    #     return reward
-    #
-    # def _reward_tracking_ang_vel(self):
-    #     # Tracking of angular velocity commands (yaw)
-    #     ang_vel_error = torch.square(
-    #         self.commands[:, 2] - self.base_ang_vel[:, 2])
-    #     return torch.exp(-ang_vel_error / self.cfg.rewards.tracking_sigma)
-    #
-    # def _reward_feet_air_time(self):
-    #     # Reward long steps
-    #     # Need to filter the contacts because the contact reporting of PhysX is unreliable on meshes
-    #     contact = self.contact_forces[:, self.feet_indices, 2] > 1.
-    #     contact_filt = torch.logical_or(contact, self.last_contacts)
-    #     self.last_contacts = contact
-    #     first_contact = (self.feet_air_time > 0.) * contact_filt
-    #     self.feet_air_time += self.dt
-    #     rew_airTime = torch.sum((self.feet_air_time - 0.5) * first_contact,
-    #                             dim=1)  # reward only on first contact with the ground
-    #     # no reward for zero command
-    #     rew_airTime *= torch.norm(self.commands[:, :2], dim=1) > 0.1
-    #     self.feet_air_time *= ~contact_filt
-    #     return rew_airTime
-    #
-    # def _reward_feet_stumble(self):
-    #     # Penalize feet hitting vertical surfaces
-    #     return torch.any(torch.norm(self.contact_forces[:, self.feet_indices, :2], dim=2) >
-    #                      5 * torch.abs(self.contact_forces[:, self.feet_indices, 2]), dim=1)
-    #
-    # def _reward_stand_still(self):
-    #     # Penalize motion at zero commands
-    #     return torch.sum(torch.abs(self.dof_pos - self.default_dof_pos), dim=1) * (
-    #         torch.norm(self.commands[:, :2], dim=1) < 0.1)
 
     # ---------------Reward functions end here ---------------------- #
-    def _get_local_terrain_height(self):
-        local_terrain_height = self.measured_heights
-        # this gives the measured heights of all points below the body of the robot. Max of local terrain height is just
-        # the max of each of the heights of the envs. This is in contrast to the paper which defines terrain height as
-        # the max of the height below the robot feet.
-        local_terrain_height = torch.max(local_terrain_height, dim=-1)[0]
-
-        return local_terrain_height
 
     def _get_random_boxes(self, l_limit, w_limit, h_limit):
         length = random.uniform(l_limit[0], l_limit[1])
         width = random.uniform(w_limit[0], w_limit[1])
         height = random.uniform(h_limit[0], h_limit[1])
         return (length, width, height)
+
+    def get_depth_sensors(self):
+        q = self.box_quat.resize(self.num_envs,1,4).expand(-1,3,-1).resize(3*self.num_envs,4)
+        v = self.box_init_axis.resize(3*self.num_envs,3)
+        box_axis = quat_rotate(q, v)
+        #self.box_dim
+
+        C = self.box_root_state[:,:3].resize(self.num_envs,1,3).expand(-1,3,-1).resize(3*self.num_envs,3)
+
+        P1 = self.rigid_body_tensor[:, self.conveyor_left_id, :3].resize(self.num_envs,1,3).expand(-1,3,-1).resize(3*self.num_envs,3)
+        P1[:,2] += 0.1
+        P2 = self.rigid_body_tensor[:, self.conveyor_right_id, :3].resize(self.num_envs,1,3).expand(-1,3,-1).resize(3*self.num_envs,3)
+        P2[:,2] += 0.1
+        d = quat_rotate(self.rigid_body_tensor[:, self.conveyor_right_id, 3:7],self.gripper_init_x_axis).resize(self.num_envs,1,3).expand(-1,3,-1).resize(3*self.num_envs,3)
+        #parallel =  torch.abs(torch.sum(d*box_axis,dim = 1))
+        r1 = torch.sum(box_axis*(C-P1),dim = 1)
+        r2 = torch.sum(box_axis*(C-P2), dim = 1)
+        s = torch.sum(box_axis*d, dim = 1)
+
+        t0_1 = (r1 + torch.flatten(self.box_dim)/2)/s
+        t1_1 = (r1 - torch.flatten(self.box_dim)/2) /s
+
+        t0_2 = (r2 + torch.flatten(self.box_dim)/2) / s
+        t1_2 = (r2 - torch.flatten(self.box_dim)/2) / s
+        t1near,_ = torch.max(torch.min(t0_1,t1_1).resize(self.num_envs,3),dim=1)
+        t2near,_ = torch.max(torch.min(t0_2, t1_2).resize(self.num_envs,3),dim=1)
+
+        self.distance_sensors[:,0] = t1near
+        self.distance_sensors[:,1] = t2near

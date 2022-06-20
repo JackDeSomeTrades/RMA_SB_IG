@@ -58,7 +58,7 @@ task_config:
     name: "soto_gripper" #actor name
     foot_name: "conveyor_belt" # name of the feet bodies, used to index body state and contact force tensors
     penalize_contacts_on: [] # important to provide the sidebar links all around the end effector
-    terminate_after_contacts_on: ["base_link"]
+    terminate_after_contacts_on: ["base_footprint"]
     self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
     disable_gravity: False
     armature : 0.01
@@ -71,7 +71,7 @@ task_config:
     override_com : False #overide inertia properties (might be wrong)
     restitution : 0.1
   distance_sensor :
-    fov : 3 #degrés
+    fov : 1 #degrés
     near_plane : 0.025
     far_plane : 1.5
     use_collision_geometry : True
@@ -104,7 +104,7 @@ task_config:
 
   domain_rand:
     randomize_friction : True
-    friction_range : [0.7,0.9]
+    friction_range : [2.0,2.5]
 
     randomize_base_mass: True
     mass_box: [1.0, 3.0]
@@ -196,7 +196,7 @@ rl_config:
     dir: '{ROOT_DIR}/logs/'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
-    batch_size: 2350 # TODO: adapt to your setting
+    batch_size: 2500 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
