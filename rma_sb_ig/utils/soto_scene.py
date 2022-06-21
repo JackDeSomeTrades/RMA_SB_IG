@@ -214,7 +214,7 @@ class SotoEnvScene:
             index_rotate = self.gym.find_actor_dof_index(env, self.soto_handle, "gripper_rotate", gymapi.DOMAIN_ENV)
             index_x = self.gym.find_actor_dof_index(env, self.soto_handle, "gripper_base_x", gymapi.DOMAIN_ENV)
             self.default_dof_state["pos"][index_rotate] = self.cfg.init_state.angle
-            self.default_dof_state["pos"][index_x] = self.upper_bounds_joints[index_x]
+            self.default_dof_state["pos"][index_x] = self.lower_bounds_joints[index_x]
             # set dof properties
             self.gym.set_actor_dof_properties(
                 env, self.soto_handle, self.soto_dof_props)

@@ -450,7 +450,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.reset_buf = torch.logical_or(self.box_pos[:, 2] < 0.70,self.box_pos[:, 2] > 3)
         self.test_pos = torch.logical_and(self.distance_sensors[:,0] > 0.7, self.distance_sensors[:,1] > 0.7)
 
-
         self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
 
         self.reset_buf |= self.time_out_buf
