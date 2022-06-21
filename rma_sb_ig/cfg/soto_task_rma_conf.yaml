@@ -58,7 +58,7 @@ task_config:
     name: "soto_gripper" #actor name
     foot_name: "conveyor_belt" # name of the feet bodies, used to index body state and contact force tensors
     penalize_contacts_on: [] # important to provide the sidebar links all around the end effector
-    terminate_after_contacts_on: ["base_footprint"]
+    terminate_after_contacts_on: ["base_footprint", "gripper_base_x_link", "gripper_base_link"]
     self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
     disable_gravity: True
     armature : 0.01
@@ -134,16 +134,16 @@ task_config:
     max_contact_force: 100. # forces above this value are penalized
     soft_dof_pos_limit: 0.9 # percentage of urdf limits, values above this limit are penalized
     scales:
-      termination: -2   # 0.0
+      termination: -1  # 0.0
       #forward: 10
       #distance_equal: -10.0
-      turn: 10
-      #distance_min : 1
+      turn: 15
+      #distance_min : 0.1
       #velocity : 10
-      #dof_acc : -2
+      dof_acc : -0.5
       #geometric_center : -1.0
       #work: -0.005
-      #turning_velocity : 1.0
+      turning_velocity : -1
       #z_position : -1.0
       #maintain_forward : 10
       #tracking_lin_vel: 20.0

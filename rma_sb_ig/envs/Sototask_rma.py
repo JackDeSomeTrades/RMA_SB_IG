@@ -197,15 +197,9 @@ class SotoRobotTask(SotoForwardTask):
 
     # -------------- Reward functions begin below: --------------------------------#
 
-    # def _reward_forward(self):
-    #     forward = quat_apply(self.gripper_quat, self.forward_vec)
-    #     # max_fwd_vel_tensor = torch.full_like(base_x_velocity, MAX_FWD_VEL)
-    #     # reward = torch.abs(base_x_velocity - max_fwd_vel_tensor)
-    #     diff = self.box_lin_vel - forward
-    #     reward = torch.linalg.norm(
-    #         diff, dim=1, ord=1)   # L1 norm
-    #     return reward
-
+    def _reward_turning_velocity(self):
+        reward = torch.square(self.rigid_body_tensor[:,self.gripper_x_id,12])
+        return reward
     def _reward_turn(self):
         value = torch.remainder(self.commands.squeeze(-1)-self.box_angle,torch.pi)
         angle_error = torch.square(value)
@@ -220,6 +214,7 @@ class SotoRobotTask(SotoForwardTask):
     def _reward_velocity(self):
         reward = torch.abs(self.dof_vel[:,self.right_conv_belt_id]-self.dof_vel[:,self.left_conv_belt_id])
         return reward
+
     def _reward_distance_min(self):
         reward = torch.exp(-(torch.abs(self.distance_sensors[:,0] +0.15)+torch.abs(self.distance_sensors[:,1] +0.15)) / self.cfg.rewards.tracking_distance)
         return reward
@@ -240,9 +235,6 @@ class SotoRobotTask(SotoForwardTask):
     #     return reward
     def _reward_z_position(self):
         reward = torch.abs(self.box_pos[:,2] - self.box_init_pos[:,2])
-        return reward
-    def _reward_turning_velocity(self):
-        reward = self.box_root_state[:,12]
         return reward
 
 
