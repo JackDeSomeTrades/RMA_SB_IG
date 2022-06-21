@@ -43,7 +43,7 @@ class SotoRobotTask(SotoForwardTask):
 
         limits_low = np.array(
             list(self.lower_bounds_joints) +
-            [0] * 9 +    # minimum values of joint velocities
+            list(-self.joint_velocity)+    # minimum values of joint velocities
             [0] +
             list(self.lower_bounds_joints) +
 
@@ -109,7 +109,7 @@ class SotoRobotTask(SotoForwardTask):
 
         ub = np.array(self.joint_velocity)
         lb = np.zeros_like(ub)
-        act_space = gymspace.Box(lb, ub, dtype=np.float32)
+        act_space = gymspace.Box(-ub, ub, dtype=np.float32)
         return act_space
 
     def _get_noise_scale_vec(self, cfg):
