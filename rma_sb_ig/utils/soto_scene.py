@@ -307,7 +307,7 @@ class SotoEnvScene:
             friction = np.random.uniform(rng_static[0], rng_static[1])
             dyn_friction = np.random.uniform(rng_dynamic[0], rng_dynamic[1])
             for i in range(len(props)) :
-                props[i].compliance = 0.5
+                props[i].compliance = 0.0
                 props[i].friction = friction
                 props[i].rolling_friction = dyn_friction
                 props[i].restitution = self.cfg.asset.restitution
