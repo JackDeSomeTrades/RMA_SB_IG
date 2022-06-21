@@ -82,8 +82,8 @@ task_config:
   control:
     # PD Drive parameters:
     control_type: 'P' # P: position, V: velocity, T: torques
-    stiffness: { 'joint': 20., 'conveyor_left_to_belt' : 20}  # [N/m]
-    damping: { 'joint': 1.0,'conveyor_left_to_belt' : 0.8}  # [N*m*s/rad]
+    stiffness: { 'joint': 20., 'conveyor_left_to_belt' : 10}  # [N/m]
+    damping: { 'joint': 1.0,'conveyor_left_to_belt' : 1.0}  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
     action_scale: 1.0
     # decimation: Number of control action updates @ sim DT per policy DT
@@ -127,19 +127,20 @@ task_config:
 
   rewards:
     only_positive_rewards: False # if true negative total rewards are clipped at zero (avoids early termination problems)
-    tracking_angle: 0.1 # tracking reward: exp(-error^2/sigma)
+    tracking_angle: 0.5 # tracking reward: exp(-error^2/sigma)
     tracking_distance : 0.5
+    velocity : 0.5
     soft_dof_vel_limit: 1.
     soft_torque_limit: 1.
     max_contact_force: 100. # forces above this value are penalized
     soft_dof_pos_limit: 0.9 # percentage of urdf limits, values above this limit are penalized
     scales:
-      termination: -0.05  # 0.0
+      #termination: -0.05  # 0.0
       #forward: 10
       #distance_equal: -10.0
-      turn: 15
+      turn: 20
       #distance_min : 0.1
-      #velocity : 10
+      velocity : 2
       dof_acc : -0.05
       #geometric_center : -1.0
       #work: -0.005

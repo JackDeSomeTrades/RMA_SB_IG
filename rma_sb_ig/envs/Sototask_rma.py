@@ -212,7 +212,8 @@ class SotoRobotTask(SotoForwardTask):
         return reward
 
     def _reward_velocity(self):
-        reward = torch.abs(self.dof_vel[:,self.right_conv_belt_id]-self.dof_vel[:,self.left_conv_belt_id])
+        value = torch.square(self.dof_vel[:,self.right_conv_belt_id]+self.dof_vel[:,self.left_conv_belt_id])
+        reward = torch.abs(torch.max(self.dof_vel[:,self.right_conv_belt_id],self.dof_vel[:,self.left_conv_belt_id]))*torch.exp(-value/self.cfg.rewards.velocity)
         return reward
 
     def _reward_distance_min(self):
