@@ -98,4 +98,5 @@ class RMAV0SixTaskVecEnvStableBaselineGym(V0SixLeggedRobotTask, StableBaselinesV
 @register("soto")
 class RMASotoTaskVecEnvStableBaseLineGym(SotoRobotTask, StableBaselinesVecEnvAdapter):
     def __init__(self, *args, **kwargs):  # args : tuple / kwargs : dictionnary
+
         SotoRobotTask.__init__(self, *args, **kwargs)

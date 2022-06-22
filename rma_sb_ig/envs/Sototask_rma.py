@@ -203,7 +203,6 @@ class SotoRobotTask(SotoForwardTask):
     def _reward_turn(self):
         value = torch.remainder(self.commands.squeeze(-1)-self.box_angle,torch.pi)
         angle_error = torch.square(value)
-        print(value.mean())
         reward = torch.exp(-angle_error / self.cfg.rewards.tracking_angle)
         return reward
 
@@ -223,7 +222,11 @@ class SotoRobotTask(SotoForwardTask):
     def _reward_dof_acc(self):
         # Penalize dof accelerations
         return torch.sum(torch.square((self.last_dof_vel - self.dof_vel) / self.dt), dim=1)
-
+    def _reward_arm_contact(self):
+        f1 = torch.norm(self.contact_forces[:,self.left_conveyor_shape,:], dim = -1)
+        f2 = torch.norm(self.contact_forces[:,self.right_conveyor_shape,:],dim = -1)
+        reward = torch.min(f1,f2)*torch.exp(torch.square(f1-f2)/0.5)
+        return reward
     # def _reward_geometric_center(self):
     #     reward = torch.norm(self.box_pos - self.box_init_pos,dim=1)
     #     return reward

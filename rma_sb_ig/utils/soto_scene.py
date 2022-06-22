@@ -75,11 +75,19 @@ class SotoEnvScene:
         self.sim_params.substeps = self.cfg.sim_param.substep
         self.sim_params.use_gpu_pipeline = self.cfg.sim_param.use_gpu
         if self.physics_engine == gymapi.SIM_PHYSX:
+            self.sim_params.physx.bounce_threshold_velocity = 2*9.81*self.sim_params.dt/self.sim_params.substeps
             self.sim_params.physx.num_position_iterations = self.cfg.sim_param.num_position_iterations
             self.sim_params.physx.num_velocity_iterations = self.cfg.sim_param.num_velocity_iterations
             self.sim_params.physx.num_threads = self.cfg.sim_param.num_threads
             self.sim_params.physx.use_gpu = self.cfg.sim_param.use_gpu_physx
-        else:
+            self.sim_params.physx.max_gpu_contact_pairs = 2097152
+            self.sim_params.physx.friction_correlation_distance = self.cfg.sim_param.friction_correlation_distance
+        elif self.physics_engine == gymapi.SIM_FLEX:
+            self.sim_params.flex.num_outer_iterations = 4
+            self.sim_params.flex.num_inner_iterations = 1
+            self.sim_params.flex.shape_collision_distance = 0.001
+            self.sim_params.flex.shape_collision_margin = 0.005
+        else :
             raise Exception("This robot can only be used with PhysX")
 
     def _create_assets(self):
@@ -92,15 +100,16 @@ class SotoEnvScene:
                       self.cfg.domain_rand.height_box)
 
         asset_options = gymapi.AssetOptions()
-        asset_options.use_mesh_materials = True
+        #asset_options.use_mesh_materials = True
         # load soto asset
         asset_file = os.path.basename(asset_path)
         asset_options.armature = self.cfg.asset.armature
+        # asset_options.convex_decomposition_from_submeshes = True
 
         asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
         asset_options.default_dof_drive_mode = self.cfg.asset.default_dof_drive_mode
         asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints
-        asset_options.density = 10
+        asset_options.density = 5
         self.box_dimensions = [self._get_random_boxes(*box_limits) for i in range(self.num_envs)]
         self.l_boxes_asset = [self.gym.create_box(self.sim, *dim, asset_options) for dim in self.box_dimensions]
         asset_options.disable_gravity = self.cfg.asset.disable_gravity
@@ -115,7 +124,6 @@ class SotoEnvScene:
         self.num_dofs = self.gym.get_asset_dof_count(self.soto_asset)
         self.num_bodies = self.gym.get_asset_rigid_body_count(self.soto_asset)
         # dof_props_asset = self.gym.get_asset_dof_properties(self.soto_asset)
-
         self.soto_dof_props = self.gym.get_asset_dof_properties(self.soto_asset)
         self.lower_bounds_joints = self.soto_dof_props["lower"]
         self.upper_bounds_joints = self.soto_dof_props["upper"]
@@ -238,7 +246,7 @@ class SotoEnvScene:
 
             self.box_pose.p.x = body_states["pose"][self.gripper_x_id][0]["x"]
             self.box_pose.p.y = body_states["pose"][self.gripper_x_id][0]["y"]
-            self.box_pose.p.z = body_states["pose"][self.gripper_x_id][0]["z"] + self.box_dimensions[i][2]/2+0.132
+            self.box_pose.p.z = body_states["pose"][self.gripper_x_id][0]["z"] + self.box_dimensions[i][2]/2+0.139
 
 
             vec_add = gymapi.Vec3(-self.box_dimensions[i][0]/2+0.15,0.0,0.0)
@@ -297,7 +305,10 @@ class SotoEnvScene:
             self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
                 self.envs[0], self.actor_handles[0], self.termination_contact_names[i])
         
-        
+        self.left_conveyor_shape = self.gym.find_actor_rigid_body_handle(
+                self.envs[0], self.actor_handles[0], "left_conveyor_belt")
+        self.right_conveyor_shape = self.gym.find_actor_rigid_body_handle(
+            self.envs[0], self.actor_handles[0], "right_conveyor_belt")
         self._create_distance_sensors()
 
     def _process_rigid_properties(self, props,type):
@@ -309,9 +320,9 @@ class SotoEnvScene:
             for i in range(len(props)) :
                 props[i].compliance = 0.0
                 props[i].friction = friction
-                props[i].rolling_friction = dyn_friction
+                #props[i].rolling_friction = dyn_friction
                 props[i].restitution = self.cfg.asset.restitution
-                #props[i].thickness = 0.05
+                #props[i].thickness = 1.0
                 #props[i].torsion_friction  = 0.4
         if type == "soto" :
             self.soto_fric.append([friction,dyn_friction])
