@@ -430,55 +430,55 @@
 	<link name="left_conveyor_belt">
 		<visual>
 			<geometry>
-				<box size = "5.0 0.05 0.005"/>
+				<box size = "5.0 0.05 0.01"/>
 			</geometry>
 			<material name="black"/>
 		</visual>
 		<collision>
 			<geometry>
-				<box size = "5.0 0.05 0.005"/>
+				<box size = "5.0 0.05 0.01"/>
 			</geometry>
 		</collision>
 		<inertial>
-			<mass value="5.0"/>
+			<mass value="0.3"/>
 			<inertia ixx="0.00" ixy="0" ixz="0" iyy="00" iyz="0.0" izz="00"/>
 		</inertial>
 	</link>
 
 	<joint name="conveyor_left_to_belt" type="prismatic">
-		<origin xyz="0.0 0.0 0.005"/>
+		<origin xyz="0.0 0.0 0.01"/>
 		<parent link="conveyor_belt_left_foremost_link"/>
 		<child link="left_conveyor_belt"/>
 		<axis xyz="1 0 0"/>
-		<limit effort="15000.0" lower="-10.0" upper="10.0" velocity="1"/>
-	    <dynamics damping="0.7" friction="0.3"/>
+		<limit effort="10000" lower="-2.5" upper="2.5" velocity="0.3"/>
+	    <dynamics damping="1.0" friction="0.4"/>
 	</joint>
 
 	<link name="right_conveyor_belt">
 		<visual>
 			<geometry>
-				<box size = "5.0 0.05 0.005"/>
+				<box size = "5.0 0.05 0.01"/>
 			</geometry>
 			<material name="black"/>
 		</visual>
 		<collision>
 			<geometry>
-				<box size = "5.0 0.05 0.005"/>
+				<box size = "5.0 0.05 0.01"/>
 			</geometry>
 		</collision>
 		<inertial>
-			<mass value="5.0"/>
+			<mass value="0.3"/>
 			<inertia ixx="0.00" ixy="0" ixz="0" iyy="0" iyz="0.0" izz="00"/>
 		</inertial>
 	</link>
 
 	<joint name="conveyor_right_to_belt" type="prismatic">
-		<origin xyz="0.0 0.0 0.005"/>
+		<origin xyz="0.0 0.0 0.01"/>
 		<parent link="conveyor_belt_right_foremost_link"/>
 		<child link="right_conveyor_belt"/>
 		<axis xyz="1 0 0"/>
-		<dynamics damping="0.7" friction="0.3"/>
-		<limit effort="15000.0" lower="-10.0" upper="10.0" velocity="1"/>
+		<dynamics damping="1.0" friction="0.4"/>
+		<limit effort="10000" lower="-2.5" upper="2.5" velocity="0.3"/>
 	</joint>
 
 	

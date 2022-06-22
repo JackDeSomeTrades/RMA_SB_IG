@@ -25,7 +25,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.init_done = False
         BaseTask.__init__(self, cfg=config,
                           sim_params=sim_params, sim_device=args.sim_device)
-
         SotoEnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device,
                               headless=args.headless, sim_params=sim_params)
         set_seed(config.seed)

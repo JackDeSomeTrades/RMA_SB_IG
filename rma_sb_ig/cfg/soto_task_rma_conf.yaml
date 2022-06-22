@@ -13,13 +13,13 @@ task_config:
   sim_param :
     dt : 0.01
     use_gpu : True
-    substep : 1
+    substep : 2
     num_position_iterations : 4
     num_velocity_iterations  : 1
 #    rest_offset  : 0.0
 #    contact_offset  : 0.01
-#    friction_offset_threshold  : 0.001
-#    friction_correlation_distance  : 0.0005
+    friction_offset_threshold  : 0.06
+    friction_correlation_distance  : 0.005
     num_threads  : 0
     use_gpu_physx  : True
     test : False
@@ -58,7 +58,7 @@ task_config:
     name: "soto_gripper" #actor name
     foot_name: "conveyor_belt" # name of the feet bodies, used to index body state and contact force tensors
     penalize_contacts_on: [] # important to provide the sidebar links all around the end effector
-    terminate_after_contacts_on: ["base_footprint", "gripper_base_x_link", "gripper_base_link"]
+    terminate_after_contacts_on: ["base_footprint", "gripper_base_x_link", "gripper_base_link","vertical_axis_link"]
     self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
     disable_gravity: True
     armature : 0.01
@@ -104,10 +104,10 @@ task_config:
 
   domain_rand:
     randomize_friction : True
-    friction_static_range : [0.7,0.9]
+    friction_static_range : [0.7,0.8]
     friction_dynamic_range : [0.8,0.9]
     randomize_base_mass: True
-    mass_box: [0.2, 0.5]
+    mass_box: [0.5, 1.0]
     length_box : [0.30,0.30]
     width_box : [0.4,0.4]
     height_box : [0.1,0.1]
@@ -140,11 +140,12 @@ task_config:
       #distance_equal: -10.0
       turn: 20
       #distance_min : 0.1
-      velocity : 2
-      dof_acc : -0.05
+      velocity : 10
+      #dof_acc : -0.005
       #geometric_center : -1.0
       #work: -0.005
-      turning_velocity : -1.0
+      turning_velocity : -3
+      #arm_contact : 1
       #z_position : -1.0
       #maintain_forward : 10
       #tracking_lin_vel: 20.0
@@ -178,26 +179,26 @@ task_config:
     add_noise: True
     noise_level: 1.0 # scales other values
     noise_scales:
-       dof_pos: 0.05
-       dof_vel: 0.05
-       lin_vel: 0.05
-       ang_vel: 0.05
-       gravity: 0.05
-       action : 0.05
-       distance_measurements: 0.05
+       dof_pos: 0.01
+       dof_vel: 0.005
+       lin_vel: 0.005
+       ang_vel: 0.01
+       gravity: 0.01
+       action : 0.01
+       distance_measurements: 0.01
        motor_strength: 0.01
 
 rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 18000000
+  n_timesteps: 4000000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
   ppo:
-    n_steps: 30 # TODO: adapt to your setting
-    batch_size: 7680 # TODO: adapt to your setting
+    n_steps: 25 # TODO: adapt to your setting
+    batch_size: 6400 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
