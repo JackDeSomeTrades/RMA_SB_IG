@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 256
+    num_envs: 50
     num_observations: 43
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 9
@@ -11,18 +11,26 @@ task_config:
     episode_length_s : 60
     # episode length in seconds
   sim_param :
-    dt : 0.01
+    dt : 0.005
     use_gpu : True
-    substep : 2
-    num_position_iterations : 4
-    num_velocity_iterations  : 1
-#    rest_offset  : 0.0
-#    contact_offset  : 0.01
+    substeps : 2
+
     friction_offset_threshold  : 0.06
     friction_correlation_distance  : 0.005
-    num_threads  : 0
+    num_threads  : 10
     use_gpu_physx  : True
     test : False
+    physx:
+      solver_type: 1  # 0: pgs, 1: tgs
+      num_position_iterations: 4
+      num_velocity_iterations: 0
+      contact_offset: 0.01  # [m]
+      rest_offset: 0.0   # [m]
+      bounce_threshold_velocity: 0.5 #0.5 [m/s]
+      max_depenetration_velocity: 1.0
+      max_gpu_contact_pairs: 8388608  #2**24 -> needed for 8000 envs and more
+      default_buffer_size_multiplier: 5
+      contact_collection: 2 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
 
   terrain:
     mesh_type: 'none' # "heightfield" # none, plane, heightfield or trimesh
@@ -104,12 +112,12 @@ task_config:
 
   domain_rand:
     randomize_friction : True
-    friction_static_range : [0.7,0.8]
+    friction_static_range : [0.7,0.9]
     friction_dynamic_range : [0.8,0.9]
     randomize_base_mass: True
-    mass_box: [0.5, 1.0]
-    length_box : [0.30,0.30]
-    width_box : [0.4,0.4]
+    mass_box: [0.5, 3.0]
+    length_box : [0.40,0.42]
+    width_box : [0.6,0.62]
     height_box : [0.1,0.1]
     randomize_com : True
     com_distribution_range : [-0.05,0.05]
@@ -198,7 +206,7 @@ rl_config:
     dir: '{ROOT_DIR}/logs/'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
-    batch_size: 6400 # TODO: adapt to your setting
+    batch_size: 1250 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99

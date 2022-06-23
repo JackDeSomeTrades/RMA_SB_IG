@@ -28,14 +28,14 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         SotoEnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device,
                               headless=args.headless, sim_params=sim_params)
         set_seed(config.seed)
+
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
         self.reward_scales = self.cfg.rewards.scales.to_dict()
         self.command_angle = np.pi/2 #rotation to do
+
         self.max_episode_length_s = self.cfg.env.episode_length_s
-        # in terms of timsesteps.
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
-        # to count the number of times the step function is called.
         self._elapsed_steps = None
 
         self.observation_space = self._init_observation_space()
@@ -45,28 +45,36 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         dof_state_tensor = self.gym.acquire_dof_state_tensor(self.sim)
         net_contact_forces = self.gym.acquire_net_contact_force_tensor(self.sim)
         _rb_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
+
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
         self.gym.refresh_rigid_body_state_tensor(self.sim)
+
         self.root_states = gymtorch.wrap_tensor(actor_root_state)
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
         self.rb_state = gymtorch.wrap_tensor(_rb_states)
-        self.rigid_body_tensor = self.rb_state.view(self.num_envs,-1,13)
+        self.contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(self.num_envs, -1, 3)
+
+
         self.dof_pos = self.dof_state.view(self.num_envs, self.num_dofs, 2)[..., 0]
         self.dof_vel = self.dof_state.view(self.num_envs, self.num_dofs, 2)[..., 1]
+        self.rigid_body_tensor = self.rb_state.view(self.num_envs, -1, 13)
         self.soto_root_state = self.root_states.view(self.num_envs,2,13)[:,0,:]
         self.box_root_state = self.root_states.view(self.num_envs,2,13)[:,1,:]
 
 
-        self.gym.simulate(self.sim)
-        self.gym.refresh_dof_state_tensor(self.sim)
-        self.gym.refresh_actor_root_state_tensor(self.sim)
-        self.gym.refresh_net_contact_force_tensor(self.sim)
-        self.gym.refresh_rigid_body_state_tensor(self.sim)
-
-        self.soto_init_state = torch.clone(self.soto_root_state)
-        self.box_init_state = torch.clone(self.box_root_state)
+        # self.gym.simulate(self.sim)
+        # self.gym.refresh_dof_state_tensor(self.sim)
+        # self.gym.refresh_actor_root_state_tensor(self.sim)
+        # self.gym.refresh_net_contact_force_tensor(self.sim)
+        # self.gym.refresh_rigid_body_state_tensor(self.sim)
+        self.common_step_counter = 0
+        self.infos = [{} for _ in range(self.num_envs)]
+        self.soto_init_state = torch.zeros_like(self.soto_root_state)
+        self.box_init_state = torch.zeros_like(self.soto_root_state)
+        self.soto_init_state[:] = self.soto_root_state[:]
+        self.box_init_state[:] = self.box_root_state[:]
 
         self.index_rotate = self.dof_names.index("gripper_rotate")
 
@@ -84,7 +92,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.box_pos = self.box_root_state[..., 0:3]
         self.box_init_pos = torch.clone(self.box_pos[:])
 
-        self.contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(self.num_envs, -1, 3)
         # initialize some data used later on
         self.common_step_counter = 0
         self.infos = [{} for _ in range(self.num_envs)]
@@ -237,12 +244,12 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.render()
         for _ in range(self.cfg.control.decimation):
             self.torques_forces = self._compute_torques_forces(self.actions).view(self.torques_forces.shape)
-            # adapt to each dofs
             self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques_forces))
             self.gym.simulate(self.sim)
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
+
         self.post_physics_step()
 
         # return clipped obs, clipped states (None), rewards, dones and infos
@@ -253,7 +260,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             return self.obs_buf, self.rew_buf, self.reset_buf, self.infos, self.privileged_obs_buf
         if flag:
             # For SB3 compatibility
-            # print("This is what's causing the slowdown")
+            #print("This is what's causing the slowdown")
             rew_buf = self.rew_buf.detach().cpu().numpy()
             obs_buf = self.obs_buf.detach().cpu().numpy()
             dones = self.reset_buf.detach().cpu().numpy()
@@ -295,7 +302,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             raise NameError(f"Unknown controller type: {control_type}")
 
         return torch.clip(torques_forces, -self.torque_force_bound,
-                          self.torque_force_bound)  # TODO : change limits dimension and turn into a tensor
+                          self.torque_force_bound)
 
     def post_physics_step(self):
         """ check terminations, compute observations and rewards
@@ -394,12 +401,10 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.dof_pos[env_ids] = self.default_dof_pos #* torch_rand_float(0.5, 1.5, (len(env_ids), self.num_dof), device=self.device)
         self.dof_vel[env_ids] = 0.
 
-
-        self.dof_pos[env_ids] = self.default_dof_pos_tensor
-
-        self.dof_vel[env_ids] = 0.
-        #
-        self.gym.set_dof_state_tensor(self.sim,gymtorch.unwrap_tensor(self.dof_state))
+        env_ids_int32 = env_ids.to(dtype=torch.int32)
+        self.gym.set_dof_state_tensor_indexed(self.sim,
+                                              gymtorch.unwrap_tensor(self.dof_state),
+                                              gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
     def _reset_root_states(self, env_ids):
         """ Resets ROOT states position and velocities of selected environmments
             Sets base position based on the curriculum
@@ -445,15 +450,15 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
     def check_termination(self):
         """ Check if environments need to be reset. Sets up the dones for the return values of step.
         """
-        self.reset_indices = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1.,dim = 1)
-        self.reset_buf = torch.logical_or(self.box_pos[:, 2] < 0.70,self.box_pos[:, 2] > 3)
-        self.test_pos = torch.logical_and(self.distance_sensors[:,0] > 0.7, self.distance_sensors[:,1] > 0.7)
-
-        self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
-
-        self.reset_buf |= self.time_out_buf
-        self.reset_buf |= self.test_pos
-        self.reset_buf |= self.reset_indices
+        # self.reset_indices = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1.,dim = 1)
+        # self.reset_buf = torch.logical_or(self.box_pos[:, 2] < 0.70,self.box_pos[:, 2] > 3)
+        # self.test_pos = torch.logical_and(self.distance_sensors[:,0] > 0.7, self.distance_sensors[:,1] > 0.7)
+        #
+        # self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
+        #
+        # self.reset_buf |= self.time_out_buf
+        # self.reset_buf |= self.test_pos
+        # self.reset_buf |= self.reset_indices
 
 
     def _prepare_reward_function(self):
