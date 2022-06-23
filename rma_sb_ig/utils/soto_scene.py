@@ -27,6 +27,7 @@ class SotoEnvScene:
 
         self.device = sim_device if self.sim_params.use_gpu_pipeline else 'cpu'
         self.graphics_device_id = self.sim_device_id
+
         # configure sim
         self._adjust_sim_param()
 
@@ -42,6 +43,10 @@ class SotoEnvScene:
             if self.viewer is None:
                 print("*** Failed to create viewer")
                 quit()
+            self.gym.subscribe_viewer_keyboard_event(
+                self.viewer, gymapi.KEY_ESCAPE, "QUIT")
+            self.gym.subscribe_viewer_keyboard_event(
+                self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
         else :
             self.viewer = None
 
@@ -72,21 +77,16 @@ class SotoEnvScene:
         self.sim_params.up_axis = gymapi.UP_AXIS_Z
         self.sim_params.gravity = gymapi.Vec3(0.0, 0.0, -9.8)
         self.sim_params.dt = self.cfg.sim_param.dt
-        self.sim_params.substeps = self.cfg.sim_param.substep
+        self.sim_params.substeps = self.cfg.sim_param.substeps
         self.sim_params.use_gpu_pipeline = self.cfg.sim_param.use_gpu
         if self.physics_engine == gymapi.SIM_PHYSX:
             self.sim_params.physx.bounce_threshold_velocity = 2*9.81*self.sim_params.dt/self.sim_params.substeps
-            self.sim_params.physx.num_position_iterations = self.cfg.sim_param.num_position_iterations
-            self.sim_params.physx.num_velocity_iterations = self.cfg.sim_param.num_velocity_iterations
+            self.sim_params.physx.num_position_iterations = self.cfg.sim_param.physx.num_position_iterations
+            self.sim_params.physx.num_velocity_iterations = self.cfg.sim_param.physx.num_velocity_iterations
             self.sim_params.physx.num_threads = self.cfg.sim_param.num_threads
             self.sim_params.physx.use_gpu = self.cfg.sim_param.use_gpu_physx
-            self.sim_params.physx.max_gpu_contact_pairs = 2097152
+            self.sim_params.physx.max_gpu_contact_pairs = self.cfg.sim_param.physx.max_gpu_contact_pairs
             self.sim_params.physx.friction_correlation_distance = self.cfg.sim_param.friction_correlation_distance
-        elif self.physics_engine == gymapi.SIM_FLEX:
-            self.sim_params.flex.num_outer_iterations = 4
-            self.sim_params.flex.num_inner_iterations = 1
-            self.sim_params.flex.shape_collision_distance = 0.001
-            self.sim_params.flex.shape_collision_margin = 0.005
         else :
             raise Exception("This robot can only be used with PhysX")
 
@@ -132,6 +132,10 @@ class SotoEnvScene:
         self.joint_velocity = self.soto_dof_props["velocity"]
         self.soto_mids = 0.5*(self.upper_bounds_joints +self.lower_bounds_joints)
         self.default_dof_pos = self.soto_mids
+
+        k = 0.15
+        self.default_dof_pos[3] = (1-k)*self.lower_bounds_joints[3] + k*self.upper_bounds_joints[3]
+        self.default_dof_pos[6] = (1-k)*self.lower_bounds_joints[6] + k*self.upper_bounds_joints[6]
         # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
 
         self.default_dof_state = np.zeros(

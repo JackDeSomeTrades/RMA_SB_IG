@@ -170,6 +170,7 @@ class SotoRobotTask(SotoForwardTask):
         self.distance_sensors = torch.clip(self.distance_sensors, 0.025, 1.5)
         distance_btw_arms = torch.abs(
             self.dof_pos[:, self.right_arm_index] - (0.7 - self.dof_pos[:, self.left_arm_index]))
+
         self.X_t = torch.cat((self.dof_pos,
                               self.dof_vel,
                               distance_btw_arms.unsqueeze(-1)
@@ -206,22 +207,24 @@ class SotoRobotTask(SotoForwardTask):
         reward = torch.exp(-angle_error / self.cfg.rewards.tracking_angle)
         return reward
 
-    def _reward_termination(self):
-        reward = torch.where(self.reset_buf,1,0)
-        return reward
 
     def _reward_velocity(self):
         value = torch.square(self.dof_vel[:,self.right_conv_belt_id]+self.dof_vel[:,self.left_conv_belt_id])
         reward = torch.abs(torch.max(self.dof_vel[:,self.right_conv_belt_id],self.dof_vel[:,self.left_conv_belt_id]))*torch.exp(-value/self.cfg.rewards.velocity)
         return reward
 
-    def _reward_distance_min(self):
-        reward = torch.exp(-(torch.abs(self.distance_sensors[:,0] +0.15)+torch.abs(self.distance_sensors[:,1] +0.15)) / self.cfg.rewards.tracking_distance)
+    def _reward_distance(self):
+        angle = torch.remainder(self.commands.squeeze(-1) - self.box_angle, torch.pi)-torch.pi/2
+        dist = torch.abs(self.box_dim[:,1]*torch.sin(angle))+torch.abs(self.box_dim[0]*torch.cos(angle))
+        dist2 = torch.abs(
+            self.dof_pos[:, self.right_arm_index] - (0.7 - self.dof_pos[:, self.left_arm_index]))
+        reward = torch.exp(torch.square(dist-dist2))
         return reward
 
     def _reward_dof_acc(self):
         # Penalize dof accelerations
         return torch.sum(torch.square((self.last_dof_vel - self.dof_vel) / self.dt), dim=1)
+
     def _reward_arm_contact(self):
         f1 = torch.norm(self.contact_forces[:,self.left_conveyor_shape,:], dim = -1)
         f2 = torch.norm(self.contact_forces[:,self.right_conveyor_shape,:],dim = -1)
@@ -241,6 +244,9 @@ class SotoRobotTask(SotoForwardTask):
         reward = torch.abs(self.box_pos[:,2] - self.box_init_pos[:,2])
         return reward
 
+    def _reward_termination(self):
+        reward = torch.where(self.reset_buf,1,0)
+        return reward
 
     # ---------------Reward functions end here ---------------------- #
 
