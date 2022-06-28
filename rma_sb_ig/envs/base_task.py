@@ -30,16 +30,15 @@ class BaseTask(ABC, gym.Env):
         torch._C._jit_set_profiling_executor(False)
 
         # allocate buffers
-        self.test_pos = torch.zeros(num_envs, 1, device=self.device, dtype=torch.float)
-        self.distance_sensors = torch.zeros(num_envs, 2, device=self.device, dtype=torch.float)
+
         self.obs_buf = torch.zeros(num_envs, self.num_obs, device=self.device, dtype=torch.float)
         self.rew_buf = torch.zeros(num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.ones(num_envs, device=self.device, dtype=torch.long)
         self.episode_length_buf = torch.zeros(num_envs, device=self.device, dtype=torch.long)
         self.time_out_buf = torch.zeros(num_envs, device=self.device, dtype=torch.bool)
+        self.test_pos = torch.zeros(num_envs, device=self.device, dtype=torch.bool)
+        self.env_done = torch.zeros(num_envs, device=self.device, dtype=torch.bool)
         self.reset_indices = torch.zeros(num_envs, device=self.device, dtype=torch.bool)
-
-        self.box_out_buffer = torch.zeros(num_envs, device=self.device, dtype=torch.bool)
         if self.num_privileged_obs is not None:
             self.privileged_obs_buf = torch.zeros(num_envs, self.num_privileged_obs, device=self.device, dtype=torch.float)
         else:

@@ -130,13 +130,11 @@
 		</geometry>
 		</collision>
 	</link>
-	<joint name="gripper_rotate" type="revolute">
+	<joint name="gripper_rotate" type="fixed">
 		<origin rpy="0 0 3.1416" xyz="0 0 0.1205" />
 		<parent link="vertical_axis_link" />
 		<child link="gripper_base_link" />
-		<axis xyz="0 0 1" />
-		<dynamics damping="12.0" friction="0.0" />
-		<limit effort="32.11" lower="-3.22886" upper="1.65806" velocity="3.72802" />
+		
 	</joint>
 	<link name="gripper_base_x_link">
 		<inertial>
@@ -192,7 +190,7 @@
 		<child link="gripper_y_right_link" />
 		<axis xyz="0 1 0" />
 		<dynamics damping="300.0" friction="80.0" />
-		<limit effort="140.16" lower="0.002" upper="0.489" velocity="0.261799" />
+		<limit effort="1400.16" lower="0.002" upper="0.489" velocity="0.261799" />
 	</joint>
 	<link name="distance_sensor_conveyor_right">
 		<inertial>
@@ -246,7 +244,7 @@
 		<child link="gripper_y_left_link" />
 		<axis xyz="0 -1 0" />
 		<dynamics damping="300.0" friction="80.0" />
-		<limit effort="140.16" lower="0.002" upper="0.489" velocity="0.261799" />
+		<limit effort="1400.16" lower="0.002" upper="0.489" velocity="0.261799" />
 	</joint>
 	<link name="distance_sensor_conveyor_left">
 		<inertial>
@@ -450,7 +448,7 @@
 		<parent link="conveyor_belt_left_foremost_link"/>
 		<child link="left_conveyor_belt"/>
 		<axis xyz="1 0 0"/>
-		<limit effort="10000" lower="-2.5" upper="2.5" velocity="0.3"/>
+		<limit effort="1000" lower="-2.5" upper="2.5" velocity="0.3"/>
 	    <dynamics damping="1.0" friction="0.4"/>
 	</joint>
 
@@ -478,7 +476,7 @@
 		<child link="right_conveyor_belt"/>
 		<axis xyz="1 0 0"/>
 		<dynamics damping="1.0" friction="0.4"/>
-		<limit effort="10000" lower="-2.5" upper="2.5" velocity="0.3"/>
+		<limit effort="1000" lower="-2.5" upper="2.5" velocity="0.3"/>
 	</joint>
 
 	
