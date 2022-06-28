@@ -15,7 +15,7 @@ from rma_sb_ig.envs.soto_forward_task import SotoForwardTask
 
 class SotoRobotTask(SotoForwardTask):
     def __init__(self, *args):
-
+        self.init_done = False
         super(SotoRobotTask, self).__init__(*args)
     def _init_observation_space(self):
         # Observation consists of : 43
@@ -40,57 +40,39 @@ class SotoRobotTask(SotoForwardTask):
         self.right_arm_index = self.dof_names.index('gripper_y_right')
         self.left_arm_index = self.dof_names.index('gripper_y_left')
         dist_max = self.upper_bounds_joints[self.right_arm_index] - self.lower_bounds_joints[self.right_arm_index]
-
         limits_low = np.array(
             list(self.lower_bounds_joints) +
             list(-self.joint_velocity)+    # minimum values of joint velocities
             [0] +
             list(self.lower_bounds_joints) +
-
-
             [self.cfg.domain_rand.friction_static_range[0]]*2 +
             [self.cfg.domain_rand.friction_dynamic_range[0]]*2 +
             [self.cfg.domain_rand.mass_box[0]] +
-            [-1.5] +
-            [-1.5] +
-            [-1.5] +
-            [-1.5] +
+            [-1.5]*4+
             [self.cfg.domain_rand.width_box[0]] +
             [self.cfg.domain_rand.length_box[0]] +
             [self.cfg.domain_rand.height_box[0]] +
-
             [-1.5]*2 +
             [0]
         )
 
         limits_high = np.array(
             list(self.upper_bounds_joints) +
-            list(self.joint_velocity)+    # maximum values of joint velocities
-            # distance max btw 2 conveyors +
+            list(self.joint_velocity)+    # maximum values of joint velocities# distance max btw 2 conveyors +
             [dist_max] +
             list(self.upper_bounds_joints) +
-
-
             [self.cfg.domain_rand.friction_static_range[1]]*2 +
             [self.cfg.domain_rand.friction_dynamic_range[1]]*2 +
             [self.cfg.domain_rand.mass_box[1]] +
-
-            [1.5] +
-            [1.5] +
-
-            [1.5] +
-            [1.5] +
-
+            [1.5]*4 +
             [self.cfg.domain_rand.width_box[1]] +
             [self.cfg.domain_rand.length_box[1]] +
             [self.cfg.domain_rand.height_box[1]] +
-
             [-0.025]*2 +  # supposed length of grippers
             [2*np.pi]
         )
 
-        obs_space = gymspace.Box(
-            limits_low, limits_high, dtype=np.float32)
+        obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float32)
         return obs_space
 
     def _init_action_space(self):
@@ -102,14 +84,15 @@ class SotoRobotTask(SotoForwardTask):
         :return: act_space -> gym.space.Box
         """
 
-        self.lower_bounds_joint_tensor = torch.tensor(self.lower_bounds_joints, dtype=torch.float,device=self.device).expand(self.num_envs, self.num_dofs)
-        self.upper_bounds_joint_tensor = torch.tensor(self.upper_bounds_joints, dtype=torch.float,device=self.device).expand(self.num_envs, self.num_dofs)
-        self.torque_force_bound = torch.tensor(self.motor_strength, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
-        self.joint_velocity_bound  = torch.tensor(self.joint_velocity, dtype = torch.float,device = self.device).expand(self.num_envs,self.num_dofs)
+        self.lower_bounds_joint_tensor = torch.tensor(self.lower_bounds_joints, dtype=torch.float, device=self.device).expand(self.num_envs, self.num_dofs)
+        self.upper_bounds_joint_tensor = torch.tensor(self.upper_bounds_joints, dtype=torch.float, device=self.device).expand(self.num_envs, self.num_dofs)
+        self.torque_force_bound = torch.tensor(self.motor_strength, dtype=torch.float, device=self.device).expand(self.num_envs,self.num_dofs)
+        self.joint_velocity_bound = torch.tensor(self.joint_velocity, dtype=torch.float, device=self.device).expand(self.num_envs,self.num_dofs)
 
-        ub = np.array(self.joint_velocity)
-        lb = np.zeros_like(ub)
-        act_space = gymspace.Box(-ub, ub, dtype=np.float32)
+
+        lb = self.lower_bounds_joints
+        ub = self.upper_bounds_joints
+        act_space = gymspace.Box(lb, ub, dtype=np.float32)
         return act_space
 
     def _get_noise_scale_vec(self, cfg):
@@ -122,7 +105,6 @@ class SotoRobotTask(SotoForwardTask):
         Returns:
             [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
         """
-
         noise_vec = torch.zeros_like(self.obs_buf[0])
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
@@ -134,17 +116,13 @@ class SotoRobotTask(SotoForwardTask):
         noise_vec[18:19] = 0.
         noise_vec[19:28] = noise_scales.action * \
             noise_level * self.obs_scales.action
-
-
         noise_vec[28:32] = 0.2 #friction
         noise_vec[32:37] = 0.1  # Mass and COM and GC
         noise_vec[37:40] = 0.1 #box dimensions
         noise_vec[40:42] = noise_scales.distance_measurements * \
             noise_level
         noise_vec[42:43] = 0.1
-
         return noise_vec
-
 
     def compute_observations(self):
         # Observation consists of : 43
@@ -168,13 +146,10 @@ class SotoRobotTask(SotoForwardTask):
         # :return: obs_spaceF
         self.get_depth_sensors()
         self.distance_sensors = torch.clip(self.distance_sensors, 0.025, 1.5)
-        distance_btw_arms = torch.abs(
-            self.dof_pos[:, self.right_arm_index] - (0.7 - self.dof_pos[:, self.left_arm_index]))
-
+        distance_btw_arms = torch.abs(self.dof_pos[:, self.right_arm_index] - (0.7 - self.dof_pos[:, self.left_arm_index]))
         self.X_t = torch.cat((self.dof_pos,
                               self.dof_vel,
-                              distance_btw_arms.unsqueeze(-1)
-                              ), dim=-1)
+                              distance_btw_arms.unsqueeze(-1)), dim=-1)
         E_t = torch.cat((
             self.soto_fric,
             self.box_fric,
@@ -187,26 +162,28 @@ class SotoRobotTask(SotoForwardTask):
             self.box_angle.unsqueeze(-1)
         ), dim=-1)
 
-        self.obs_buf = torch.cat((self.X_t,self.last_actions,
-                                  E_t), dim=-1)
-
+        self.obs_buf = torch.cat((self.X_t,self.last_actions,E_t), dim=-1)
         # add noise if needed
         noise = self._get_noise_scale_vec(self.cfg)
         if self.add_noise:
-            self.obs_buf += (2 * torch.rand_like(self.obs_buf) -
-                             1) * noise
-
+            self.obs_buf += (2 * torch.rand_like(self.obs_buf) -1) * noise
     # -------------- Reward functions begin below: --------------------------------#
 
     def _reward_turning_velocity(self):
         reward = torch.square(self.rigid_body_tensor[:,self.gripper_x_id,12])
         return reward
+
     def _reward_turn(self):
         value = torch.remainder(self.commands.squeeze(-1)-self.box_angle,torch.pi)
+        value = torch.where(value <= torch.pi/2,value,torch.pi-value)
         angle_error = torch.square(value)
+        #self.env_done = value < 0.001
         reward = torch.exp(-angle_error / self.cfg.rewards.tracking_angle)
+        print(value)
         return reward
 
+    def _reward_ecartement(self):
+        self.box_dim
 
     def _reward_velocity(self):
         value = torch.square(self.dof_vel[:,self.right_conv_belt_id]+self.dof_vel[:,self.left_conv_belt_id])
@@ -225,11 +202,7 @@ class SotoRobotTask(SotoForwardTask):
         # Penalize dof accelerations
         return torch.sum(torch.square((self.last_dof_vel - self.dof_vel) / self.dt), dim=1)
 
-    def _reward_arm_contact(self):
-        f1 = torch.norm(self.contact_forces[:,self.left_conveyor_shape,:], dim = -1)
-        f2 = torch.norm(self.contact_forces[:,self.right_conveyor_shape,:],dim = -1)
-        reward = torch.min(f1,f2)*torch.exp(torch.square(f1-f2)/0.5)
-        return reward
+
     # def _reward_geometric_center(self):
     #     reward = torch.norm(self.box_pos - self.box_init_pos,dim=1)
     #     return reward
@@ -242,10 +215,6 @@ class SotoRobotTask(SotoForwardTask):
     #     return reward
     def _reward_z_position(self):
         reward = torch.abs(self.box_pos[:,2] - self.box_init_pos[:,2])
-        return reward
-
-    def _reward_termination(self):
-        reward = torch.where(self.reset_buf,1,0)
         return reward
 
     # ---------------Reward functions end here ---------------------- #

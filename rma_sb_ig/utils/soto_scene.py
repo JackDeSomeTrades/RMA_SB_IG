@@ -19,7 +19,6 @@ class SotoEnvScene:
         self.sim_params = sim_params
         self.physics_engine = physics_engine
         self.sim_device = sim_device
-        self.is_test_mode = self.cfg.sim_param.test
         sim_device, self.sim_device_id = gymutil.parse_device_str(
             self.sim_device)
         self.headless = headless
@@ -29,12 +28,19 @@ class SotoEnvScene:
         self.graphics_device_id = self.sim_device_id
 
         # configure sim
-        self._adjust_sim_param()
+        if self.headless == True:
+            self.graphics_device_id = -1
+
+        #self._adjust_sim_param()
+        self.up_axis_idx = set_sim_params_up_axis(self.sim_params, 'z')
+        self.sim = self.gym.create_sim(
+            self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
+
+        self.create_sim()
 
         # create sim
         self.enable_viewer_sync = True
-        self.sim = self.gym.create_sim(
-            self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
+
 
         if not self.headless:
             # subscribe to keyboard shortcuts
@@ -50,12 +56,12 @@ class SotoEnvScene:
         else :
             self.viewer = None
 
-        self.create_sim()
+
         if not self.headless :
             self._define_viewer()
         # point camera at middle env
 
-        self.gym.prepare_sim(self.sim)  # TODO : ATTENTION FAIT TOUT PLANTER avec set actor dof state
+        self.gym.prepare_sim(self.sim)
 
 
     def create_sim(self):
@@ -64,7 +70,6 @@ class SotoEnvScene:
         # Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
         plane_params = gymapi.PlaneParams()
         plane_params.normal = gymapi.Vec3(0.0, 0.0, 1.0)
-        plane_params.distance = 0
         plane_params.static_friction = self.cfg.terrain.static_friction
         plane_params.dynamic_friction = self.cfg.terrain.dynamic_friction
         # used to control the elasticity of collisions with the ground plane
@@ -79,85 +84,59 @@ class SotoEnvScene:
         self.sim_params.dt = self.cfg.sim_param.dt
         self.sim_params.substeps = self.cfg.sim_param.substeps
         self.sim_params.use_gpu_pipeline = self.cfg.sim_param.use_gpu
-        if self.physics_engine == gymapi.SIM_PHYSX:
-            self.sim_params.physx.bounce_threshold_velocity = 2*9.81*self.sim_params.dt/self.sim_params.substeps
-            self.sim_params.physx.num_position_iterations = self.cfg.sim_param.physx.num_position_iterations
-            self.sim_params.physx.num_velocity_iterations = self.cfg.sim_param.physx.num_velocity_iterations
-            self.sim_params.physx.num_threads = self.cfg.sim_param.num_threads
-            self.sim_params.physx.use_gpu = self.cfg.sim_param.use_gpu_physx
-            self.sim_params.physx.max_gpu_contact_pairs = self.cfg.sim_param.physx.max_gpu_contact_pairs
-            self.sim_params.physx.friction_correlation_distance = self.cfg.sim_param.friction_correlation_distance
-        else :
-            raise Exception("This robot can only be used with PhysX")
+        self.sim_params.enable_actor_creation_warning = False
+        # if self.physics_engine == gymapi.SIM_PHYSX:
+        #     self.sim_params.physx.bounce_threshold_velocity = 2*9.81*self.sim_params.dt/self.sim_params.substeps
+        #     self.sim_params.physx.num_position_iterations = self.cfg.sim_param.physx.num_position_iterations
+        #     self.sim_params.physx.num_velocity_iterations = self.cfg.sim_param.physx.num_velocity_iterations
+        #     self.sim_params.physx.num_threads = self.cfg.sim_param.num_threads
+        #     self.sim_params.physx.use_gpu = self.cfg.sim_param.use_gpu_physx
+        #     self.sim_params.physx.max_gpu_contact_pairs = self.cfg.sim_param.physx.max_gpu_contact_pairs
+        #     self.sim_params.physx.friction_correlation_distance = self.cfg.sim_param.friction_correlation_distance
+        #     self.sim_params.physx.max_depenetration_velocity = 10
+        #     self.sim_params.physx.solver_type = self.cfg.sim_params.physx.solver_type
+        # else :
+        #     raise Exception("This robot can only be used with PhysX")
 
-    def _create_assets(self):
-
-        asset_path = self.cfg.asset.file.format(ROOT_DIR=get_project_root())
-        asset_root = os.path.dirname(asset_path)
-
-        box_limits = (self.cfg.domain_rand.length_box,
-                      self.cfg.domain_rand.width_box,
-                      self.cfg.domain_rand.height_box)
-
-        asset_options = gymapi.AssetOptions()
-        #asset_options.use_mesh_materials = True
-        # load soto asset
-        asset_file = os.path.basename(asset_path)
-        asset_options.armature = self.cfg.asset.armature
-        # asset_options.convex_decomposition_from_submeshes = True
-
+    def _get_soto_asset_option(self,asset_options):
         asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
         asset_options.default_dof_drive_mode = self.cfg.asset.default_dof_drive_mode
         asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints
-        asset_options.density = 5
-        self.box_dimensions = [self._get_random_boxes(*box_limits) for i in range(self.num_envs)]
-        self.l_boxes_asset = [self.gym.create_box(self.sim, *dim, asset_options) for dim in self.box_dimensions]
         asset_options.disable_gravity = self.cfg.asset.disable_gravity
         asset_options.override_com = self.cfg.asset.override_com
         asset_options.vhacd_enabled = True
         asset_options.override_inertia = self.cfg.asset.override_inertia
         asset_options.fix_base_link = self.cfg.asset.fix_base_link
-        self.soto_asset = self.gym.load_asset(self.sim, asset_root,asset_file,asset_options)
-        # # configure soto dofs
-        self.dof_names = self.gym.get_asset_dof_names(self.soto_asset)
-        # # self.default_dof_pos = np.zeros(self.soto_num_dofs, dtype=np.float32) #way to initialize dofs
+        return asset_options
+
+    def _get_box_asset_option(self,asset_options):
+        asset_options.density = 10
+        asset_options.override_inertia = self.cfg.asset.override_inertia
+        return asset_options
+
+    def _create_assets(self):
+
+        asset_path = self.cfg.asset.file.format(ROOT_DIR=get_project_root())
+        asset_root = os.path.dirname(asset_path)
+        asset_file = os.path.basename(asset_path)
+        soto_asset_options = gymapi.AssetOptions()
+        box_asset_options = gymapi.AssetOptions()
+        box_limits = (self.cfg.domain_rand.length_box,
+                      self.cfg.domain_rand.width_box,
+                      self.cfg.domain_rand.height_box)
+        soto_asset_options = self._get_soto_asset_option(soto_asset_options)
+        box_asset_options = self._get_box_asset_option(box_asset_options)
+        self.box_dimensions = [self._get_random_boxes(*box_limits) for _ in range(self.num_envs)]
+
+        self.l_boxes_asset = [self.gym.create_box(self.sim, *dim, box_asset_options) for dim in self.box_dimensions]
+        self.soto_asset = self.gym.load_asset(self.sim, asset_root, asset_file, soto_asset_options)
+
         self.num_dofs = self.gym.get_asset_dof_count(self.soto_asset)
-        self.num_bodies = self.gym.get_asset_rigid_body_count(self.soto_asset)
-        # dof_props_asset = self.gym.get_asset_dof_properties(self.soto_asset)
-        self.soto_dof_props = self.gym.get_asset_dof_properties(self.soto_asset)
-        self.lower_bounds_joints = self.soto_dof_props["lower"]
-        self.upper_bounds_joints = self.soto_dof_props["upper"]
-
-        self.motor_strength = self.soto_dof_props["effort"]
-        self.joint_velocity = self.soto_dof_props["velocity"]
-        self.soto_mids = 0.5*(self.upper_bounds_joints +self.lower_bounds_joints)
-        self.default_dof_pos = self.soto_mids
-
-        k = 0.15
-        self.default_dof_pos[3] = (1-k)*self.lower_bounds_joints[3] + k*self.upper_bounds_joints[3]
-        self.default_dof_pos[6] = (1-k)*self.lower_bounds_joints[6] + k*self.upper_bounds_joints[6]
-        # remember : important pieces to control are conveyor belt left base link/conveyor belt right base link
-
-        self.default_dof_state = np.zeros(
-            self.num_dofs, gymapi.DofState.dtype)
-
-        self.default_dof_state["pos"] = self.default_dof_pos
-
-        # get link index of soto pieces, which we will use as effectors
-        self.soto_link_dict = self.gym.get_asset_rigid_body_dict(
-            self.soto_asset)
-        self.index_to_get = ['gripper_y_right_link', 'gripper_y_left_link']
-
-        self.soto_indexs = [self.soto_link_dict[i] for i in self.index_to_get]
-        self.soto_pose = gymapi.Transform()
-        self.soto_pose.p = gymapi.Vec3(*self.cfg.init_state.pos)
-        self.box_pose = gymapi.Transform()
+        soto_dof_props = self.gym.get_asset_dof_properties(self.soto_asset)
+        self._get_properties(soto_dof_props)
 
         self.body_names = self.gym.get_asset_rigid_body_names(self.soto_asset)
-        self.right_conv_belt_id = self.dof_names.index("conveyor_right_to_belt")
-        self.left_conv_belt_id = self.dof_names.index("conveyor_left_to_belt")
-        self.feet_names = [s for s in self.body_names if self.cfg.asset.foot_name in s]
-
+        self.dof_names = self.gym.get_asset_dof_names(self.soto_asset)
         self.penalized_contact_names = []
         for name in self.cfg.asset.penalize_contacts_on:
             self.penalized_contact_names.extend(
@@ -167,7 +146,119 @@ class SotoEnvScene:
             self.termination_contact_names.extend(
                 [s for s in self.body_names if name in s])
 
-        self._initialize_env()
+        soto_pose = gymapi.Transform()
+        soto_pose.p = gymapi.Vec3(*self.cfg.init_state.pos)
+        box_pose = gymapi.Transform()
+        default_dof_pos = self._process_dof_pos()
+        default_dof_state = np.zeros(self.num_dofs, gymapi.DofState.dtype)
+        default_dof_state["pos"] = default_dof_pos
+        self._find_ids()
+
+
+        print("Creating %d environments" % self.num_envs)
+        self._configure_env_grid()
+        self.actor_handles = []
+        self.envs = []
+        self.box_masses = []
+        self.box_com_x = []
+        self.box_com_y = []
+        self.box_com_z = []
+        self.box_handles = []
+        self.soto_fric = []
+        self.box_fric = []
+
+        for i in range(self.num_envs):
+            # create env
+            color = gymapi.Vec3(np.random.uniform(0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
+            env = self.gym.create_env(self.sim, self.env_lower, self.env_upper, self.num_per_row)
+
+            rigid_soto_properties = self.gym.get_asset_rigid_shape_properties(self.soto_asset)
+            rigid_soto_properties = self._process_rigid_properties(rigid_soto_properties, "soto")
+            self.gym.set_asset_rigid_shape_properties(self.soto_asset, rigid_soto_properties)
+            soto_handle = self.gym.create_actor(env, self.soto_asset, soto_pose, self.cfg.asset.name, i, 1, 0)
+            self.gym.set_actor_dof_properties(env, soto_handle, soto_dof_props)
+            self.gym.set_actor_dof_states(env, soto_handle, default_dof_state, gymapi.DOMAIN_ENV)
+
+            body_states = self.gym.get_actor_rigid_body_states(env, soto_handle, gymapi.DOMAIN_ENV)
+            box_pose = self._process_box_pos(box_pose,default_dof_state,body_states,i)
+            self.box_handle = self.gym.create_actor(env, self.l_boxes_asset[i], box_pose, "box", i, 0, 1)
+            self.gym.set_rigid_body_color(env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
+            box_shape_props = self.gym.get_actor_rigid_shape_properties(env, self.box_handle)
+            box_shape_props = self._process_rigid_properties(box_shape_props, "box")
+            self.gym.set_actor_rigid_shape_properties(env, self.box_handle, box_shape_props)
+            box_properties = self.gym.get_actor_rigid_body_properties(env, self.box_handle)
+            box_properties = self._process_box_props(box_properties)
+            self.gym.set_actor_rigid_body_properties(env, self.box_handle, box_properties)
+
+            self.actor_handles.append(soto_handle)
+            self.box_handles.append(self.box_handle)
+            self.envs.append(env)
+
+        self.box_masses = torch.cuda.FloatTensor(self.box_masses)
+        self.box_com_x = torch.cuda.FloatTensor(self.box_com_x)
+        self.box_com_y = torch.cuda.FloatTensor(self.box_com_y)
+        self.box_com_z = torch.cuda.FloatTensor(self.box_com_z)
+        self.box_dim = torch.cuda.FloatTensor(self.box_dimensions)
+        self.soto_fric = torch.cuda.FloatTensor(self.soto_fric)
+        self.box_fric = torch.cuda.FloatTensor(self.box_fric)
+
+        self.penalised_contact_indices = torch.zeros(len(self.penalized_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
+        for i in range(len(self.penalized_contact_names)):
+            self.penalised_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
+                self.envs[0], self.actor_handles[0], self.penalized_contact_names[i])
+
+        self.termination_contact_indices = torch.zeros(len(self.termination_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
+        for i in range(len(self.termination_contact_names)):
+            self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
+                self.envs[0], self.actor_handles[0], self.termination_contact_names[i])
+
+        self._create_distance_sensors()
+
+
+    def _process_box_pos(self,box_pose,default_dof_state,body_states,i):
+        vec_add = gymapi.Vec3(-self.box_dimensions[i][0] / 2 + 0.15, 0.0, 0.0)
+        quat = gymapi.Quat.from_axis_angle(gymapi.Vec3(0., 0., 1.), default_dof_state["pos"][self.index_rotate])
+        r = gymapi.Quat.from_axis_angle(gymapi.Vec3(0., 0., 1.), np.pi)
+        box_pose.p.x = body_states["pose"][self.gripper_x_id][0]["x"]
+        box_pose.p.y = body_states["pose"][self.gripper_x_id][0]["y"]
+        box_pose.p.z = body_states["pose"][self.gripper_x_id][0]["z"] + self.box_dimensions[i][2] / 2 + 0.142
+        box_pose.p += quat.rotate(vec_add)
+        box_pose.r = gymapi.Quat(*body_states["pose"][self.gripper_x_id][1]) * r
+        return box_pose
+
+    def _find_ids(self):
+        self.gripper_x_id = self.gym.find_asset_rigid_body_index(self.soto_asset, "gripper_base_x_link")
+        self.right_conv_belt_id = self.dof_names.index("conveyor_right_to_belt")
+        self.left_conv_belt_id = self.dof_names.index("conveyor_left_to_belt")
+        self.conveyor_left_id = self.gym.find_asset_rigid_body_index(self.soto_asset, "gripper_y_left_link")
+        self.conveyor_right_id = self.gym.find_asset_rigid_body_index(self.soto_asset, "gripper_y_right_link")
+
+    def _configure_env_grid(self):
+        self.num_per_row = int(np.sqrt(self.num_envs))
+        spacing = self.cfg.terrain.border_size
+        self.env_lower = gymapi.Vec3(-spacing, -spacing, 0.0)
+        self.env_upper = gymapi.Vec3(spacing, spacing, spacing)
+
+    def _process_dof_pos(self):
+        default_dof_pos = 0.5 * (self.upper_bounds_joints + self.lower_bounds_joints)
+        print(default_dof_pos)
+        k = 0.25
+        cbl = self.dof_names.index("gripper_y_left")
+        cbr = self.dof_names.index("gripper_y_right")
+        default_dof_pos[cbl] = (1 - k) * self.lower_bounds_joints[cbl] + k * self.upper_bounds_joints[cbl]
+        default_dof_pos[cbr] = (1 - k) * self.lower_bounds_joints[cbr] + k * self.upper_bounds_joints[cbr]
+        self.index_rotate = self.gym.find_asset_dof_index(self.soto_asset, "gripper_rotate")
+        index_x = self.gym.find_asset_dof_index(self.soto_asset, "gripper_base_x")
+        default_dof_pos[self.index_rotate] = self.cfg.init_state.angle
+        default_dof_pos[index_x] = self.lower_bounds_joints[index_x]
+        self.default_dof_pos = torch.tensor(default_dof_pos, device = self.device).expand(self.num_envs,self.num_dofs)
+        return default_dof_pos
+
+    def _get_properties(self,soto_dof_props):
+        self.lower_bounds_joints = soto_dof_props["lower"]
+        self.upper_bounds_joints = soto_dof_props["upper"]
+        self.motor_strength = soto_dof_props["effort"]
+        self.joint_velocity = soto_dof_props["velocity"]
 
     def render(self, sync_frame_time=True):
         if self.viewer:
@@ -195,127 +286,7 @@ class SotoEnvScene:
             else:
                 self.gym.poll_viewer_events(self.viewer)
 
-    def _initialize_env(self):
-        # configure env grid
-        self.num_per_row = int(np.sqrt(self.num_envs))
-        spacing = self.cfg.terrain.border_size
-        self.env_lower = gymapi.Vec3(-spacing, -spacing, 0.0)
-        self.env_upper = gymapi.Vec3(spacing, spacing, spacing)
-
-        print("Creating %d environments" % self.num_envs)
-        self.envs = []
-        self.box_masses = []
-        self.box_com_x = []
-        self.box_com_y = []
-        self.box_com_z = []
-        self.actor_handles = []
-        self.box_handles = []
-        self.soto_fric = []
-        self.box_fric = []
-
-        for i in range(self.num_envs):
-            # create env
-            env = self.gym.create_env(
-                self.sim, self.env_lower, self.env_upper, self.num_per_row)
-
-            # get soto_id in environnement(always the same )
-            self.soto_handle = self.gym.create_actor(
-                env, self.soto_asset, self.soto_pose, self.cfg.asset.name, i,
-                1,0)
-
-            index_rotate = self.gym.find_actor_dof_index(env, self.soto_handle, "gripper_rotate", gymapi.DOMAIN_ENV)
-            index_x = self.gym.find_actor_dof_index(env, self.soto_handle, "gripper_base_x", gymapi.DOMAIN_ENV)
-            self.default_dof_state["pos"][index_rotate] = self.cfg.init_state.angle
-            self.default_dof_state["pos"][index_x] = self.lower_bounds_joints[index_x]
-            # set dof properties
-            self.gym.set_actor_dof_properties(
-                env, self.soto_handle, self.soto_dof_props)
-
-            soto_properties = self.gym.get_actor_rigid_shape_properties(env,self.soto_handle)
-            soto_properties = self._process_rigid_properties(soto_properties, "soto")
-            self.gym.set_actor_rigid_shape_properties(env, self.soto_handle, soto_properties)
-            # set initial dof states
-            self.gym.set_actor_dof_states(
-                env, self.soto_handle, self.default_dof_state, gymapi.DOMAIN_ENV)
-
-            # add box
-            self.gripper_x_id = self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, "gripper_base_x_link", gymapi.DOMAIN_ENV)
-
-            self.conveyor_left_id = self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, "gripper_y_left_link", gymapi.DOMAIN_ENV)
-            self.conveyor_right_id = self.gym.find_actor_rigid_body_index(
-                env, self.soto_handle, "gripper_y_right_link", gymapi.DOMAIN_ENV)
-            body_states = self.gym.get_actor_rigid_body_states(env, self.soto_handle, gymapi.DOMAIN_ENV)
-
-            self.box_pose.p.x = body_states["pose"][self.gripper_x_id][0]["x"]
-            self.box_pose.p.y = body_states["pose"][self.gripper_x_id][0]["y"]
-            self.box_pose.p.z = body_states["pose"][self.gripper_x_id][0]["z"] + self.box_dimensions[i][2]/2+0.139
-
-
-            vec_add = gymapi.Vec3(-self.box_dimensions[i][0]/2+0.15,0.0,0.0)
-
-            quat = gymapi.Quat.from_axis_angle(gymapi.Vec3(0.,0.,1.),self.default_dof_state["pos"][index_rotate])
-
-            self.box_pose.p +=quat.rotate(vec_add)
-            r = gymapi.Quat.from_axis_angle(gymapi.Vec3(0.,0.,1.),np.pi)
-
-            self.box_pose.r = gymapi.Quat(*body_states["pose"][self.gripper_x_id][1])*r
-            self.box_handle = self.gym.create_actor(env, self.l_boxes_asset[i], self.box_pose, "box", i,0,1)
-            color = gymapi.Vec3(np.random.uniform(0, 1), np.random.uniform(0, 1), np.random.uniform(0, 1))
-            self.gym.set_rigid_body_color(env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
-
-            box_shape_props = self.gym.get_actor_rigid_shape_properties(env, self.box_handle)
-            box_shape_props = self._process_rigid_properties(box_shape_props, "box")
-
-            self.gym.set_actor_rigid_shape_properties(env, self.box_handle, box_shape_props)
-            box_properties = self.gym.get_actor_rigid_body_properties(env, self.box_handle)
-            box_properties = self._process_box_props(box_properties)
-            self.gym.set_actor_rigid_body_properties(
-                env, self.box_handle, box_properties)
-            
-            # get box id (always the same at each iteration)
-            self.box_idx = self.gym.get_actor_rigid_body_index(
-                env, self.box_handle, 0, gymapi.DOMAIN_SIM)
-            self.actor_handles.append(self.soto_handle)
-            self.box_handles.append(self.box_handle)
-
-            self.envs.append(env)
-
-        self.box_masses = torch.cuda.FloatTensor(self.box_masses)
-        self.box_com_x = torch.cuda.FloatTensor(self.box_com_x)
-        self.box_com_y = torch.cuda.FloatTensor(self.box_com_y)
-        self.box_com_z = torch.cuda.FloatTensor(self.box_com_z)
-        self.box_dim = torch.cuda.FloatTensor(self.box_dimensions)
-        self.soto_fric = torch.cuda.FloatTensor(self.soto_fric)
-        self.box_fric = torch.cuda.FloatTensor(self.box_fric)
-
-        self.feet_indices = torch.zeros(
-            len(self.feet_names), dtype=torch.long, device=self.device, requires_grad=False)
-        for i in range(len(self.feet_names)):
-            self.feet_indices[i] = self.gym.find_actor_rigid_body_handle(
-                self.envs[0], self.actor_handles[0], self.feet_names[i])
-
-        self.penalised_contact_indices = torch.zeros(len(
-            self.penalized_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
-        
-        for i in range(len(self.penalized_contact_names)):
-            self.penalised_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
-                self.envs[0], self.actor_handles[0], self.penalized_contact_names[i])
-
-        self.termination_contact_indices = torch.zeros(len(
-            self.termination_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
-        for i in range(len(self.termination_contact_names)):
-            self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
-                self.envs[0], self.actor_handles[0], self.termination_contact_names[i])
-        
-        self.left_conveyor_shape = self.gym.find_actor_rigid_body_handle(
-                self.envs[0], self.actor_handles[0], "left_conveyor_belt")
-        self.right_conveyor_shape = self.gym.find_actor_rigid_body_handle(
-            self.envs[0], self.actor_handles[0], "right_conveyor_belt")
-        self._create_distance_sensors()
-
-    def _process_rigid_properties(self, props,type):
+    def _process_rigid_properties(self, props, type ):
         if self.cfg.domain_rand.randomize_friction:
             rng_static = self.cfg.domain_rand.friction_static_range
             rng_dynamic = self.cfg.domain_rand.friction_dynamic_range
