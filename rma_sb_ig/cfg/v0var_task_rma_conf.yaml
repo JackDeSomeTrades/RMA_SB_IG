@@ -108,12 +108,12 @@ task_config:
     decimation: 4
 
   asset:
-#    file: '{ROOT_DIR}/resources/robots/v0/urdf/v0.urdf'
     asset_folder: '{ROOT_DIR}/resources/robots/v0variants/urdf/'
     name: "v0variant" # actor name
+    num_legs: 4       # number of legs on the robot
     foot_name: "FOOT" # name of the feet bodies, used to index body state and contact force tensors
     penalize_contacts_on: ["THIGH", "CALF", "HIP"]
-    terminate_after_contacts_on: ["body", "THIGH", "CALF", "HIP"]
+    terminate_after_contacts_on: ["body", "THIGH"]
     self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
     disable_gravity: False
     collapse_fixed_joints: True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">

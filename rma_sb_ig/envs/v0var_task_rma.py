@@ -2,6 +2,7 @@ from time import time
 from warnings import WarningMessage
 import numpy as np
 import os
+import re
 
 from isaacgym import gymapi
 from isaacgym.torch_utils import *
@@ -24,51 +25,64 @@ class V0VarLeggedRobotTask(VarForwardTask):
 
     def _init_observation_space(self):
         """
-        Observation for 4 legged v0 robot consists of :
-                        dof_pos - 12
-                        dof_vel - 12
-                        roll - 1
-                        pitch - 1
-                        feet_contact_switches - 4
-                        previous_actions -12
-                        Mass - 1
-                        Gravity (projected) - 3
-                        COM_x - 1
-                        COM_y - 1
-                        COM_z - 1
-                        Friction - 1
-                        Local terrain height - 4 ( for each of the 4 legs)
+        Observation function for a variable v0 robot (generalised to x number of legs; x=4, 5 or 6) consists of the following parameters:
+                dof_pos           -    num_legs * 3
+                dof_ vel          -    num_legs * 3
+                roll              -    1
+                yaw               -    1
+                foot_contact      -    num_legs
+                heading_deviation -    1
+                previous_action   -    num_legs * 3
+                --------
+                Mass              -    1
+                com_x             -    1
+                com_y             -    1
+                com_z             -    1
+                friction          -    1
+                terrain_height    -    num_legs
+                projected_gravity -    3
+                structure_dist    -    num_legs  ( TODO: for more than num_legs. excess legs to be represented by -1)
+                structure_angle   -    num_legs  ( TODO: for more than num_legs. excess legs represented by 0)
+
+                Total state space size ---- 43 + 20 = 63
+
         :return: obs_space
         """
+        # TODO: Generalise for more than 4 legs. For the moment, running with 4 legs.
+
         limits_low = np.array(
-            self.lower_bounds_joints +
-            [0] * 12 +    # minimum values of joint velocities
-            [-math.inf] +
-            [-math.inf] +
-            [0] * 4 +
-            self.lower_bounds_joints +
+            self.lower_bounds_joints +   # dof_pos
+            [0] * (self.cfg.asset.num_legs * 3) +    # minimum values of joint velocities (dof_vels)
+            [-math.inf] +   # roll
+            [-math.inf] +   # yaw
+            [0] * self.cfg.asset.num_legs +  # foot_contact
+            [-math.inf] +  # heading deviation
+            self.lower_bounds_joints +   # previous action
+            # ------------#
             [0] +             # Mass
-            [-math.inf] * 3 + # Projected Gravity
-            [-math.inf] +
-            [-math.inf] +
-            [-math.inf] +
-            [self.cfg.domain_rand.friction_range[0]] +
-            [0] * 4
+            [-math.inf] * 3 +       # com_ x, y, z
+            [self.cfg.domain_rand.friction_range[0]] +   # friction
+            [0] * self.cfg.asset.num_legs +   # local terrain height
+            [-math.inf] * 3 +   # Projected Gravity
+            [-1] * self.cfg.asset.num_legs +      # TODO: Make this generic for over 4 legs. At the moment, it's only for 4
+            [-math.inf] * self.cfg.asset.num_legs    # structure angle
         )
         limits_high = np.array(
             self.upper_bounds_joints +
             self.upper_bound_joint_velocities +
             [math.inf] +
             [math.inf] +
-            [1] * 4 +
+            [1] * self.cfg.asset.num_legs +
+            [math.inf] +
             self.upper_bounds_joints +
+            #  ------------------ #
             [math.inf] +      # Mass
-            [0] * 3 +         # Projected Gravity
-            [math.inf] +
-            [math.inf] +
-            [math.inf] +
+            [math.inf] * 3 +  # com_ x, y, z
             [self.cfg.domain_rand.friction_range[1]] +
-            [math.inf] * 4
+            [math.inf] * self.cfg.asset.num_legs +  # local terrain height
+            [0] * 3 +         # Projected Gravity
+            [math.inf] * self.cfg.asset.num_legs +
+            [math.inf] * self.cfg.asset.num_legs
         )
         obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float32)
         return obs_space
@@ -106,33 +120,38 @@ class V0VarLeggedRobotTask(VarForwardTask):
         noise_vec[12:24] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
         noise_vec[24:26] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
         noise_vec[26:30] = 0.
-        noise_vec[30:42] = 0.  # Previous action.
-        noise_vec[42:50] = 0.  # Mass, Gravity and COM
-        noise_vec[50:54] = noise_scales.height_measurements * noise_level * self.obs_scales.height_measurements
+        noise_vec[30] = 0.
+        noise_vec[31:43] = 0.  # Previous action.
+        noise_vec[43:48] = 0.  # Mass, COM and friction
+        noise_vec[48:52] = noise_scales.height_measurements * noise_level * self.obs_scales.height_measurements
 
         return noise_vec
 
     def compute_observations(self):
         """Overrides the base class observation computation to bring it in line with observations proposed in the RMA
         paper. The observation consists of two major parts - the environment variables and the state-action pair."""
-        # self.compute_heading_deviation()
+        self.compute_heading_deviation()
         feet_contact_switches = self._get_foot_status()
         local_terrain_height = self._get_local_terrain_height()
+        structure_dist, structure_angle = self._get_asset_struct_details()
 
         self.X_t = torch.cat((self.dof_pos,
                               self.dof_vel,
                               self.base_rpy[0].unsqueeze(1),
                               self.base_rpy[1].unsqueeze(1),
-                              feet_contact_switches
+                              feet_contact_switches,
+                              self.heading_deviation
                               ), dim=-1)
         E_t = torch.cat((
             self.body_masses.unsqueeze(-1),
-            self.projected_gravity,    # TODO: Check this to see if the dimensions are right.
-            self.body_com_x.unsqueeze(-1),
-            self.body_com_y.unsqueeze(-1),
-            self.body_com_z.unsqueeze(-1),
+            self.full_body_com_x.unsqueeze(-1),
+            self.full_body_com_y.unsqueeze(-1),
+            self.full_body_com_z.unsqueeze(-1),
             self.friction_coeffs.squeeze(-1),
-            local_terrain_height
+            local_terrain_height,
+            self.projected_gravity,    # TODO: Check this to see if the dimensions are right.
+            structure_dist,
+            structure_angle
         ), dim=-1)
 
         self.obs_buf = torch.cat((self.X_t,
@@ -158,6 +177,21 @@ class V0VarLeggedRobotTask(VarForwardTask):
         self.heading_deviation = (torch.sign(forward_orientation_quat[:, 1]) * self.heading_deviation).reshape((-1, 1))
 
         return self.heading_deviation
+
+    def _get_asset_struct_details(self):
+        self.asset_base_joint_positions = [[[float(k) for k in re.split('[\s]', x)] for x in lst_] for lst_ in self.asset_base_joint_positions]
+
+        dist = lambda a: a[0]**2 + a[1]**2
+        angle = lambda a: math.atan2(a[1], a[0])
+
+        dist_leg = [[dist(a) for a in lst_] for lst_ in self.asset_base_joint_positions]
+        ang_leg = [[angle(a) for a in lst_] for lst_ in self.asset_base_joint_positions]
+
+        dist_leg = torch.cuda.FloatTensor(dist_leg)
+        ang_leg = torch.cuda.FloatTensor(ang_leg)
+
+        return dist_leg, ang_leg
+
 
     def _get_foot_status(self):
         # foot_status = torch.zeros_like(self.feet_indices)

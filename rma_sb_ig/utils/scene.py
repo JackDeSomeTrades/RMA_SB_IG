@@ -267,12 +267,15 @@ class EnvScene:
         self.lower_bounds_joints = []
         self.upper_bounds_joints = []
         self.upper_bound_joint_velocities = []
+        self.asset_base_joint_positions = []
 
         tree = ET.parse(asset_path)
         robot = tree.getroot()
         for child in robot:
             if child.tag == "joint":
                 for joint_type in child:
+                    if ('_base_to_joint_1' in child.attrib['name']) and (joint_type.tag == 'origin'):
+                        self.asset_base_joint_positions.append(joint_type.attrib['xyz'])
                     if joint_type.tag == "limit":
                         self.motor_strength.append(float(joint_type.attrib['effort']))
                         self.lower_bounds_joints.append(float(joint_type.attrib['lower']))
@@ -498,6 +501,11 @@ class EnvScene:
 
 class VariantEnvScene(EnvScene):
     def __init__(self, *args, **kwargs):
+        self.full_body_masses = []
+        self.full_body_com_x = []
+        self.full_body_com_y = []
+        self.full_body_com_z = []
+
         EnvScene.__init__(self, *args, **kwargs)
 
     def _create_envs(self):
@@ -514,6 +522,7 @@ class VariantEnvScene(EnvScene):
         self.body_com_x = []
         self.body_com_y = []
         self.body_com_z = []
+        self.asset_base_joint_positions = []
 
         for asset_file, env_id in assets_env_pairs:
             asset_full_path = os.path.join(asset_root, asset_file)
@@ -586,3 +595,65 @@ class VariantEnvScene(EnvScene):
         self.body_com_x = torch.cuda.FloatTensor(self.body_com_x)
         self.body_com_y = torch.cuda.FloatTensor(self.body_com_y)
         self.body_com_z = torch.cuda.FloatTensor(self.body_com_z)
+
+        self.full_body_masses = torch.cuda.FloatTensor(self.full_body_masses)
+        self.full_body_com_x = torch.cuda.FloatTensor(self.full_body_com_x)
+        self.full_body_com_y = torch.cuda.FloatTensor(self.full_body_com_y)
+        self.full_body_com_z = torch.cuda.FloatTensor(self.full_body_com_z)
+
+    def _get_asset_joint_details(self, asset_path):
+        self.motor_strength = []
+        self.lower_bounds_joints = []
+        self.upper_bounds_joints = []
+        self.upper_bound_joint_velocities = []
+        asset_base_joint_positions = []
+
+        tree = ET.parse(asset_path)
+        robot = tree.getroot()
+        for child in robot:
+            if child.tag == "joint":
+                for joint_type in child:
+                    if ('_base_to_joint_1' in child.attrib['name']) and (joint_type.tag == 'origin'):
+                        asset_base_joint_positions.append(joint_type.attrib['xyz'])
+
+                    if joint_type.tag == "limit":
+                        self.motor_strength.append(float(joint_type.attrib['effort']))
+                        self.lower_bounds_joints.append(float(joint_type.attrib['lower']))
+                        self.upper_bounds_joints.append(float(joint_type.attrib['upper']))
+                        self.upper_bound_joint_velocities.append(float(joint_type.attrib['velocity']))
+
+        self.asset_base_joint_positions.append(asset_base_joint_positions)
+
+    def _process_rigid_body_props(self, props, env_id):
+        body_mass = 0
+        ix, iy, iz = 0, 0, 0
+
+        # randomize base mass
+        if self.cfg.domain_rand.randomize_base_mass:
+            rng = self.cfg.domain_rand.added_mass_range
+            props[0].mass += np.random.uniform(rng[0], rng[1])
+        if self.cfg.domain_rand.randomize_com:
+            rng_2 = self.cfg.domain_rand.com_distribution_range
+            props[0].com.x += np.random.uniform(rng_2[0], rng_2[1])
+            props[0].com.y += np.random.uniform(rng_2[0], rng_2[1])
+        for prop in props:
+            body_mass += prop.mass
+            ix += prop.mass * prop.com.x
+            iy += prop.mass * prop.com.y
+            iz += prop.mass * prop.com.z
+
+        Ixx = ix/body_mass
+        Iyy = iy/body_mass
+        Izz = iz/body_mass
+
+        self.full_body_masses.append(body_mass)
+        self.full_body_com_x.append(Ixx)
+        self.full_body_com_y.append(Iyy)
+        self.full_body_com_z.append(Izz)
+
+        self.body_masses.append(props[0].mass)
+        self.body_com_x.append(props[0].com.x)
+        self.body_com_y.append(props[0].com.y)
+        self.body_com_z.append(props[0].com.z)
+
+        return props

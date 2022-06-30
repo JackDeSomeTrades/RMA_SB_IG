@@ -47,19 +47,67 @@ class VariableRobotDescriptor:
         # takes tuple of (x: float, y: float, z: float) as input and converts it into a string 'x y z'
         return f'{tuple[0]} {tuple[1]} {tuple[2]}'
 
+    def _fix_leg_positions(self, x_pos_list):
+        x_pos_list = sorted(x_pos_list)
+        if len(x_pos_list) > 1:
+            for i, pos in enumerate(x_pos_list):
+                try:
+                    next_pos = x_pos_list[i+1]
+                except IndexError:
+                    next_pos = x_pos_list[0]
+
+                abs_dist = abs(pos - next_pos)
+
+                if abs_dist < 0.2:
+                    if (pos - 0.1) > self.sizex/2:
+                        x_pos_list[i] = pos
+                        x_pos_list[i+1] = next_pos + 0.15
+                    else:
+                        x_pos_list[i] = pos - 0.1
+                        x_pos_list[i + 1] = next_pos + 0.1
+
+        else:
+            pass
+
+        return x_pos_list
+
     def generate_legs(self):
         # randomly select x position to change for the legs to be modified on the longer side of the body. Random
         # generate positions on y if legs need to be on the shorter side. Generate xacro with reflect -1 to have legs
         # reflect on each side of the axis, for symmetry.
         # origin 0 is at the center of the robot body, size covers the span [-size_ /2., +size_ /2.]
         nblegs_robot = self.conf_dict['robotDef']['num_legs']
-        self.legspos = []
+        legspos_original = []
+        self.legspos = [[[], [], []] for i in range(nblegs_robot)]
         for i in range(nblegs_robot):
-            x_pos = np.random.uniform(low=-self.sizex/2., high= self.sizex/2.)
+            x_pos = np.random.uniform(low=(-self.sizex/2.) + 0.05, high= (self.sizex/2.)-0.05)
             y_pos = np.random.choice([-0.1, 0.1])
             z_pos = 0.75
 
-            self.legspos.append((x_pos, y_pos, z_pos))
+            legspos_original.append([x_pos, y_pos, z_pos])
+
+        # check if generated leg positions on x are all atleast 0.2 away from each other.
+        xpos_on_y_left = [x_pos for x_pos, y_pos, _ in legspos_original if y_pos == 0.1]
+        xpos_on_y_right = [x_pos for x_pos, y_pos, _ in legspos_original if y_pos == -0.1]
+
+        xpos_on_y_left = self._fix_leg_positions(xpos_on_y_left)
+        xpos_on_y_right = self._fix_leg_positions(xpos_on_y_right)
+
+        left_leg_count = len(xpos_on_y_left)
+        right_leg_count = len(xpos_on_y_right)
+        llc = 0
+        rlc = 0
+
+        for i, legs in enumerate(legspos_original):
+            if legs[1] == 0.1 and left_leg_count > 0:
+                self.legspos[i][0] = xpos_on_y_left[llc]
+                llc += 1
+            if legs[1] == -0.1 and right_leg_count > 0:
+                self.legspos[i][0] = xpos_on_y_right[rlc]
+                rlc += 1
+            self.legspos[i][1] = legs[1]
+            self.legspos[i][2] = legs[2]
+
         print("done")
 
     def write_xacro(self, variant_name):
@@ -71,9 +119,7 @@ class VariableRobotDescriptor:
             else:
                 reflect_val = -1
                 leg_prefix = 'r'
-            # reflect_val = random.choice([-1, 1])
-            # if reflect_val == -1: leg_prefix = 'r'
-            # elif reflect_val == 1: leg_prefix = 'l'
+
             leg_template = ET.Element('{'+f'{self.xacrons}'+'}'+'leg', attrib={'name': f'{leg_prefix}{val+1}', 'reflect': f'{reflect_val}'}, nsmap=self.ns)
             leg_desc = ET.SubElement(leg_template, 'origin', attrib={'xyz': self._stringify_value(legpos), 'rpy': '0 0 0'})
             self.root.append(leg_template)
