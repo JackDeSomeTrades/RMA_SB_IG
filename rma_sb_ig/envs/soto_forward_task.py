@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
-
+import sys
 import torch
 CUDA_LAUNCH_BLOCKING=1
 # import torch
@@ -12,10 +12,9 @@ from rma_sb_ig.utils.helpers import *
 from rma_sb_ig.envs.base_task import BaseTask
 from rma_sb_ig.utils.soto_scene import SotoEnvScene
 
-
+import gc
 class SotoForwardTask(SotoEnvScene, BaseTask):
     def __init__(self, *args):
-
         config = args[0][0]
         sim_params = args[0][1]
         args = args[0][2]
@@ -23,17 +22,19 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.height_samples = None
         self.debug_viz = False
         self.init_done = False
-
         BaseTask.__init__(self, cfg=config, sim_params=sim_params, sim_device=args.sim_device)
         SotoEnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device,headless=args.headless, sim_params=sim_params)
         set_seed(config.seed)
-
+        self.l = []
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
         self.reward_scales = self.cfg.rewards.scales.to_dict()
         self.command_angle = np.pi/2
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
+
+        if not self.headless :
+            self.set_camera()
         self._elapsed_steps = None
 
         self.observation_space = self._init_observation_space()
@@ -60,7 +61,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.rigid_body_tensor = self.rb_state.view(self.num_envs, -1, 13)
         self.soto_root_state = self.root_states.view(self.num_envs,2,13)[:,0,:]
         self.box_root_state = self.root_states.view(self.num_envs,2,13)[:,1,:]
-
         # initialize some data used later on
         self.common_step_counter = 0
         self.infos = [{} for _ in range(self.num_envs)]
@@ -76,6 +76,8 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device,requires_grad=False)
 
         self.last_actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device,requires_grad=False)
+        self.angle_error = torch.zeros(self.num_envs,device=self.device,dtype=torch.float)
+        self.angle_error[:] = torch.pi/2
         self.last_torques_forces = torch.zeros_like(self.torques_forces)  # new addition for RMA
         self.last_contact_forces = torch.zeros_like(self.contact_forces)
         self.last_dof_vel = torch.zeros_like(self.dof_vel)
@@ -105,7 +107,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             name = self.dof_names[i]
             found = False
             for dof_name in self.cfg.control.stiffness.keys():
-
                 if dof_name in name :
                     self.p_gains[i] = self.cfg.control.stiffness[dof_name]
                     self.d_gains[i] = self.cfg.control.damping[dof_name]
@@ -117,9 +118,9 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
                     print(f"PD gain of joint {name} were not defined, setting them to joint default values")
 
         # initialise reward functions here
+
         self._prepare_reward_function()
         self.init_done = True
-
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step()
 
@@ -167,7 +168,17 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             obs_buf = self.obs_buf
             dones = self.reset_buf
 
-        # print("#", "--"*50, "#")
+        print("#", "--"*50, "#")
+        a = []
+        for obj in gc.get_objects():
+            try:
+                if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+                    if obj.is_cuda :
+                        a.append(sys.getsizeof(obj))
+            except:
+                pass
+        self.l.append(sum(a))
+        print(sum(a))
 
         return obs_buf, rew_buf, dones, self.infos
 
@@ -257,6 +268,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self._reset_dofs(env_ids)
         self._reset_root_states(env_ids)
         self._resample_commands(env_ids)
+        self.mean_terminated = torch.mean(self.rew_buf[env_ids]).detach().cpu().numpy()
         env_ids_list = env_ids.tolist()
         for env_id in env_ids_list:
             self.infos[env_id]["episode"] = {}
@@ -264,6 +276,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
                 self.infos[env_id]["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_id]) / self.max_episode_length_s
                 self.infos[env_id]["episode"]["r"] = self.rew_buf.clone().detach().cpu().numpy()   #TODO: Fix this.
                 self.episode_sums[key][env_id] = 0.
+
             self.infos[env_id]["episode"]["l"] = self.episode_length_buf[env_id].clone().detach().cpu().numpy()
             if self.cfg.commands.curriculum:
                 self.infos[env_id]["episode"]["max_command_x"] = self.command_ranges["lin_vel_x"][1]
@@ -273,6 +286,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             self.infos[env_id]["TimeLimit.truncated"] = 1  #TODO: New addition, not checked
             self.infos[env_id]["terminal_observation"] = self.obs_buf[env_id,:].detach().cpu().numpy()
         # reset buffers
+
         self.last_actions[env_ids] = 0.
         self.last_torques_forces[env_ids] = 0.  # for RMA
         self.last_contact_forces[env_ids] = 0.
@@ -339,7 +353,9 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         """ Check if environments need to be reset. Sets up the dones for the return values of step.
         """
         #self.reset_indices = torch.logical_or(self.box_pos[:, 2] < 0.70,self.box_pos[:, 2] > 3)
+
         self.reset_buf = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1.,dim = 1)
+        d = self.box_dim[:,0]*torch.sin(self.angle_error) + self.box_dim[:,1]*torch.cos(self.angle_error)
         self.test_pos = torch.logical_and(self.distance_sensors[:,0] > 0.8, self.distance_sensors[:,1] > 0.8)
 
         self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
@@ -347,20 +363,19 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.reset_buf |= self.time_out_buf
         self.reset_buf |= self.test_pos
         self.reset_buf |= self.env_done
-        #self.reset_buf |= self.reset_indices
 
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.
             Looks for self._reward_<REWARD_NAME>, where <REWARD_NAME> are names of all non zero reward scales in the cfg.
         """
-        # remove zero scales + multiply non-zero ones by dt
+        # remove zero scales
         for key in list(self.reward_scales.keys()):
             scale = self.reward_scales[key]
             if scale == 0:
                 self.reward_scales.pop(key)
-            else:
-                self.reward_scales[key] *= self.dt
+            # else:
+            #     self.reward_scales[key] *= self.dt
         # prepare list of functions
         self.reward_functions = []
         self.reward_names = []
@@ -387,7 +402,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         obs = obs.detach().cpu().numpy()
 
         return obs
-
 
     def get_observations(self):
         pass

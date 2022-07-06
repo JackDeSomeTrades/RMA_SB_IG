@@ -11,7 +11,6 @@ from isaacgym import gymutil
 from isaacgym.torch_utils import *
 import math
 
-
 class SotoEnvScene:
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
         self.gym = gymapi.acquire_gym()
@@ -19,64 +18,82 @@ class SotoEnvScene:
         self.sim_params = sim_params
         self.physics_engine = physics_engine
         self.sim_device = sim_device
-        sim_device, self.sim_device_id = gymutil.parse_device_str(
-            self.sim_device)
+        sim_device_type, self.sim_device_id = gymutil.parse_device_str(self.sim_device)
         self.headless = headless
         self.num_envs = cfg.env.num_envs
 
-        self.device = sim_device if self.sim_params.use_gpu_pipeline else 'cpu'
+        if sim_device_type == 'cuda' and sim_params.use_gpu_pipeline:
+            self.device = self.sim_device
+        else:
+            self.device = 'cpu'
+        # configure sim
         self.graphics_device_id = self.sim_device_id
 
-        # configure sim
         if self.headless == True:
             self.graphics_device_id = -1
-
-        #self._adjust_sim_param()
+        self._adjust_sim_param()
         self.up_axis_idx = set_sim_params_up_axis(self.sim_params, 'z')
         self.sim = self.gym.create_sim(
             self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
-
         self.create_sim()
-
+        self.gym.prepare_sim(self.sim)
         # create sim
         self.enable_viewer_sync = True
+        self.viewer = None
 
-
-        if not self.headless:
+        # if running with a viewer, set up keyboard shortcuts and camera
+        if self.headless == False:
             # subscribe to keyboard shortcuts
             self.viewer = self.gym.create_viewer(
                 self.sim, gymapi.CameraProperties())
-            if self.viewer is None:
-                print("*** Failed to create viewer")
-                quit()
             self.gym.subscribe_viewer_keyboard_event(
                 self.viewer, gymapi.KEY_ESCAPE, "QUIT")
             self.gym.subscribe_viewer_keyboard_event(
                 self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
-        else :
-            self.viewer = None
-
-
-        if not self.headless :
-            self._define_viewer()
-        # point camera at middle env
-
-        self.gym.prepare_sim(self.sim)
-
 
     def create_sim(self):
         """ Creates simulation, terrain and evironments
         """
-        # Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
         plane_params = gymapi.PlaneParams()
         plane_params.normal = gymapi.Vec3(0.0, 0.0, 1.0)
         plane_params.static_friction = self.cfg.terrain.static_friction
         plane_params.dynamic_friction = self.cfg.terrain.dynamic_friction
-        # used to control the elasticity of collisions with the ground plane
         plane_params.restitution = self.cfg.terrain.restitution
         self.gym.add_ground(self.sim, plane_params)
 
-        self._create_assets()
+        self._create_envs()
+
+    def render(self, sync_frame_time=True):
+        if self.viewer:
+            # check for window closed
+            if self.gym.query_viewer_has_closed(self.viewer):
+                sys.exit()
+
+            # check for keyboard events
+            for evt in self.gym.query_viewer_action_events(self.viewer):
+                if evt.action == "QUIT" and evt.value > 0:
+                    sys.exit()
+                elif evt.action == "toggle_viewer_sync" and evt.value > 0:
+                    self.enable_viewer_sync = not self.enable_viewer_sync
+
+            # fetch results
+            if self.device != 'cpu':
+                self.gym.fetch_results(self.sim, True)
+
+            # step graphics
+            if self.enable_viewer_sync:
+                self.gym.step_graphics(self.sim)
+                self.gym.draw_viewer(self.viewer, self.sim, True)
+                if sync_frame_time:
+                    self.gym.sync_frame_time(self.sim)
+            else:
+                self.gym.poll_viewer_events(self.viewer)
+
+    def set_camera(self):
+        cam_pos = gymapi.Vec3(4, 3, 2)
+        cam_target = gymapi.Vec3(-4, -3, 0)
+        middle_env = self.envs[self.num_envs // 2 + self.num_per_row // 2]
+        self.gym.viewer_camera_look_at(self.viewer, middle_env, cam_pos, cam_target)
 
     def _adjust_sim_param(self):
         self.sim_params.up_axis = gymapi.UP_AXIS_Z
@@ -85,18 +102,16 @@ class SotoEnvScene:
         self.sim_params.substeps = self.cfg.sim_param.substeps
         self.sim_params.use_gpu_pipeline = self.cfg.sim_param.use_gpu
         self.sim_params.enable_actor_creation_warning = False
-        # if self.physics_engine == gymapi.SIM_PHYSX:
-        #     self.sim_params.physx.bounce_threshold_velocity = 2*9.81*self.sim_params.dt/self.sim_params.substeps
-        #     self.sim_params.physx.num_position_iterations = self.cfg.sim_param.physx.num_position_iterations
-        #     self.sim_params.physx.num_velocity_iterations = self.cfg.sim_param.physx.num_velocity_iterations
-        #     self.sim_params.physx.num_threads = self.cfg.sim_param.num_threads
-        #     self.sim_params.physx.use_gpu = self.cfg.sim_param.use_gpu_physx
-        #     self.sim_params.physx.max_gpu_contact_pairs = self.cfg.sim_param.physx.max_gpu_contact_pairs
-        #     self.sim_params.physx.friction_correlation_distance = self.cfg.sim_param.friction_correlation_distance
-        #     self.sim_params.physx.max_depenetration_velocity = 10
-        #     self.sim_params.physx.solver_type = self.cfg.sim_params.physx.solver_type
-        # else :
-        #     raise Exception("This robot can only be used with PhysX")
+        if self.physics_engine == gymapi.SIM_PHYSX:
+            self.sim_params.physx.bounce_threshold_velocity = 1.0*9.81*self.sim_params.dt/self.sim_params.substeps
+            self.sim_params.physx.num_position_iterations = self.cfg.sim_param.physx.num_position_iterations
+            self.sim_params.physx.num_velocity_iterations = self.cfg.sim_param.physx.num_velocity_iterations
+            self.sim_params.physx.num_threads = self.cfg.sim_param.physx.num_threads
+            self.sim_params.physx.use_gpu = self.cfg.sim_param.use_gpu
+            self.sim_params.physx.max_depenetration_velocity = self.cfg.sim_param.physx.max_depenetration_velocity
+            self.sim_params.physx.solver_type = self.cfg.sim_param.physx.solver_type
+        else :
+            raise Exception("This robot can only be used with PhysX")
 
     def _get_soto_asset_option(self,asset_options):
         asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
@@ -107,6 +122,12 @@ class SotoEnvScene:
         asset_options.vhacd_enabled = True
         asset_options.override_inertia = self.cfg.asset.override_inertia
         asset_options.fix_base_link = self.cfg.asset.fix_base_link
+        asset_options.angular_damping = self.cfg.asset.angular_damping
+        asset_options.linear_damping = self.cfg.asset.linear_damping
+        asset_options.max_angular_velocity = self.cfg.asset.max_angular_velocity
+        asset_options.max_linear_velocity = self.cfg.asset.max_linear_velocity
+        asset_options.armature = self.cfg.asset.armature
+        asset_options.thickness = self.cfg.asset.thickness
         return asset_options
 
     def _get_box_asset_option(self,asset_options):
@@ -114,24 +135,28 @@ class SotoEnvScene:
         asset_options.override_inertia = self.cfg.asset.override_inertia
         return asset_options
 
-    def _create_assets(self):
+    def _create_envs(self):
 
         asset_path = self.cfg.asset.file.format(ROOT_DIR=get_project_root())
         asset_root = os.path.dirname(asset_path)
         asset_file = os.path.basename(asset_path)
+
         soto_asset_options = gymapi.AssetOptions()
         box_asset_options = gymapi.AssetOptions()
         box_limits = (self.cfg.domain_rand.length_box,
                       self.cfg.domain_rand.width_box,
                       self.cfg.domain_rand.height_box)
+
         soto_asset_options = self._get_soto_asset_option(soto_asset_options)
         box_asset_options = self._get_box_asset_option(box_asset_options)
+
         self.box_dimensions = [self._get_random_boxes(*box_limits) for _ in range(self.num_envs)]
 
         self.l_boxes_asset = [self.gym.create_box(self.sim, *dim, box_asset_options) for dim in self.box_dimensions]
         self.soto_asset = self.gym.load_asset(self.sim, asset_root, asset_file, soto_asset_options)
 
         self.num_dofs = self.gym.get_asset_dof_count(self.soto_asset)
+        self.num_bodies = self.gym.get_asset_rigid_body_count(self.soto_asset)
         soto_dof_props = self.gym.get_asset_dof_properties(self.soto_asset)
         self._get_properties(soto_dof_props)
 
@@ -241,7 +266,6 @@ class SotoEnvScene:
 
     def _process_dof_pos(self):
         default_dof_pos = 0.5 * (self.upper_bounds_joints + self.lower_bounds_joints)
-        print(default_dof_pos)
         k = 0.25
         cbl = self.dof_names.index("gripper_y_left")
         cbr = self.dof_names.index("gripper_y_right")
@@ -251,7 +275,7 @@ class SotoEnvScene:
         index_x = self.gym.find_asset_dof_index(self.soto_asset, "gripper_base_x")
         default_dof_pos[self.index_rotate] = self.cfg.init_state.angle
         default_dof_pos[index_x] = self.lower_bounds_joints[index_x]
-        self.default_dof_pos = torch.tensor(default_dof_pos, device = self.device).expand(self.num_envs,self.num_dofs)
+        self.default_dof_pos = torch.tensor(default_dof_pos[:], device = self.device).expand(self.num_envs,self.num_dofs)
         return default_dof_pos
 
     def _get_properties(self,soto_dof_props):
@@ -260,38 +284,11 @@ class SotoEnvScene:
         self.motor_strength = soto_dof_props["effort"]
         self.joint_velocity = soto_dof_props["velocity"]
 
-    def render(self, sync_frame_time=True):
-        if self.viewer:
-            # check for window closed
-            if self.gym.query_viewer_has_closed(self.viewer):
-                sys.exit()
-
-            # check for keyboard events
-            for evt in self.gym.query_viewer_action_events(self.viewer):
-                if evt.action == "QUIT" and evt.value > 0:
-                    sys.exit()
-                elif evt.action == "toggle_viewer_sync" and evt.value > 0:
-                    self.enable_viewer_sync = not self.enable_viewer_sync
-
-            # fetch results
-            if self.device != 'cpu':
-                self.gym.fetch_results(self.sim, True)
-
-            # step graphics
-            if self.enable_viewer_sync:
-                self.gym.step_graphics(self.sim)
-                self.gym.draw_viewer(self.viewer, self.sim, True)
-                if sync_frame_time:
-                    self.gym.sync_frame_time(self.sim)
-            else:
-                self.gym.poll_viewer_events(self.viewer)
 
     def _process_rigid_properties(self, props, type ):
         if self.cfg.domain_rand.randomize_friction:
             rng_static = self.cfg.domain_rand.friction_static_range
-            rng_dynamic = self.cfg.domain_rand.friction_dynamic_range
             friction = np.random.uniform(rng_static[0], rng_static[1])
-            dyn_friction = np.random.uniform(rng_dynamic[0], rng_dynamic[1])
             for i in range(len(props)) :
                 props[i].compliance = 0.0
                 props[i].friction = friction
@@ -300,9 +297,9 @@ class SotoEnvScene:
                 #props[i].thickness = 1.0
                 #props[i].torsion_friction  = 0.4
         if type == "soto" :
-            self.soto_fric.append([friction,dyn_friction])
+            self.soto_fric.append([friction])
         elif type == "box" :
-            self.box_fric.append([friction,dyn_friction])
+            self.box_fric.append([friction])
         return props
 
     def _process_box_props(self,props):
@@ -325,12 +322,6 @@ class SotoEnvScene:
         self.box_axis = torch.zeros_like(self.box_init_axis)
         self.gripper_init_x_axis = torch.tensor([[1,0,0]],device = self.device, dtype = torch.float32).expand(self.num_envs,-1)
 
-    def _define_viewer(self):
-        self.cam_pos = gymapi.Vec3(4, 3, 2)
-        self.cam_target = gymapi.Vec3(-4, -3, 0)
-        self.middle_env = self.envs[self.num_envs // 2 + self.num_per_row // 2]
-        self.gym.viewer_camera_look_at(
-            self.viewer, self.middle_env, self.cam_pos, self.cam_target)
 
     def _get_random_boxes(self, l_limit, w_limit, h_limit):
         length = random.uniform(l_limit[0], l_limit[1])

@@ -19,24 +19,22 @@ class SotoRobotTask(SotoForwardTask):
         super(SotoRobotTask, self).__init__(*args)
     def _init_observation_space(self):
         # Observation consists of : 43
-        #     intrinsic
-        #                 dof_pos - 7 + 2 cylinders
-        #                 dof_vel - 7 + 2 cylinders
+        #     intrinsic - 22
+        #                 dof_pos - 6 + 2 belt
+        #                 dof_vel - 6 + 2 belt
         #                 distance_btw_conveyors - 1
-        #     extrinsic
-        #                 friction box/belt - 2
-        #                 dynamic friction - 2
+        #                 distance sensors feedback(d1,d2) - 2
+        #                 GC_x - 1
+        #                 GC_y - 1
+        #                 box_angle - 1
+        #     extrinsic - 10
+        #                 friction box- 1
+        #                 friction belt - 1
         #                 Mass_box - 1
         #                 COM_x - 1
         #                 COM_y - 1
-        #                 GC_x - 1
-        #                 GC_y - 1
-        #                 width-length-height_box - 3
-        #                 distance sensors feedback(d1,d2) - 2
-        #                 box_angle - 1
-
-        # + previous_action - 7 + 2 cylinders
-        # :return: obs_space
+        #   previous_action
+        #           - 8
         self.right_arm_index = self.dof_names.index('gripper_y_right')
         self.left_arm_index = self.dof_names.index('gripper_y_left')
         dist_max = self.upper_bounds_joints[self.right_arm_index] - self.lower_bounds_joints[self.right_arm_index]
@@ -44,32 +42,26 @@ class SotoRobotTask(SotoForwardTask):
             list(self.lower_bounds_joints) +
             list(-self.joint_velocity)+    # minimum values of joint velocities
             [0] +
+            [0]*2+
+            [-1.5] * 2 +
+            [-np.pi]+
             list(self.lower_bounds_joints) +
             [self.cfg.domain_rand.friction_static_range[0]]*2 +
-            [self.cfg.domain_rand.friction_dynamic_range[0]]*2 +
             [self.cfg.domain_rand.mass_box[0]] +
-            [-1.5]*4+
-            [self.cfg.domain_rand.width_box[0]] +
-            [self.cfg.domain_rand.length_box[0]] +
-            [self.cfg.domain_rand.height_box[0]] +
-            [-1.5]*2 +
-            [0]
+            [-1.5]*2
         )
 
         limits_high = np.array(
             list(self.upper_bounds_joints) +
             list(self.joint_velocity)+    # maximum values of joint velocities# distance max btw 2 conveyors +
             [dist_max] +
+            [1.5]*2 +
+            [1.5] * 2 +
+            [np.pi] +
             list(self.upper_bounds_joints) +
             [self.cfg.domain_rand.friction_static_range[1]]*2 +
-            [self.cfg.domain_rand.friction_dynamic_range[1]]*2 +
             [self.cfg.domain_rand.mass_box[1]] +
-            [1.5]*4 +
-            [self.cfg.domain_rand.width_box[1]] +
-            [self.cfg.domain_rand.length_box[1]] +
-            [self.cfg.domain_rand.height_box[1]] +
-            [-0.025]*2 +  # supposed length of grippers
-            [2*np.pi]
+            [1.5]*2
         )
 
         obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float32)
@@ -105,64 +97,77 @@ class SotoRobotTask(SotoForwardTask):
         Returns:
             [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
         """
+        #     intrinsic - 22
+        #                 dof_pos - 6 + 2 belt
+        #                 dof_vel - 6 + 2 belt
+        #                 distance_btw_conveyors - 1
+        #                 distance sensors feedback(d1,d2) - 2
+        #                 GC_x - 1
+        #                 GC_y - 1
+        #                 box_angle - 1
+        #     extrinsic - 5
+        #                 friction box- 1
+        #                 friction belt - 1
+        #                 Mass_box - 1
+        #                 COM_x - 1
+        #                 COM_y - 1
+        #   previous_action - 8
         noise_vec = torch.zeros_like(self.obs_buf[0])
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         noise_level = self.cfg.noise.noise_level
-        noise_vec[:9] = noise_scales.dof_pos * \
+        noise_vec[:8] = noise_scales.dof_pos * \
             noise_level * self.obs_scales.dof_pos
-        noise_vec[9:18] = noise_scales.dof_vel * \
+        noise_vec[8:16] = noise_scales.dof_vel * \
             noise_level * self.obs_scales.dof_vel
-        noise_vec[18:19] = 0.
-        noise_vec[19:28] = noise_scales.action * \
-            noise_level * self.obs_scales.action
-        noise_vec[28:32] = 0.2 #friction
-        noise_vec[32:37] = 0.1  # Mass and COM and GC
-        noise_vec[37:40] = 0.1 #box dimensions
-        noise_vec[40:42] = noise_scales.distance_measurements * \
+        noise_vec[16:17] = 0.
+        noise_vec[17:19] = 0.1
+        noise_vec[19:21] = noise_scales.distance_measurements * \
             noise_level
-        noise_vec[42:43] = 0.1
+        noise_vec[21:22] = 0.05
+        noise_vec[22:30] = noise_scales.action * \
+            noise_level * self.obs_scales.action
+        noise_vec[30:32] = 0.1 #friction
+        noise_vec[32:35] = 0.1  # Mass and COM and GC
         return noise_vec
 
     def compute_observations(self):
-        # Observation consists of : 43
-        #     intrinsic
-        #                 dof_pos - 7 + 2 cylinders
-        #                 dof_vel - 7 + 2 cylinders
+        #     intrinsic - 22
+        #                 dof_pos - 6 + 2 belt
+        #                 dof_vel - 6 + 2 belt
         #                 distance_btw_conveyors - 1
-        #     extrinsic
-        #                 friction box/belt - 2
-        #                 dynamic friction - 2
+        #                 distance sensors feedback(d1,d2) - 2
+        #                 GC_x - 1
+        #                 GC_y - 1
+        #                 box_angle - 1
+        #     extrinsic - 5
+        #                 friction box- 1
+        #                 friction belt - 1
         #                 Mass_box - 1
         #                 COM_x - 1
         #                 COM_y - 1
-        #                 GC_x - 1
-        #                 GC_y - 1
-        #                 width-length-height_box - 3
-        #                 distance sensors feedback(d1,d2) - 2
-        #                 box_angle - 1
-
-        # + previous_action - 7 + 2 cylinders
-        # :return: obs_spaceF
+        #   previous_action - 8
         self.get_depth_sensors()
         self.distance_sensors = torch.clip(self.distance_sensors, 0.025, 1.5)
         distance_btw_arms = torch.abs(self.dof_pos[:, self.right_arm_index] - (0.7 - self.dof_pos[:, self.left_arm_index]))
         self.X_t = torch.cat((self.dof_pos,
                               self.dof_vel,
-                              distance_btw_arms.unsqueeze(-1)), dim=-1)
+                              distance_btw_arms.unsqueeze(-1),
+                              self.distance_sensors,
+                              self.box_pos[..., :2],
+                              self.box_angle.unsqueeze(-1)), dim=-1)
+
         E_t = torch.cat((
             self.soto_fric,
             self.box_fric,
             self.box_masses.unsqueeze(-1),
             self.box_com_x.unsqueeze(-1),
-            self.box_com_y.unsqueeze(-1),
-            self.box_pos[...,:2],
-            self.box_dim,
-            self.distance_sensors,
-            self.box_angle.unsqueeze(-1)
+            self.box_com_y.unsqueeze(-1)
         ), dim=-1)
 
-        self.obs_buf = torch.cat((self.X_t,self.last_actions,E_t), dim=-1)
+        self.obs_buf = torch.cat((self.X_t,
+                                  self.last_actions,
+                                  E_t), dim=-1)
         # add noise if needed
         noise = self._get_noise_scale_vec(self.cfg)
         if self.add_noise:
@@ -176,14 +181,22 @@ class SotoRobotTask(SotoForwardTask):
     def _reward_turn(self):
         value = torch.remainder(self.commands.squeeze(-1)-self.box_angle,torch.pi)
         value = torch.where(value <= torch.pi/2,value,torch.pi-value)
+        self.angle_error = value
         angle_error = torch.square(value)
-        #self.env_done = value < 0.001
+        self.env_done = value < 0.05
         reward = torch.exp(-angle_error / self.cfg.rewards.tracking_angle)
-        print(value)
         return reward
 
     def _reward_ecartement(self):
-        self.box_dim
+        d1 = self.box_dim[:,0]*torch.cos(self.angle_error) + self.box_dim[:,1]*torch.sin(self.angle_error)-0.25
+        d2 = torch.abs(self.dof_pos[:, self.right_arm_index] - (0.7 - self.dof_pos[:, self.left_arm_index]))
+        reward = torch.exp(-torch.square(d1-d2)/ self.cfg.rewards.tracking_arms)
+        return reward
+
+    def _reward_termination(self):
+        # Terminal reward / penalty
+        reward = torch.where(self.env_done,1,0)
+        return reward
 
     def _reward_velocity(self):
         value = torch.square(self.dof_vel[:,self.right_conv_belt_id]+self.dof_vel[:,self.left_conv_belt_id])
@@ -226,6 +239,7 @@ class SotoRobotTask(SotoForwardTask):
         return (length, width, height)
 
     def get_depth_sensors(self):
+        pass
         q = self.box_quat.resize(self.num_envs,1,4).expand(-1,3,-1).resize(3*self.num_envs,4)
         v = self.box_init_axis.resize(3*self.num_envs,3)
         box_axis = quat_rotate(q, v)
