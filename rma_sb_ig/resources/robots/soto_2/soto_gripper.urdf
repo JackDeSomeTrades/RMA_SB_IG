@@ -190,7 +190,7 @@
 		<child link="gripper_y_right_link" />
 		<axis xyz="0 1 0" />
 		<dynamics damping="300.0" friction="80.0" />
-		<limit effort="1400.16" lower="0.002" upper="0.489" velocity="0.261799" />
+		<limit effort="140.16" lower="0.002" upper="0.489" velocity="0.261799" />
 	</joint>
 	<link name="distance_sensor_conveyor_right">
 		<inertial>
@@ -244,7 +244,7 @@
 		<child link="gripper_y_left_link" />
 		<axis xyz="0 -1 0" />
 		<dynamics damping="300.0" friction="80.0" />
-		<limit effort="1400.16" lower="0.002" upper="0.489" velocity="0.261799" />
+		<limit effort="140.16" lower="0.002" upper="0.489" velocity="0.261799" />
 	</joint>
 	<link name="distance_sensor_conveyor_left">
 		<inertial>
@@ -438,7 +438,7 @@
 			</geometry>
 		</collision>
 		<inertial>
-			<mass value="0.3"/>
+			<mass value="2"/>
 			<inertia ixx="0.00" ixy="0" ixz="0" iyy="00" iyz="0.0" izz="00"/>
 		</inertial>
 	</link>
@@ -448,8 +448,8 @@
 		<parent link="conveyor_belt_left_foremost_link"/>
 		<child link="left_conveyor_belt"/>
 		<axis xyz="1 0 0"/>
-		<limit effort="1000" lower="-2.5" upper="2.5" velocity="0.3"/>
-	    <dynamics damping="1.0" friction="0.4"/>
+		<limit effort="140" lower="-2.5" upper="2.5" velocity="0.3"/>
+	    <dynamics damping="1.0" friction="0.6"/>
 	</joint>
 
 	<link name="right_conveyor_belt">
@@ -465,7 +465,7 @@
 			</geometry>
 		</collision>
 		<inertial>
-			<mass value="0.3"/>
+			<mass value="2"/>
 			<inertia ixx="0.00" ixy="0" ixz="0" iyy="0" iyz="0.0" izz="00"/>
 		</inertial>
 	</link>
@@ -475,9 +475,8 @@
 		<parent link="conveyor_belt_right_foremost_link"/>
 		<child link="right_conveyor_belt"/>
 		<axis xyz="1 0 0"/>
-		<dynamics damping="1.0" friction="0.4"/>
-		<limit effort="1000" lower="-2.5" upper="2.5" velocity="0.3"/>
+		<dynamics damping="1.0" friction="0.6"/>
+		<limit effort="140" lower="-2.5" upper="2.5" velocity="0.3"/>
 	</joint>
 
-	
 </robot>

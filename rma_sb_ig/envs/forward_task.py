@@ -11,7 +11,7 @@ import box
 import gym.spaces as gymspace
 import math
 import torch
-
+import gc
 # import torch
 # from torch import Tensor
 # from typing import Tuple, Dict
@@ -232,9 +232,7 @@ class ForwardTask(EnvScene, BaseTask):
             dones = self.reset_buf
 
         # print("#", "--"*50, "#")
-
         return obs_buf, rew_buf, dones, self.infos
-
     def _compute_torques(self, actions):
         """ Compute torques from actions.
             Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
@@ -352,6 +350,7 @@ class ForwardTask(EnvScene, BaseTask):
         # add termination reward after clipping
         if "termination" in self.reward_scales:
             rew = self._reward_termination() * self.reward_scales["termination"]
+            print(rew)
             self.rew_buf += rew
             self.episode_sums["termination"] += rew
 

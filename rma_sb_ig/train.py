@@ -45,7 +45,7 @@ if __name__ == "__main__":
     intermediate_dset_save_path = os.path.join(os.getcwd(), f'{args.dsetsavedir}', run_name)+'.hkl'
 
     # ----------- Loaders and Callbacks ---#
-    #save_history_callback = SaveHistoryCallback(savepath=intermediate_dset_save_path)
+    save_history_callback = SaveHistoryCallback(savepath=intermediate_dset_save_path)
 
     if args.phase == '1' or args.phase == None:
         # ----------------- RMA Phase 1 -------------------------------------------- #
@@ -63,7 +63,9 @@ if __name__ == "__main__":
                     tensorboard_log=rl_config.logging.dir.format(ROOT_DIR=get_project_root()),
                     policy_kwargs=policy_kwargs)
 
-        model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name) #, callback=save_history_callback)
+
+
+        model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name, callback=save_history_callback)
         model.save(path=model_save_path)
         # need to close the sim env here to release GPU mem for the next phase.
 
@@ -73,11 +75,11 @@ if __name__ == "__main__":
     if args.phase == '2' or args.phase == None:
 
         # ----------------- RMA Phase 2 -------------------------------------------- #
-        dataset_iterator = RMAPhase2FastDataset(hkl_filepath=intermediate_dset_save_path, device=arch_config.device,
+        dataset_iterator = RMAPhase2Dataset(hkl_filepath=intermediate_dset_save_path, device=arch_config.device,
                                                 horizon=arch_config.state_action_horizon)
         phase2dataloader = DataLoader(dataset_iterator)
 
-        model_adapted = Adaptation(net=rma.RMAPhase2, arch_config=arch_config,)# tensorboard_log_writer=save_history_callback.tb_formatter)
+        model_adapted = Adaptation(net=rma.RMAPhase2, arch_config=arch_config, tensorboard_log_writer=save_history_callback.tb_formatter)
         model_adapted.adapt(phase2dataloader)
         model_adapted.save(path=model_save_path)
 

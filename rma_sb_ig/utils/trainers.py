@@ -75,14 +75,15 @@ class Adaptation:
 
 
 if __name__ == '__main__':
-    cfg = get_config('v0_task_rma_conf.yaml')
-    hkl_fpath = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_75_03_May_145037_v0six.hkl'
-    tb_logs = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_75_03_May_145037_v0six_0'
+    cfg = get_config('soto_task_rma_conf.yaml')
+    hkl_fpath = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_3__soto.hkl'
+    tb_logs = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_3__soto_0'
 
     arch_config = Box(cfg).arch_config
 
     dataset_iterator = RMAPhase2FastDataset(hkl_filepath=hkl_fpath, device=arch_config.device,
                                             horizon=arch_config.state_action_horizon)
+
     # dataset_iterator = RMAPhase2Dataset(hkl_filepath=hkl_fpath, device=arch_config.device,
     #                                     horizon=arch_config.state_action_horizon)
     phase2dataloader = DataLoader(dataset_iterator, batch_size=128, pin_memory=False)

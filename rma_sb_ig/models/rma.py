@@ -51,7 +51,6 @@ class RMAPhase2(nn.Module):
             nn.Conv1d(in_channels=32, out_channels=32, kernel_size=1, stride=4),
             nn.Conv1d(in_channels=32, out_channels=32, kernel_size=1, stride=1),
             nn.Conv1d(in_channels=32, out_channels=32, kernel_size=1, stride=1),
-
             nn.Flatten()
         )
 
