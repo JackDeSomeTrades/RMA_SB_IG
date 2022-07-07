@@ -6,7 +6,6 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import hickle as hkl
 import torch.nn.functional as F
-import tqdm
 
 
 class RMAPhase2Dataset(Dataset):
@@ -85,18 +84,18 @@ class RMAPhase2FastDataset(Dataset):
         return max(self.full_hkl_data_dict.keys())
 
     def _load_fast_dataset(self):
-        self.fast_dataset = torch.tensor(()).cuda(non_blocking=True)
-        self.env = torch.tensor(()).cuda(non_blocking=True)
+        self.fast_dataset = torch.tensor(())
+        self.env = torch.tensor(())
         self.num_element = len(self.full_hkl_data_dict)
         print("sending dataset on GPU")
-        for step in tqdm.tqdm(range(1,len(self.full_hkl_data_dict)+1)):
-            state_at_step = self.full_hkl_data_dict[step]['state'].cuda(non_blocking=True)
-            action_at_step = self.full_hkl_data_dict[step]['actions'].cuda(non_blocking=True)
-            env_at_step = self.full_hkl_data_dict[step]['env_encoding'].cuda(non_blocking=True)
-            state_action_pair_at_step = torch.cat((state_at_step, action_at_step), dim=1).cuda(non_blocking=True)
-            self.fast_dataset = torch.cat((self.fast_dataset, state_action_pair_at_step.unsqueeze(-1)), dim=-1).cuda(non_blocking=True)
-            self.env = torch.cat((self.env,env_at_step.unsqueeze(-1)),dim=-1).cuda(non_blocking=True)
-
+        for step in tqdm(range(1,len(self.full_hkl_data_dict)+1)):
+            state_at_step = self.full_hkl_data_dict[step]['state']
+            action_at_step = self.full_hkl_data_dict[step]['actions']
+            env_at_step = self.full_hkl_data_dict[step]['env_encoding']
+            state_action_pair_at_step = torch.cat((state_at_step, action_at_step), dim=1)
+            self.fast_dataset = torch.cat((self.fast_dataset, state_action_pair_at_step.unsqueeze(-1)), dim=-1)
+            self.env = torch.cat((self.env,env_at_step.unsqueeze(-1)),dim=-1)
+        self.env = self.env.cuda(non_blocking = True)
 
 
 if __name__ == '__main__':

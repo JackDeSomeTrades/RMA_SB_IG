@@ -108,6 +108,7 @@ class SotoEnvScene:
             self.sim_params.physx.num_velocity_iterations = self.cfg.sim_param.physx.num_velocity_iterations
             self.sim_params.physx.num_threads = self.cfg.sim_param.physx.num_threads
             self.sim_params.physx.use_gpu = self.cfg.sim_param.use_gpu
+            self.sim_params.physx.max_gpu_contact_pairs = eval(self.cfg.sim_param.physx.max_gpu_contact_pairs)
             self.sim_params.physx.max_depenetration_velocity = self.cfg.sim_param.physx.max_depenetration_velocity
             self.sim_params.physx.solver_type = self.cfg.sim_param.physx.solver_type
         else :
