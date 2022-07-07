@@ -36,7 +36,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         if not self.headless :
             self.set_camera()
         self._elapsed_steps = None
-
         self.observation_space = self._init_observation_space()
         self.action_space = self._init_action_space()
 
@@ -121,6 +120,8 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         self._prepare_reward_function()
         self.init_done = True
+
+
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step()
 
@@ -168,18 +169,17 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             obs_buf = self.obs_buf
             dones = self.reset_buf
 
-        print("#", "--"*50, "#")
-        a = []
-        for obj in gc.get_objects():
-            try:
-                if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
-                    if obj.is_cuda :
-                        a.append(sys.getsizeof(obj))
-            except:
-                pass
-        self.l.append(sum(a))
-        print(sum(a))
-
+        #print("#", "--"*50, "#")
+        # if self.i%50 == 0 :
+        #     a = 0
+        #     for obj in gc.get_objects():
+        #         try:
+        #             if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+        #                 if obj.is_cuda :
+        #                     a+= sys.getsizeof(obj)
+        #         except:
+        #             pass
+        #     print(a)
         return obs_buf, rew_buf, dones, self.infos
 
 

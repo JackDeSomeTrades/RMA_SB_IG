@@ -76,8 +76,8 @@ class Adaptation:
 
 if __name__ == '__main__':
     cfg = get_config('soto_task_rma_conf.yaml')
-    hkl_fpath = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_3__soto.hkl'
-    tb_logs = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_3__soto_0'
+    hkl_fpath = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_4__soto.hkl'
+    tb_logs = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_4__soto_0'
 
     arch_config = Box(cfg).arch_config
 

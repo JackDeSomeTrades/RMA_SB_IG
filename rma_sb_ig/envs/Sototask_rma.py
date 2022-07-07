@@ -27,7 +27,7 @@ class SotoRobotTask(SotoForwardTask):
         #                 GC_x - 1
         #                 GC_y - 1
         #                 box_angle - 1
-        #     extrinsic - 10
+        #     extrinsic - 5
         #                 friction box- 1
         #                 friction belt - 1
         #                 Mass_box - 1
@@ -120,15 +120,16 @@ class SotoRobotTask(SotoForwardTask):
             noise_level * self.obs_scales.dof_pos
         noise_vec[8:16] = noise_scales.dof_vel * \
             noise_level * self.obs_scales.dof_vel
-        noise_vec[16:17] = 0.
-        noise_vec[17:19] = 0.1
+        noise_vec[16:17] = 0.05
+        noise_vec[17:19] = 0.02
         noise_vec[19:21] = noise_scales.distance_measurements * \
             noise_level
         noise_vec[21:22] = 0.05
         noise_vec[22:30] = noise_scales.action * \
             noise_level * self.obs_scales.action
-        noise_vec[30:32] = 0.1 #friction
-        noise_vec[32:35] = 0.1  # Mass and COM and GC
+        noise_vec[30:32] = 0.05 #friction
+        noise_vec[32:33] = 0.3
+        noise_vec[33:35] = 0.05  # Mass and COM and GC
         return noise_vec
 
     def compute_observations(self):

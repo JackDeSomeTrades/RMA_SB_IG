@@ -2,8 +2,8 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 50
-    num_observations: 40
+    num_envs: 500
+    num_observations: 35
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 8
     env_spacing: 3. 
@@ -144,7 +144,7 @@ task_config:
        ang_vel: 0.01
        gravity: 0.01
        action : 0.01
-       distance_measurements: 0.01
+       distance_measurements: 0.03
        motor_strength: 0.01
 
   sim_param:
@@ -160,6 +160,7 @@ task_config:
       num_velocity_iterations: 0
       bounce_threshold_velocity: 0.5 #0.5 [m/s]
       max_depenetration_velocity: 100
+      max_gpu_contact_pairs : 2**23
       contact_collection: 1 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
 
 
@@ -167,14 +168,14 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 1000000
+  n_timesteps: 4000000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
-    run_name : 'PPO_3__soto'
+    run_name : 'PPO_5__soto'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
-    batch_size: 1250 # TODO: adapt to your setting
+    batch_size: 5000 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
