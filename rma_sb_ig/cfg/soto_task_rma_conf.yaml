@@ -160,7 +160,7 @@ task_config:
       num_velocity_iterations: 0
       bounce_threshold_velocity: 0.5 #0.5 [m/s]
       max_depenetration_velocity: 100
-      max_gpu_contact_pairs : 2**23
+      max_gpu_contact_pairs : 2**22
       contact_collection: 1 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
 
 
@@ -168,7 +168,7 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 4000000
+  n_timesteps: 3500000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
