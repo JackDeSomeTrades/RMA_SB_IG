@@ -169,9 +169,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             obs_buf = self.obs_buf
             dones = self.reset_buf
 
-        print("#", "--"*50, "#")
-        if self.i%50 == 0 :
-            print(len(gc.get_objects()))
+        print(len(gc.get_objects()))
 
         return obs_buf, rew_buf, dones, self.infos
 
