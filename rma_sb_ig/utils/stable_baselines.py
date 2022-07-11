@@ -40,7 +40,6 @@ class SaveHistoryCallback(EventCallback):
         self.datadict[self.n_calls] = {
             'state': current_state, 'env_encoding': zt, 'actions': current_actions}
         # Log scalar value (here a random variable)
-        self.logger.record('max_episode_reward_mean', self.model.env.mean_terminated)
         return True
 
     def _on_training_end(self) -> None:

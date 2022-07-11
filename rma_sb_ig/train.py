@@ -1,7 +1,7 @@
 import argparse
 import os
 from box import Box
-
+import matplotlib.pyplot as plt
 from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, parse_config
 from rma_sb_ig.utils.trainers import Adaptation
 from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset, RMAPhase2FastDataset
@@ -62,8 +62,6 @@ if __name__ == "__main__":
                     verbose=1,
                     tensorboard_log=rl_config.logging.dir.format(ROOT_DIR=get_project_root()),
                     policy_kwargs=policy_kwargs)
-
-
 
         model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name, callback=save_history_callback)
         model.save(path=model_save_path)

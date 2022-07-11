@@ -11,13 +11,13 @@ import box
 import gym.spaces as gymspace
 import math
 import torch
-import gc
+
 # import torch
 # from torch import Tensor
 # from typing import Tuple, Dict
 from rma_sb_ig.utils.helpers import *
 from rma_sb_ig.envs.base_task import BaseTask
-from rma_sb_ig.utils.scene import EnvScene
+from rma_sb_ig.utils.scene import EnvScene, VariantEnvScene
 
 
 class ForwardTask(EnvScene, BaseTask):
@@ -25,15 +25,22 @@ class ForwardTask(EnvScene, BaseTask):
         config = args[0][0]
         sim_params = args[0][1]
         args = args[0][2]
-
+        self.sum_reseted = 0
         self.height_samples = None
         self.debug_viz = False
         self.init_done = False
         BaseTask.__init__(self, cfg=config, sim_params=sim_params, sim_device=args.sim_device)
         EnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device,
-                          headless=args.headless, sim_params=sim_params)
+                                                headless=args.headless, sim_params=sim_params)
         set_seed(config.seed)
 
+        self._setup_task_tensors()
+
+        # initialise reward functions here
+        self._prepare_reward_function()
+        self.init_done = True
+
+    def _setup_task_tensors(self):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
         self.reward_scales = self.cfg.rewards.scales.to_dict()
@@ -55,7 +62,6 @@ class ForwardTask(EnvScene, BaseTask):
         actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
         dof_state_tensor = self.gym.acquire_dof_state_tensor(self.sim)
         net_contact_forces = self.gym.acquire_net_contact_force_tensor(self.sim)
-
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
@@ -63,13 +69,12 @@ class ForwardTask(EnvScene, BaseTask):
         # create some wrapper tensors for different slices
         self.root_states = gymtorch.wrap_tensor(actor_root_state)
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
-        self.contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(self.num_envs, -1,3)  # shape: num_envs, num_bodies, xyz axis
-
         self.dof_pos = self.dof_state.view(self.num_envs, self.num_dof, 2)[..., 0]
         self.dof_vel = self.dof_state.view(self.num_envs, self.num_dof, 2)[..., 1]
         self.base_quat = self.root_states[:, 3:7]
 
-
+        self.contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(self.num_envs, -1,
+                                                                            3)  # shape: num_envs, num_bodies, xyz axis
 
         # initialize some data used later on
         self.common_step_counter = 0
@@ -88,11 +93,8 @@ class ForwardTask(EnvScene, BaseTask):
                                         requires_grad=False)
         self.last_torques = torch.zeros_like(self.torques)  # new addition for RMA
         self.last_contact_forces = torch.zeros_like(self.contact_forces)  # new addition for RMA
-
         self.last_dof_vel = torch.zeros_like(self.dof_vel)
         self.last_root_vel = torch.zeros_like(self.root_states[:, 7:13])
-
-
         self.commands = torch.zeros(self.num_envs, self.cfg.commands.num_commands, dtype=torch.float,
                                     device=self.device, requires_grad=False)  # x vel, y vel, yaw vel, heading
         self.commands_scale = torch.tensor([self.obs_scales.lin_vel, self.obs_scales.lin_vel, self.obs_scales.ang_vel],
@@ -136,10 +138,6 @@ class ForwardTask(EnvScene, BaseTask):
                 if self.cfg.control.control_type in ["P", "V"]:
                     print(f"PD gain of joint {name} were not defined, setting them to zero")
         self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
-
-        # initialise reward functions here
-        self._prepare_reward_function()
-        self.init_done = True
 
     @abstractmethod
     def _init_observation_space(self):
@@ -232,7 +230,9 @@ class ForwardTask(EnvScene, BaseTask):
             dones = self.reset_buf
 
         # print("#", "--"*50, "#")
+
         return obs_buf, rew_buf, dones, self.infos
+
     def _compute_torques(self, actions):
         """ Compute torques from actions.
             Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
@@ -350,7 +350,6 @@ class ForwardTask(EnvScene, BaseTask):
         # add termination reward after clipping
         if "termination" in self.reward_scales:
             rew = self._reward_termination() * self.reward_scales["termination"]
-            print(rew)
             self.rew_buf += rew
             self.episode_sums["termination"] += rew
 
@@ -388,7 +387,9 @@ class ForwardTask(EnvScene, BaseTask):
 
         # fill infos
         # convert tensor to list -
+
         env_ids_list = env_ids.tolist()
+        self.sum_reseted += env_ids.size()[0]
         for env_id in env_ids_list:
             self.infos[env_id]["episode"] = {}
             for key in self.episode_sums.keys():

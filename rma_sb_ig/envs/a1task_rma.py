@@ -107,7 +107,7 @@ class A1LeggedRobotTask(ForwardTask):
     def compute_observations(self):
         """Overrides the base class observation computation to bring it in line with observations proposed in the RMA
         paper. The observation consists of two major parts - the environment variables and the state-action pair."""
-        # self.compute_heading_deviation()
+        self.compute_heading_deviation()
         feet_contact_switches = self._get_foot_status()
         local_terrain_height = self._get_local_terrain_height()
 
