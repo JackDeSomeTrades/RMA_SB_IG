@@ -99,7 +99,7 @@ class RMAPhase2FastDataset(Dataset):
 
 
 if __name__ == '__main__':
-    hkl_fpath = '/home/pavan/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_68_a1.hkl'
+    hkl_fpath = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_5__soto_0.hkl'
     # dataset_main = RMAPhase2Dataset(hkl_filepath=hkl_fpath)
     dataset_main = RMAPhase2FastDataset(hkl_filepath=hkl_fpath)
 

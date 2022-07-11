@@ -110,7 +110,7 @@ def get_config(cfg_fname):
 def get_args():
     custom_parameters = [
         {"name": "--resume", "action": "store_true", "default": False, "help": "Resume training from a checkpoint"},
-        {"name": "--replay_cfg", "type": str, "default": "a1_task_rma", "help": "Task config for replaying the trained policy"},
+        {"name": "--replay_cfg", "type": str, "default": "soto_task_rma", "help": "Task config for replaying the trained policy"},
         {"name": "--experiment_name", "type": str, "help": "Name of the experiment to run or load. Overrides config file if provided."},
         {"name": "--run_name", "type": str, "help": "Name of the run. Overrides config file if provided."},
         {"name": "--load_run", "type": str, "help": "Name of the run to load when resume=True. If -1: will load the last run. Overrides config file if provided."},

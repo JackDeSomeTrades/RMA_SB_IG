@@ -169,17 +169,10 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             obs_buf = self.obs_buf
             dones = self.reset_buf
 
-        #print("#", "--"*50, "#")
-        # if self.i%50 == 0 :
-        #     a = 0
-        #     for obj in gc.get_objects():
-        #         try:
-        #             if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
-        #                 if obj.is_cuda :
-        #                     a+= sys.getsizeof(obj)
-        #         except:
-        #             pass
-        #     print(a)
+        print("#", "--"*50, "#")
+        if self.i%50 == 0 :
+            print(len(gc.get_objects()))
+
         return obs_buf, rew_buf, dones, self.infos
 
 
@@ -404,7 +397,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         return obs
 
     def get_observations(self):
-        pass
+        return self.obs_buf
 
     def get_privileged_observations(self):
         pass
