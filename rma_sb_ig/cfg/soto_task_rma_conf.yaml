@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 500
+    num_envs: 50
     num_observations: 35
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 8
@@ -172,7 +172,6 @@ rl_config:
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
-    run_name : 'PPO_5__soto'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
     batch_size: 5000 # TODO: adapt to your setting

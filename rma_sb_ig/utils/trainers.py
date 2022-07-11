@@ -28,10 +28,10 @@ class Adaptation:
             self.log_writer = tensorboard_log_writer
 
     def adapt(self, iterator):
+        #n = iterator.
+        n = len(iterator)
         for epoch in tqdm(range(self.epochs)):
             epoch_loss = 0
-            epoch_acc = 0
-            itr_cntr = 0
             self.model.train()
             for label, data in tqdm(iterator, desc='|----', leave=False):
                 data = data.squeeze()
@@ -53,7 +53,7 @@ class Adaptation:
                 loss.backward()
                 self.optimizer.step()
 
-                epoch_loss += loss.item()
+                epoch_loss += loss.item()/n
                 if self.log_writer:
                     try:
                         self.log_writer.add_scalar('phase2/train/loss', epoch_loss, epoch)

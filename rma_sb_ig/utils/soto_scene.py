@@ -287,6 +287,7 @@ class SotoEnvScene:
 
 
     def _process_rigid_properties(self, props, type ):
+        friction = 0.8
         if self.cfg.domain_rand.randomize_friction:
             rng_static = self.cfg.domain_rand.friction_static_range
             friction = np.random.uniform(rng_static[0], rng_static[1])
