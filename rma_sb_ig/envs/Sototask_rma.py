@@ -240,7 +240,6 @@ class SotoRobotTask(SotoForwardTask):
         return (length, width, height)
 
     def get_depth_sensors(self):
-        pass
         q = self.box_quat.resize(self.num_envs,1,4).expand(-1,3,-1).resize(3*self.num_envs,4)
         v = self.box_init_axis.resize(3*self.num_envs,3)
         box_axis = quat_rotate(q, v)
@@ -259,10 +258,10 @@ class SotoRobotTask(SotoForwardTask):
         s = torch.sum(box_axis*d, dim = 1)
 
         t0_1 = (r1 + torch.flatten(self.box_dim)/2)/s
-        t1_1 = (r1 - torch.flatten(self.box_dim)/2) /s
+        t1_1 = (r1 - torch.flatten(self.box_dim)/2)/s
 
-        t0_2 = (r2 + torch.flatten(self.box_dim)/2) / s
-        t1_2 = (r2 - torch.flatten(self.box_dim)/2) / s
+        t0_2 = (r2 + torch.flatten(self.box_dim)/2)/s
+        t1_2 = (r2 - torch.flatten(self.box_dim)/2)/s
         t1near,_ = torch.max(torch.min(t0_1,t1_1).resize(self.num_envs,3),dim=1)
         t2near,_ = torch.max(torch.min(t0_2, t1_2).resize(self.num_envs,3),dim=1)
 

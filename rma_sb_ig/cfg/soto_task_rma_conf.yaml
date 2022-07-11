@@ -168,13 +168,14 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 3500000
+  n_timesteps: 300000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
+    run_name : 'PPO_5__soto'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
-    batch_size: 5000 # TODO: adapt to your setting
+    batch_size: 1250 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99

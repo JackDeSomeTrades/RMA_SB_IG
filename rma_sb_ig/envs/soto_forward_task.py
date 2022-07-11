@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
-import sys
+import time
 import torch
 CUDA_LAUNCH_BLOCKING=1
 # import torch
@@ -25,14 +25,13 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         BaseTask.__init__(self, cfg=config, sim_params=sim_params, sim_device=args.sim_device)
         SotoEnvScene.__init__(self, cfg=config, physics_engine=args.physics_engine, sim_device=args.sim_device,headless=args.headless, sim_params=sim_params)
         set_seed(config.seed)
-        self.l = []
+        self.l = [[],[],[],[]]
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
         self.reward_scales = self.cfg.rewards.scales.to_dict()
         self.command_angle = np.pi/2
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
-
         if not self.headless :
             self.set_camera()
         self._elapsed_steps = None
@@ -128,6 +127,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         Args:
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
         """
+
         flag = 0
         # print("actions", actions)
 
@@ -148,6 +148,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             self.gym.simulate(self.sim)
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
+
             self.gym.refresh_dof_state_tensor(self.sim)
 
         self.post_physics_step()
@@ -170,7 +171,6 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             dones = self.reset_buf
 
         #print(len(gc.get_objects()))
-
         return obs_buf, rew_buf, dones, self.infos
 
 
@@ -309,7 +309,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         self.box_root_state[env_ids] = self.box_init_state[env_ids] #TODO : add noise on this
         self.soto_root_state[env_ids] = self.soto_init_state[env_ids]
         self.env_ids_int32 = env_ids.to(dtype=torch.int32)
-        self.gym.set_actor_root_state_tensor(self.sim,gymtorch.unwrap_tensor(self.root_states))
+        self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
 
     def _resample_commands(self, env_ids):
         """ Randommly select commands of some environments
