@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 50
+    num_envs: 500
     num_observations: 35
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 8
@@ -168,14 +168,14 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 300000
+  n_timesteps: 1000000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
-    run_name : 'PPO_5__soto'
+    #run_name : 'PPO_5__soto'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
-    batch_size: 1250 # TODO: adapt to your setting
+    batch_size: 12500 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
