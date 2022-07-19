@@ -29,8 +29,8 @@ if __name__ == "__main__":
 
     cfg = get_config(f'{args.cfg}_conf.yaml')
     robot_name = args.robot_name
-
-    vec_env = env_gen(robot_name)(parse_config(cfg))
+    parsed_cfg = parse_config(cfg)
+    vec_env = env_gen(robot_name)(parsed_cfg)
 
 
     # begin RL here
@@ -64,11 +64,21 @@ if __name__ == "__main__":
                     policy_kwargs=policy_kwargs)
 
         model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name, callback=save_history_callback)
+        vec_env.close()
+        torch.cuda.empty_cache()
+        vec_env = env_gen(robot_name)(parsed_cfg)
+        model.set_env(vec_env)
+        model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name, callback=save_history_callback)
+        vec_env.close()
         model.save(path=model_save_path)
+        
+        
+
+
+        
         # need to close the sim env here to release GPU mem for the next phase.
 
-        vec_env.close()
-        torch.cuda.empty_cache()  # to see if everything is released after the first phase.
+          # to see if everything is released after the first phase.
 
     if args.phase == '2' or args.phase == None:
 

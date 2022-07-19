@@ -169,7 +169,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
             rew_buf = self.rew_buf
             obs_buf = self.obs_buf
             dones = self.reset_buf
-
+        torch.cuda.empty_cache()
         #print(len(gc.get_objects()))
         return obs_buf, rew_buf, dones, self.infos
 
