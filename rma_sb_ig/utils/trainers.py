@@ -50,10 +50,10 @@ class Adaptation:
                 zt_cap = self.model(data)
                 loss = self.criterion(zt_cap, zt)
 
-                loss.backward()
+                loss.backward()/n
                 self.optimizer.step()
 
-                epoch_loss += loss.item()/n
+                epoch_loss += loss.item()
                 if self.log_writer:
                     try:
                         self.log_writer.add_scalar('phase2/train/loss', epoch_loss, epoch)
@@ -76,16 +76,16 @@ class Adaptation:
 
 if __name__ == '__main__':
     cfg = get_config('soto_task_rma_conf.yaml')
-    hkl_fpath = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_4__soto.hkl'
-    tb_logs = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_4__soto_0'
+    hkl_fpath = '/home/stone/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_5__soto.hkl'
+    tb_logs = '/home/stone/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_5__soto_0'
 
     arch_config = Box(cfg).arch_config
 
-    dataset_iterator = RMAPhase2FastDataset(hkl_filepath=hkl_fpath, device=arch_config.device,
-                                            horizon=arch_config.state_action_horizon)
+    # dataset_iterator = RMAPhase2FastDataset(hkl_filepath=hkl_fpath, device=arch_config.device,
+    #                                         horizon=arch_config.state_action_horizon)
 
-    # dataset_iterator = RMAPhase2Dataset(hkl_filepath=hkl_fpath, device=arch_config.device,
-    #                                     horizon=arch_config.state_action_horizon)
+    dataset_iterator = RMAPhase2FastDataset(hkl_filepath=hkl_fpath, device=arch_config.device,
+                                        horizon=arch_config.state_action_horizon)
     phase2dataloader = DataLoader(dataset_iterator, batch_size=128, pin_memory=False)
     logger = SummaryWriter(log_dir=tb_logs)
 

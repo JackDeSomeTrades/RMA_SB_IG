@@ -14,7 +14,8 @@ from rma_sb_ig.envs.soto_forward_task import SotoForwardTask
 
 
 class SotoRobotTask(SotoForwardTask):
-    def __init__(self, *args):
+    def __init__(self, *args,final_computation = False):
+        self.final_computation = final_computation
         self.init_done = False
         super(SotoRobotTask, self).__init__(*args)
     def _init_observation_space(self):

@@ -2,13 +2,13 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 500
+    num_envs: 1000
     num_observations: 35
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 8
     env_spacing: 3. 
     send_timeouts: True # send time out information to the algorithm
-    episode_length_s : 30
+    episode_length_s : 8
     # episode length in seconds
   terrain:
     mesh_type: 'none' # "heightfield" # none, plane, heightfield or trimesh
@@ -168,14 +168,14 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 1000000
+  n_timesteps: 2000000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
-    #run_name : 'PPO_5__soto'
+    run_name : 'PPO_6__soto'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
-    batch_size: 12500 # TODO: adapt to your setting
+    batch_size: 25000 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
@@ -197,8 +197,7 @@ arch_config:
     state_space_size: 22 #intrisic parameters
     env_size: 5 # define the input of rma ->extrinsic
   adaptation:
-    epochs: 500
+    epochs: 200
     optimizer: 'Adam'
     lr: 0.5e-3
     loss: 'mse'
-

@@ -12,7 +12,9 @@ import hickle as hkl
 import os
 from pathlib import Path
 from rma_sb_ig.utils import *
-
+import pandas as pd
+from tqdm import tqdm
+import torch
 class SaveHistoryCallback(EventCallback):
     def __init__(self, savepath=None, verbose=0):
         super(SaveHistoryCallback, self).__init__(verbose=verbose)
@@ -25,6 +27,7 @@ class SaveHistoryCallback(EventCallback):
             raise ValueError("Provide a path to save environment data")
         self.file = open(self.savepath, 'w')
         self.datadict = {}
+        self.data_set = pd.DataFrame()
 
     def _on_training_start(self):
         output_formats = self.logger.output_formats
@@ -34,17 +37,25 @@ class SaveHistoryCallback(EventCallback):
             formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))
 
     def _on_step(self) -> bool:
-        zt = self.model.policy.features_extractor.zt.clone().detach().cpu()
-        current_state = self.model.env.X_t.clone().detach().cpu()
-        current_actions = self.model.env.actions.clone().detach().cpu()
+        zt = self.model.policy.features_extractor.zt.clone().detach().cpu().numpy()
+        current_state = self.model.env.X_t.clone().detach().cpu().numpy()
+        current_actions = self.model.env.actions.clone().detach().cpu().numpy()
         self.datadict[self.n_calls] = {
             'state': current_state, 'env_encoding': zt, 'actions': current_actions}
         # Log scalar value (here a random variable)
         return True
 
     def _on_training_end(self) -> None:
-        hkl.dump(self.datadict, self.file)
-        self.file.close()
+        if self.model.env.final_computation :
+            max_len_datadict = max(self.datadict.keys())
+            for step in tqdm(range(1,max_len_datadict),desc="computing observation through encoder") :
+                state_at_step = self.datadict[step]['state']
+                state = torch.tensor(state_at_step,device ="cuda",dtype=torch.float)
+                out = self.model.policy.extract_features(state)
+                self.datadict[step]['env_encoding'] = out.clone().detach().cpu().numpy()
+            hkl.dump(self.datadict, self.file)
+            self.file.close()
+        
 
 
 class StableBaselinesVecEnvAdapter(VecEnv):

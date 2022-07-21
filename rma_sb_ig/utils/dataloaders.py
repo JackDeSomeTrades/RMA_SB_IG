@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import hickle as hkl
 import torch.nn.functional as F
-
+import pandas as pd
 
 class RMAPhase2Dataset(Dataset):
     def __init__(self, hkl_filepath, device='cpu', horizon=50):
@@ -28,6 +28,12 @@ class RMAPhase2Dataset(Dataset):
 
         # concat the state action pair and stack by step for the final tensor and
         # stack zt over steps
+        df = pd.DataFrame(full_hkl_data_dict)
+        df = df.T
+        envs = torch.tensor(df['env_encoding'].values)
+        print(type(envs))
+        states_actions =  df[['state','actions']].values
+        print(type(states_actions))
         for step in tqdm(range(1, max_len_datadict), desc='Reading state action data:'):
             state_at_step = full_hkl_data_dict[step]['state']
             action_at_step = full_hkl_data_dict[step]['actions']
@@ -37,8 +43,8 @@ class RMAPhase2Dataset(Dataset):
             env_at_step = full_hkl_data_dict[step]['env_encoding']
             zt = torch.cat((zt, env_at_step.unsqueeze(-1)), dim=-1)
 
-        self.dataset['zt'] = zt
-        self.dataset['x_a'] = state_action_pair
+        self.dataset['zt'] = torch.cat(list(envs))
+        self.dataset['x_a'] = torch.cat(list(states_actions))
         print("Ready")
 
     def __getitem__(self, idx):
@@ -55,51 +61,39 @@ class RMAPhase2Dataset(Dataset):
 
 
 class RMAPhase2FastDataset(Dataset):
-    def __init__(self, hkl_filepath, device='cuda', horizon=50):
+    def __init__(self, hkl_filepath, device='cpu', horizon=50):
         print(f"Reading dataset from:{hkl_filepath}, named: {hkl_filepath.split('/')[-1]}")
         self.device = device
         self.horizon = horizon
         self.full_hkl_data_dict = hkl.load(hkl_filepath)
-        self._load_fast_dataset()
-        self.state_action_pair = torch.zeros(self.fast_dataset.size()[0],self.fast_dataset.size()[1],self.horizon,device=self.device)
         print("Ready")
 
     def __getitem__(self, idx):
-
-        bsup = self.horizon if idx+self.horizon <= self.num_element else self.horizon - (self.horizon + idx) % self.num_element
-        if bsup == 50 :
-            self.state_action_pair[:] = self.fast_dataset[...,idx:idx+self.horizon]
-        else :
-            self.state_action_pair[...,:bsup] = self.fast_dataset[...,idx:]
-            self.state_action_pair[:,:, bsup:] = torch.unsqueeze(self.fast_dataset[:,:,-1],-1)
-
+        idx = idx+1   # quirk of saving the dataset, the step counter starts from 1, not 0
+        state_action_pair = torch.tensor(()).cuda(non_blocking=True)
+        for step in range(idx, idx+self.horizon):
+            try:
+                state_at_step = self.full_hkl_data_dict[step]['state'].cuda(non_blocking=True)
+                action_at_step = self.full_hkl_data_dict[step]['actions'].cuda(non_blocking=True)
+                state_action_pair_at_step = torch.cat((state_at_step, action_at_step), dim=1).cuda(non_blocking=True)
+            except KeyError:
+                # on the first key error (i.e., when there are less than 50 elements left in the dict), break the loop
+                break
+            state_action_pair = torch.cat((state_action_pair, state_action_pair_at_step.unsqueeze(-1)), dim=-1).cuda(non_blocking=True)
         # Check if there are 50 elements every time this is called. If there is a break in the previous loop, make sure\
         # the data is padded with the final state action pair.
-        env_at_step = self.env[...,idx]
+        pad_val = self.horizon - state_action_pair.size()[-1]
+        data = F.pad(state_action_pair, (0, pad_val), mode='replicate')
+        env_at_step = self.full_hkl_data_dict[idx]['env_encoding'].cuda(non_blocking=True)
         label = env_at_step.unsqueeze(-1)   # zt
 
-        return label, self.state_action_pair
+        return label, data
 
     def __len__(self):
         return max(self.full_hkl_data_dict.keys())
 
-    def _load_fast_dataset(self):
-        self.fast_dataset = torch.tensor(())
-        self.env = torch.tensor(())
-        self.num_element = len(self.full_hkl_data_dict)
-        print("sending dataset on GPU")
-        for step in tqdm(range(1,len(self.full_hkl_data_dict)+1)):
-            state_at_step = self.full_hkl_data_dict[step]['state']
-            action_at_step = self.full_hkl_data_dict[step]['actions']
-            env_at_step = self.full_hkl_data_dict[step]['env_encoding']
-            state_action_pair_at_step = torch.cat((state_at_step, action_at_step), dim=1)
-            self.fast_dataset = torch.cat((self.fast_dataset, state_action_pair_at_step.unsqueeze(-1)), dim=-1)
-            self.env = torch.cat((self.env,env_at_step.unsqueeze(-1)),dim=-1)
-        self.env = self.env.cuda(non_blocking = True)
-
-
 if __name__ == '__main__':
-    hkl_fpath = '/home/student/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_5__soto_0.hkl'
+    hkl_fpath = '/home/stone/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_6__soto_0.hkl'
     # dataset_main = RMAPhase2Dataset(hkl_filepath=hkl_fpath)
     dataset_main = RMAPhase2FastDataset(hkl_filepath=hkl_fpath)
 

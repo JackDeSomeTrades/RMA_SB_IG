@@ -47,6 +47,9 @@ class BaseTask(ABC, gym.Env):
 
         self.infos = {}
 
+    def close(self) :
+        self.gym.destroy_viewer(self.viewer)
+        self.gym.destroy_sim(self.sim)
     @abstractmethod
     def step(self, actions):
         pass
@@ -62,3 +65,5 @@ class BaseTask(ABC, gym.Env):
     @abstractmethod
     def get_privileged_observations(self):
         pass
+    
+    
