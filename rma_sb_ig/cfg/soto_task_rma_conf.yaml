@@ -8,7 +8,7 @@ task_config:
     num_actions: 8
     env_spacing: 3. 
     send_timeouts: True # send time out information to the algorithm
-    episode_length_s : 8
+    episode_length_s : 7
     # episode length in seconds
   terrain:
     mesh_type: 'none' # "heightfield" # none, plane, heightfield or trimesh
@@ -172,7 +172,7 @@ rl_config:
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
-    run_name : 'PPO_6__soto'
+    run_name : 'PPO_7__soto'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
     batch_size: 25000 # TODO: adapt to your setting

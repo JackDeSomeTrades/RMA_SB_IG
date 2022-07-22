@@ -70,7 +70,6 @@ if __name__ == "__main__":
             vec_env = env_gen(robot_name)(parsed_cfg,final_computation = i == args.n_times-2)
             model.set_env(vec_env)
             model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name, callback=save_history_callback)
-        vec_env.close()
         model.save(path=model_save_path)
         
         

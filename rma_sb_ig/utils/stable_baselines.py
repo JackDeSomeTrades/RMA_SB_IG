@@ -37,9 +37,9 @@ class SaveHistoryCallback(EventCallback):
             formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))
 
     def _on_step(self) -> bool:
-        zt = self.model.policy.features_extractor.zt.clone().detach().cpu().numpy()
-        current_state = self.model.env.X_t.clone().detach().cpu().numpy()
-        current_actions = self.model.env.actions.clone().detach().cpu().numpy()
+        zt = self.model.policy.features_extractor.zt.clone().detach().cpu()
+        current_state = self.model.env.X_t.clone().detach().cpu()
+        current_actions = self.model.env.actions.clone().detach().cpu()
         self.datadict[self.n_calls] = {
             'state': current_state, 'env_encoding': zt, 'actions': current_actions}
         # Log scalar value (here a random variable)
@@ -47,15 +47,17 @@ class SaveHistoryCallback(EventCallback):
 
     def _on_training_end(self) -> None:
         if self.model.env.final_computation :
+            
+            self.model.env.close()
+            torch.cuda.empty_cache()
             max_len_datadict = max(self.datadict.keys())
             for step in tqdm(range(1,max_len_datadict),desc="computing observation through encoder") :
                 state_at_step = self.datadict[step]['state']
-                state = torch.tensor(state_at_step,device ="cuda",dtype=torch.float)
+                state = state_at_step.cuda(non_blocking=True)
                 out = self.model.policy.extract_features(state)
-                self.datadict[step]['env_encoding'] = out.clone().detach().cpu().numpy()
+                self.datadict[step]['env_encoding'][:] = out.clone().detach().cpu()[:,-5:]
             hkl.dump(self.datadict, self.file)
-            self.file.close()
-        
+            self.file.close()        
 
 
 class StableBaselinesVecEnvAdapter(VecEnv):

@@ -50,17 +50,17 @@ class Adaptation:
                 zt_cap = self.model(data)
                 loss = self.criterion(zt_cap, zt)
 
-                loss.backward()/n
+                loss.backward()
                 self.optimizer.step()
 
-                epoch_loss += loss.item()
+                epoch_loss += loss.item()/n
                 if self.log_writer:
                     try:
                         self.log_writer.add_scalar('phase2/train/loss', epoch_loss, epoch)
                     except AttributeError:
                         self.log_writer.writer.add_scalar('phase2/train/loss', epoch_loss, epoch)
                         self.log_writer.writer.flush()
-
+            print(epoch_loss)
                 # itr_cntr += 1
             # print(epoch_loss)
 
@@ -76,8 +76,8 @@ class Adaptation:
 
 if __name__ == '__main__':
     cfg = get_config('soto_task_rma_conf.yaml')
-    hkl_fpath = '/home/stone/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_5__soto.hkl'
-    tb_logs = '/home/stone/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_5__soto_0'
+    hkl_fpath = '/home/stone/Workspace/RMA_SB_IG/rma_sb_ig/output/PPO_7__soto.hkl'
+    tb_logs = '/home/stone/Workspace/RMA_SB_IG/rma_sb_ig/logs/PPO_7__soto_0'
 
     arch_config = Box(cfg).arch_config
 

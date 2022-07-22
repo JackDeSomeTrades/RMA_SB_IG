@@ -31,9 +31,7 @@ class RMAPhase2Dataset(Dataset):
         df = pd.DataFrame(full_hkl_data_dict)
         df = df.T
         envs = torch.tensor(df['env_encoding'].values)
-        print(type(envs))
         states_actions =  df[['state','actions']].values
-        print(type(states_actions))
         for step in tqdm(range(1, max_len_datadict), desc='Reading state action data:'):
             state_at_step = full_hkl_data_dict[step]['state']
             action_at_step = full_hkl_data_dict[step]['actions']
