@@ -2,13 +2,13 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 1000
+    num_envs: 250
     num_observations: 35
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 8
     env_spacing: 3. 
     send_timeouts: True # send time out information to the algorithm
-    episode_length_s : 7
+    episode_length_s : 20
     # episode length in seconds
   terrain:
     mesh_type: 'none' # "heightfield" # none, plane, heightfield or trimesh
@@ -97,9 +97,9 @@ task_config:
 
   domain_rand:
     randomize_friction : True
-    friction_static_range : [0.7,0.9]
+    friction_static_range : [0.60,0.70]
     randomize_base_mass: True
-    mass_box: [0.5, 3.0]
+    mass_box: [1.5, 5.0]
     length_box : [0.40,0.42]
     width_box : [0.6,0.62]
     height_box : [0.1,0.1]
@@ -129,8 +129,8 @@ task_config:
     soft_dof_pos_limit: 0.9 # percentage of urdf limits, values above this limit are penalized
     scales:
       turn: 10.
-      ecartement: 2.
-      termination: 20.
+      #ecartement: 2.
+      termination: 1
       #distance_min : 0.1
 
 
@@ -168,21 +168,21 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 2000000
+  n_timesteps: 750000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
-    run_name : 'PPO_7__soto'
+    run_name : 'PPO_9__soto_rma'
   ppo:
     n_steps: 25 # TODO: adapt to your setting
-    batch_size: 25000 # TODO: adapt to your setting
+    batch_size: 12500 # TODO: adapt to your setting
 #    n_epochs: 5
     gae_lambda: 0.95
     gamma: 0.99
     n_epochs: 10
     ent_coef: 0.01
     lr: 1e-3
-    clip_range: 0.2
+    clip_range: 0.1
     max_grad_norm: 1.0
     vf_coef: 1.0
     # use_sde: False
@@ -197,7 +197,7 @@ arch_config:
     state_space_size: 22 #intrisic parameters
     env_size: 5 # define the input of rma ->extrinsic
   adaptation:
-    epochs: 200
+    epochs: 500
     optimizer: 'Adam'
-    lr: 0.5e-3
+    lr: 0.5e-4
     loss: 'mse'

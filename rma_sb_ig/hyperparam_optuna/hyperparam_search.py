@@ -9,10 +9,7 @@ src = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT))
 if not (src in sys.path):
     sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from env import create_task
-from rma_sb_ig.utils.stable_baselines import RMASotoTaskVecEnvStableBaseLineGym
-from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, parse_config
-
+from envs import create_task
 import argparse
 import mysql.connector
 import optuna
@@ -25,7 +22,7 @@ from optuna.samplers import TPESampler
 
 from common.utils import save_dict, create_directory, create_agent
 from hyperparam_optuna.hyperparam_sampler import sample_hyperparams
-from train import eval_model
+from train_hyperparameter import eval_model
 
 ERRORS_HYPERPARAM=[RuntimeError]
 ERRORS_HYPERPARAM=tuple(ERRORS_HYPERPARAM)
@@ -171,10 +168,10 @@ def eval_objective(task_name:str, agent:str, path_agent:str, num_episodes:int, p
 
 #%%
 
-NUM_TRIALS=10000
+NUM_TRIALS=100
 NUM_JOBS=1
-NUM_TIMESTEPS=1000000
-NUM_EVAL_EP=30
+NUM_TIMESTEPS=500000
+NUM_EVAL_EP=5
 NUM_TRAININGS=2
 NUM_ENV=256
 NUM_THREADS=4
@@ -184,8 +181,8 @@ GPU=0
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("task", type=str, help="Task Name.", default='soto')
-    parser.add_argument("agent", type=str, help="Agent (SAC, PPO or DDPG).",default='PPO')
+    parser.add_argument("--task", type=str, help="Task Name.", default='soto')
+    parser.add_argument("--agent", type=str, help="Agent (SAC, PPO or DDPG).",default='PPO')
     parser.add_argument("-t", type=int,
                         help="Number of trainings. The default is " + str(NUM_TRAININGS) + ".",
                         default=NUM_TRAININGS)
@@ -214,19 +211,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     torch.cuda.set_device(args.gpu)
     set_start_method('spawn', force=True)
-
-    sotoparser = argparse.ArgumentParser()# -> devient args.config
-    sotoparser.add_argument('--cfg', '-c', type=str, default='soto_task_rma')
-    sotoparser.add_argument('--savedir', '-s', type=str, default='experiments/')
-    sotoparser.add_argument('--dsetsavedir', '-k', type=str, default='output/')
-    sotoparser.add_argument('--phase', '-p', type=str, default='1')
-    sotoparser.add_argument('--run_comment', '-m', type=str, default=None)
-    sotoparser.add_argument('--robot_name', '-r', type=str, default='soto')
-    sotoparser.add_argument('--timestamp', '-t', type=bool, default=False)
-    sotoargs, _ = parser.parse_known_args()
-
-    sotocfg = get_config(f'{sotoargs.cfg}_conf.yaml')
-    vec_env = RMASotoTaskVecEnvStableBaseLineGym(parse_config(sotocfg))
 
 
     study = "study_"+ args.agent+ "_"+args.task.replace("-", "_")

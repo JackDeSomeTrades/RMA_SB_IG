@@ -1,21 +1,13 @@
-import argparse
+from envs import create_task
+
 import os
-from box import Box
-
-from rma_sb_ig.utils.helpers import get_config, get_project_root, get_run_name, parse_config
-from rma_sb_ig.utils.trainers import Adaptation
-from rma_sb_ig.utils.dataloaders import RMAPhase2Dataset, RMAPhase2FastDataset
-from rma_sb_ig.utils import env_gen
-from rma_sb_ig.models import rma
-from rma_sb_ig.utils.stable_baselines import SaveHistoryCallback
-
-from torch.utils.data import DataLoader
 import torch
-from rma_sb_ig.envs import create_task
-
+import argparse
+import numpy as np
 from torch.multiprocessing import Process, set_start_method
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3 import SAC, PPO, DDPG
+
 from common.utils import CloudpickleWrapper
 from common.utils import create_directory
 from common.utils import create_agent, load_hyperparams
@@ -25,11 +17,11 @@ from plot_perf import plot_eval_curve
 
 #%%
 
-NUM_TIMESTEPS=1200000
+NUM_TIMESTEPS=500000
 NUM_TRAININGS=10
-NUM_EVAL_EPISODES=100
-NUM_ENV=4096
-NUM_THREADS=0
+NUM_EVAL_EPISODES=20
+NUM_ENV=100
+NUM_THREADS=4
 NUM_JOBS=1
 GPU=0
 DEVICE=torch.device(torch.cuda.current_device())
@@ -161,22 +153,20 @@ def train_agent(path:str, task_name:str, params_task:dict, hyperparams:dict, par
         _launch_jobs(n_remaining_jobs, n_iter_full_jobs)
     plot_eval_curve(path)
 
+#%%
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("task", type=str, help="Task Name.")
     parser.add_argument("hyperparams", type=str, help="Json file containing hyperparameters.")
-    parser.add_argument("-p", type=str, help="Path where to save logs.", default="logs/")
+    parser.add_argument("-p", type=str, help="Path where to save logs.", default="")
     parser.add_argument("-f", type=int, help="Evaluate the model every f steps.")
     parser.add_argument("-t", type=int,
-                        help="Number of timesteps to train the agent. The default is " + str(NUM_TIMESTEPS) + ".",
-                        default=NUM_TIMESTEPS)
+                        help="Number of timesteps to train the agent. The default is " + str(NUM_TIMESTEPS) + ".", default=NUM_TIMESTEPS)
     parser.add_argument("-n", type=int,
-                        help="Number of trainings to evaluate the agent. The default is " + str(NUM_TRAININGS) + ".",
-                        default=NUM_TRAININGS)
+                        help="Number of trainings to evaluate the agent. The default is "+str(NUM_TRAININGS)+".", default=NUM_TRAININGS)
     parser.add_argument("--eval", type=int,
-                        help="Number of episodes to evaluate the algo. The default is " + str(NUM_EVAL_EPISODES) + ".",
-                        default=NUM_EVAL_EPISODES)
+                        help="Number of episodes to evaluate the algo. The default is " + str(NUM_EVAL_EPISODES) + ".", default=NUM_EVAL_EPISODES)
     parser.add_argument("--num_env", type=int,
                         help="Number of environments per learning. The default is " + str(NUM_ENV) + ".",
                         default=NUM_ENV)
@@ -192,67 +182,18 @@ if __name__ == "__main__":
     parser.add_argument("--gpu", type=int,
                         help="GPU used. The default is " + str(GPU) + ".", default=GPU)
 
-    parser.add_argument('--cfg', '-c', type=str, default='soto_task_rma')
-    parser.add_argument('--savedir', '-s', type=str, default='experiments/')
-    parser.add_argument('--dsetsavedir', '-k', type=str, default='output/')
-    parser.add_argument('--phase', '-p', type=str, default='1')
-    parser.add_argument('--run_comment', '-m', type=str, default=None)
-    parser.add_argument('--robot_name', '-r', type=str, default='soto')
-    parser.add_argument('--timestamp', '-t', type=bool, default=False)
-
     args = parser.parse_args()
     torch.cuda.set_device(args.gpu)
+    #python hyperparam_search.py Ant PPO -n 100 --timesteps 100 --num_env 10 --eval 10 -j 1
 
-    hyperparams = load_hyperparams(path=args.hyperparams, device="cuda" + str(args.gpu))
+    hyperparams=load_hyperparams(path=args.hyperparams, device="cuda"+str(args.gpu))
 
-    path_logs = args.p + args.task + "-" + hyperparams["agent"] + "/"
+    path_logs = args.p + args.task + "-"+hyperparams["agent"]+"/"
     params_learn = dict(total_timesteps=args.t)
     params_callback = dict(freq=args.f, num_eval_episodes=args.eval, save_agent=args.save_agent)
     params_task = dict(num_env=args.num_env, num_threads=args.num_threads)
 
     set_start_method('spawn', force=True)
-    train_agent(path=path_logs, task_name=args.task, params_task=params_task, hyperparams=hyperparams,
-                params_learn=params_learn, params_callback=params_callback,
-                num_training=args.n, num_jobs=args.j, verbose=args.verbose)
-
-    args, _ = parser.parse_known_args()
-
-    cfg = get_config(f'{args.cfg}_conf.yaml')
-    robot_name = args.robot_name
-
-    vec_env = env_gen(robot_name)(parse_config(cfg))
-
-
-    # begin RL here
-    # ----------- Configs -----------------#
-    rl_config = Box(cfg).rl_config  # convert config dict into namespaces
-    arch_config = Box(cfg).arch_config
-    # ----------- Paths -------------------#
-
-    run_name = get_run_name(rl_config, args)
-    model_save_path = os.path.join(os.path.join(os.getcwd(), f'{args.savedir}'), run_name)
-    intermediate_dset_save_path = os.path.join(os.getcwd(), f'{args.dsetsavedir}', run_name)+'.hkl'
-
-    # ----------------- RMA Phase 1 -------------------------------------------- #
-    arch = rma.Architecture(arch_config=arch_config, device=arch_config.device)
-    policy_kwargs = arch.make_architecture()
-
-    model = PPO(arch.policy_class, vec_env,
-                learning_rate=eval(rl_config.ppo.lr), n_steps=rl_config.ppo.n_steps,
-                batch_size=rl_config.ppo.batch_size, n_epochs=rl_config.ppo.n_epochs,
-                gae_lambda=rl_config.ppo.gae_lambda, gamma=rl_config.ppo.gamma,
-                clip_range=rl_config.ppo.clip_range, max_grad_norm=rl_config.ppo.max_grad_norm,
-                ent_coef=rl_config.ppo.ent_coef, vf_coef=rl_config.ppo.vf_coef,
-                # use_sde=rl_config.ppo.use_sde, sde_sample_freq=rl_config.ppo.sde_sample_freq,
-                verbose=1,
-                tensorboard_log=rl_config.logging.dir.format(ROOT_DIR=get_project_root()),
-                policy_kwargs=policy_kwargs)
-
-    model.learn(total_timesteps=rl_config.n_timesteps, reset_num_timesteps=False, tb_log_name=run_name) #, callback=save_history_callback)
-    model.save(path=model_save_path)
-    # need to close the sim env here to release GPU mem for the next phase.
-
-    vec_env.close()
-    torch.cuda.empty_cache()  # to see if everything is released after the first phase.
-
+    train_agent(path=path_logs, task_name=args.task, params_task=params_task, hyperparams=hyperparams, params_learn=params_learn, params_callback=params_callback,
+              num_training=args.n, num_jobs=args.j, verbose=args.verbose)
 

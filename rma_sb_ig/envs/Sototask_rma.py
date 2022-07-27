@@ -39,31 +39,53 @@ class SotoRobotTask(SotoForwardTask):
         self.right_arm_index = self.dof_names.index('gripper_y_right')
         self.left_arm_index = self.dof_names.index('gripper_y_left')
         dist_max = self.upper_bounds_joints[self.right_arm_index] - self.lower_bounds_joints[self.right_arm_index]
-        limits_low = np.array(
-            list(self.lower_bounds_joints) +
-            list(-self.joint_velocity)+    # minimum values of joint velocities
-            [0] +
-            [0]*2+
-            [-1.5] * 2 +
-            [-np.pi]+
-            list(self.lower_bounds_joints) +
-            [self.cfg.domain_rand.friction_static_range[0]]*2 +
-            [self.cfg.domain_rand.mass_box[0]] +
-            [-1.5]*2
-        )
+        
+        if self.compute_rma :
+            limits_low = np.array(
+                list(self.lower_bounds_joints) +
+                list(-self.joint_velocity)+    # minimum values of joint velocities
+                [0] +
+                [0]*2+
+                [-1.5] * 2 +
+                [-np.pi]+
+                list(self.lower_bounds_joints) +
+                [self.cfg.domain_rand.friction_static_range[0]]*2 +
+                [self.cfg.domain_rand.mass_box[0]] +
+                [-1.5]*2
+            )
 
-        limits_high = np.array(
-            list(self.upper_bounds_joints) +
-            list(self.joint_velocity)+    # maximum values of joint velocities# distance max btw 2 conveyors +
-            [dist_max] +
-            [1.5]*2 +
-            [1.5] * 2 +
-            [np.pi] +
-            list(self.upper_bounds_joints) +
-            [self.cfg.domain_rand.friction_static_range[1]]*2 +
-            [self.cfg.domain_rand.mass_box[1]] +
-            [1.5]*2
-        )
+            limits_high = np.array(
+                list(self.upper_bounds_joints) +
+                list(self.joint_velocity)+    # maximum values of joint velocities# distance max btw 2 conveyors +
+                [dist_max] +
+                [1.5]*2 +
+                [1.5] * 2 +
+                [np.pi] +
+                list(self.upper_bounds_joints) +
+                [self.cfg.domain_rand.friction_static_range[1]]*2 +
+                [self.cfg.domain_rand.mass_box[1]] +
+                [1.5]*2
+            )
+        else :
+            limits_low = np.array(
+                list(self.lower_bounds_joints) +
+                list(-self.joint_velocity)+    # minimum values of joint velocities
+                [0] +
+                [0]*2+
+                [-1.5] * 2 +
+                [-np.pi]+
+                list(self.lower_bounds_joints)
+            )
+
+            limits_high = np.array(
+                list(self.upper_bounds_joints) +
+                list(self.joint_velocity)+    # maximum values of joint velocities# distance max btw 2 conveyors +
+                [dist_max] +
+                [1.5]*2 +
+                [1.5] * 2 +
+                [np.pi] +
+                list(self.upper_bounds_joints)
+            )
 
         obs_space = gymspace.Box(limits_low, limits_high, dtype=np.float32)
         return obs_space
@@ -129,8 +151,9 @@ class SotoRobotTask(SotoForwardTask):
         noise_vec[22:30] = noise_scales.action * \
             noise_level * self.obs_scales.action
         noise_vec[30:32] = 0.05 #friction
-        noise_vec[32:33] = 0.3
-        noise_vec[33:35] = 0.05  # Mass and COM and GC
+        if self.compute_rma : 
+            noise_vec[32:33] = 0.3
+            noise_vec[33:35] = 0.05  # Mass and COM and GC
         return noise_vec
 
     def compute_observations(self):
@@ -159,18 +182,24 @@ class SotoRobotTask(SotoForwardTask):
                               self.box_pos[..., :2],
                               self.box_angle.unsqueeze(-1)), dim=-1)
 
-        E_t = torch.cat((
-            self.soto_fric,
-            self.box_fric,
-            self.box_masses.unsqueeze(-1),
-            self.box_com_x.unsqueeze(-1),
-            self.box_com_y.unsqueeze(-1)
-        ), dim=-1)
+        if self.compute_rma :
+            E_t = torch.cat((
+                self.soto_fric,
+                self.box_fric,
+                self.box_masses.unsqueeze(-1),
+                self.box_com_x.unsqueeze(-1),
+                self.box_com_y.unsqueeze(-1)
+            ), dim=-1)
 
-        self.obs_buf = torch.cat((self.X_t,
-                                  self.last_actions,
-                                  E_t), dim=-1)
-        # add noise if needed
+
+            self.obs_buf = torch.cat((self.X_t,
+                                    self.last_actions,
+                                    E_t), dim=-1)
+        else : 
+            self.obs_buf = torch.cat((self.X_t,
+                                    self.last_actions), dim=-1)
+
+            # add noise if needed
         noise = self._get_noise_scale_vec(self.cfg)
         if self.add_noise:
             self.obs_buf += (2 * torch.rand_like(self.obs_buf) -1) * noise

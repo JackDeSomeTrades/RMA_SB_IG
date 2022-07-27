@@ -20,6 +20,8 @@ class BaseTask(ABC, gym.Env):
             warnings.warn("Warning : cpu is used")
         num_envs = cfg.env.num_envs
         self.num_obs = cfg.env.num_observations
+        if not self.compute_rma :
+            self.num_obs -= 5
         if type(cfg.env.num_privileged_obs) == str:
             cfg.env.num_privileged_obs = eval(cfg.env.num_privileged_obs)
         self.num_privileged_obs = cfg.env.num_privileged_obs

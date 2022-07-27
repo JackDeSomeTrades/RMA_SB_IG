@@ -119,6 +119,7 @@ def get_args():
         {"name": "--horovod", "action": "store_true", "default": False, "help": "Use horovod for multi-gpu training"},
         {"name": "--rl_device", "type": str, "default": "cuda:0", "help": 'Device used by the RL algorithm, (cpu, gpu, cuda:0, cuda:1 etc..)'},
         {"name": "--max_iterations", "type": int, "help": "Maximum number of training iterations. Overrides config file if provided."},
+        {"name": "--avoid_rma", "action": "store_true", "default": False, "help": "use or not the rma module"}
     ]
     # parse arguments
     args = parse_arguments(

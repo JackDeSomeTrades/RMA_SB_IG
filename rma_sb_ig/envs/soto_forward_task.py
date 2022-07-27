@@ -18,7 +18,8 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         config = args[0][0]
         sim_params = args[0][1]
         args = args[0][2]
-
+        self.compute_rma = not args.avoid_rma
+        print("rma is computed : ",  self.compute_rma)
         self.height_samples = None
         self.debug_viz = False
         self.init_done = False
@@ -386,7 +387,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
         """ Reset all robots"""
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
 
-        obs, rews, dones, infos = self.step(
+        obs, _, _, _ = self.step(
             torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
 
         # because SB3 cannot take as input tensors - observation (torch.Tensor) needs to be converted into (np.ndarray)

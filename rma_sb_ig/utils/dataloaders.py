@@ -101,6 +101,3 @@ if __name__ == '__main__':
         label = label.squeeze()
         data = data.squeeze()
         pass
-
-
-

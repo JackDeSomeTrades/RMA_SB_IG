@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser.add_argument('--run_comment', '-m', type=str, default=None)
     parser.add_argument('--robot_name', '-r', type=str, default='soto')
     parser.add_argument('--timestamp', '-t', type=bool, default=False)
-    parser.add_argument('--n_times', '-n', type=int, default=4)
+    parser.add_argument('--n_times', '-n', type=int, default=6)
     args, _ = parser.parse_known_args()
 
     cfg = get_config(f'{args.cfg}_conf.yaml')
@@ -32,14 +32,14 @@ if __name__ == "__main__":
     parsed_cfg = parse_config(cfg)
     vec_env = env_gen(robot_name)(parsed_cfg)
 
-
+    compute_rma = vec_env.compute_rma
     # begin RL here
     # ----------- Configs -----------------#
     rl_config = Box(cfg).rl_config  # convert config dict into namespaces
     arch_config = Box(cfg).arch_config
 
     # ----------- Paths -------------------#
-
+    
     run_name = get_run_name(rl_config, args)
     model_save_path = os.path.join(os.path.join(os.getcwd(), f'{args.savedir}'), run_name)
     intermediate_dset_save_path = os.path.join(os.getcwd(), f'{args.dsetsavedir}', run_name)+'.hkl'
@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     if args.phase == '1' or args.phase == None:
         # ----------------- RMA Phase 1 -------------------------------------------- #
-        arch = rma.Architecture(arch_config=arch_config, device=arch_config.device)
+        arch = rma.Architecture(arch_config=arch_config, device=arch_config.device,encoder=compute_rma)
         policy_kwargs = arch.make_architecture()
 
         model = PPO(arch.policy_class, vec_env,

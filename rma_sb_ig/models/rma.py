@@ -98,29 +98,35 @@ class Phase2Net(nn.Module):
 
 
 class Architecture():
-    def __init__(self, arch_config, device='cpu', savefile=None):
+    def __init__(self, arch_config, device='cpu', savefile=None, encoder=True):
         self.device = device
         self.savefile = savefile
         self.arch_config = arch_config
-
-        self.features_encoder_arch = EnvironmentEncoder
-        self.features_dim_encoder = self.arch_config.encoder.encoded_extrinsic_size + self.arch_config.encoder.action_space_size + self.arch_config.encoder.state_space_size
+        self.encoder = encoder
+        if self.encoder :
+            self.features_encoder_arch = EnvironmentEncoder
+            self.features_dim_encoder = self.arch_config.encoder.encoded_extrinsic_size + self.arch_config.encoder.action_space_size + self.arch_config.encoder.state_space_size
 
         self.policy_class = "MlpPolicy"
         self.policy_arch = [dict(pi=[256, 256], vf=[256, 256])]
         self.policy_activation_fn = nn.ELU
 
     def make_architecture(self):
-        return dict(
-            features_extractor_class=EnvironmentEncoder,
-            features_extractor_kwargs=dict(features_dim=self.features_dim_encoder, save_intermediate=True,
-                                           device=self.device, save_dict=self.savefile, arch_config=self.arch_config),
-            activation_fn=self.policy_activation_fn,
-            net_arch=self.policy_arch)
+        if self.encoder :
+            return dict(
+                features_extractor_class=EnvironmentEncoder,
+                features_extractor_kwargs=dict(features_dim=self.features_dim_encoder, save_intermediate=True,
+                                            device=self.device, save_dict=self.savefile, arch_config=self.arch_config),
+                activation_fn=self.policy_activation_fn,
+                net_arch=self.policy_arch)
+        else : 
+            return dict(
+                activation_fn=self.policy_activation_fn,
+                net_arch=self.policy_arch)
 
 
 def test_net():
-    cfg = 'a1_task_rma_conf.yaml'
+    cfg = 'soto_conf.yaml'
     cfg = get_config(cfg)
     arch_cfg = Box(cfg).arch_config
     net = RMAPhase2(arch_config=arch_cfg)

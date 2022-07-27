@@ -1,5 +1,5 @@
 import os
-from rma_sb_ig.envs.base_task import BaseTask
+#from rma_sb_ig.envs.base_task import BaseTask
 import importlib
 
 
@@ -13,8 +13,8 @@ def register(name:str):
     def register_function_fn(cls:type):
         if name in __MODEL_DICT__:
             raise ValueError(f"Name {name} already registered!")
-        if not issubclass(cls, BaseTask):
-            raise ValueError(f"Class {cls} is not a subclass of {BaseTask}")
+        # if not issubclass(cls, BaseTask):
+        #     raise ValueError(f"Class {cls} is not a subclass of {BaseTask}")
         __MODEL_DICT__[name] = cls
         return cls
 

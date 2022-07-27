@@ -19,9 +19,8 @@ class SotoEnvScene:
         self.physics_engine = physics_engine
         self.sim_device = sim_device
         sim_device_type, self.sim_device_id = gymutil.parse_device_str(self.sim_device)
-        self.headless = True
         self.num_envs = cfg.env.num_envs
-
+        self.headless = True
         if sim_device_type == 'cuda' and sim_params.use_gpu_pipeline:
             self.device = self.sim_device
         else:
