@@ -46,9 +46,8 @@ class Sampler:
         hyperparam_range = dict(categorical=hyperparams_categorical,
                                 loguniform=hyperparams_loguniform,
                                 uniform=hyperparams_uniform)
-        policy_kwargs = dict(net_arch=[400, 300], activation_fn=activation_fn, ortho_init=False)
+        #policy_kwargs = dict(net_arch=[400, 300], activation_fn=activation_fn, ortho_init=False)
         default_hyperparams = dict(policy='MlpPolicy',
-                                   policy_kwargs=policy_kwargs,
                                    device=self.device)
         return default_hyperparams, hyperparam_range
 

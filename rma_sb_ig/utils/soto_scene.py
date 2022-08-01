@@ -308,9 +308,10 @@ class SotoEnvScene:
             rng = self.cfg.domain_rand.mass_box
             props[0].mass = np.random.uniform(rng[0], rng[1])
         if self.cfg.domain_rand.randomize_com:
-            rng_2 = self.cfg.domain_rand.com_distribution_range
+            rng_2 = self.cfg.domain_rand.com_x_distribution_range
+            rng_3 = self.cfg.domain_rand.com_y_distribution_range
             props[0].com.x += np.random.uniform(rng_2[0], rng_2[1])
-            props[0].com.y += np.random.uniform(rng_2[0], rng_2[1])
+            props[0].com.y += np.random.uniform(rng_3[0], rng_3[1])
         self.box_masses.append(props[0].mass)
         self.box_com_x.append(props[0].com.x)
         self.box_com_y.append(props[0].com.y)

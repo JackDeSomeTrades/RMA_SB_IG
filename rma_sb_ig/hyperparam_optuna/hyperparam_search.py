@@ -129,6 +129,7 @@ class Hyperparam_Searcher:
                                 device=self._params_task["device"],
                                 display=False)
                 kwargs["env"] = env
+                kwargs["verbose"] = 1
                 agent=create_agent(hyperparams=kwargs)
                 agent.learn(total_timesteps=self._num_timesteps)
                 path_agent=self._storage_logs + str(trial.number)+".pt"
@@ -145,8 +146,11 @@ class Hyperparam_Searcher:
             objective = WORST_REWARD
             del agent
         if self._save_logs:
+            print(self._storage_logs)
+            print(trial.number)
             logs['trial']=trial.number
             logs["objective"]=objective
+            del logs["policy_kwargs"]
             save_dict(filename=self._storage_logs + str(trial.number) + ".json", data=logs)
         return objective
 
