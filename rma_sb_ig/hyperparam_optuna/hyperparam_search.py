@@ -168,12 +168,12 @@ def eval_objective(task_name:str, agent:str, path_agent:str, num_episodes:int, p
 
 #%%
 
-NUM_TRIALS=100
-NUM_JOBS=1
+NUM_TRIALS=1000
+NUM_JOBS=4
 NUM_TIMESTEPS=500000
-NUM_EVAL_EP=5
-NUM_TRAININGS=2
-NUM_ENV=256
+NUM_EVAL_EP=100
+NUM_TRAININGS=1
+NUM_ENV=100
 NUM_THREADS=4
 GPU=0
 

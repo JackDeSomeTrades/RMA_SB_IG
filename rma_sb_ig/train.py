@@ -24,13 +24,13 @@ if __name__ == "__main__":
     parser.add_argument('--run_comment', '-m', type=str, default=None)
     parser.add_argument('--robot_name', '-r', type=str, default='soto')
     parser.add_argument('--timestamp', '-t', type=bool, default=False)
-    parser.add_argument('--n_times', '-n', type=int, default=6)
+    parser.add_argument('--n_times', '-n', type=int, default=1)
     args, _ = parser.parse_known_args()
 
     cfg = get_config(f'{args.cfg}_conf.yaml')
     robot_name = args.robot_name
     parsed_cfg = parse_config(cfg)
-    vec_env = env_gen(robot_name)(parsed_cfg)
+    vec_env = env_gen(robot_name)(parsed_cfg,final_computation = args.n_times==1)
 
     compute_rma = vec_env.compute_rma
     # begin RL here

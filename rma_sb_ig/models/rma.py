@@ -108,7 +108,7 @@ class Architecture():
             self.features_dim_encoder = self.arch_config.encoder.encoded_extrinsic_size + self.arch_config.encoder.action_space_size + self.arch_config.encoder.state_space_size
 
         self.policy_class = "MlpPolicy"
-        self.policy_arch = [dict(pi=[256, 256], vf=[256, 256])]
+        self.policy_arch = [dict(pi=[400, 300], vf=[400, 300])]
         self.policy_activation_fn = nn.ELU
 
     def make_architecture(self):
