@@ -2,7 +2,9 @@
 
 import sys
 import os
-
+from rma_sb_ig.models import rma
+from rma_sb_ig.utils.helpers import get_config
+from box import Box
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 src = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT))
@@ -26,7 +28,7 @@ from train_hyperparameter import eval_model
 
 ERRORS_HYPERPARAM=[RuntimeError]
 ERRORS_HYPERPARAM=tuple(ERRORS_HYPERPARAM)
-WORST_REWARD=-100000
+WORST_REWARD=0
 
 #%%
 
@@ -97,9 +99,14 @@ class Hyperparam_Searcher:
 
     def get_hyperparams(self, hyperparams_optuna:dict):
         kwargs = self._default_hyperparams.copy()
-        if "log_std_init" in hyperparams_optuna.keys():
-            kwargs["policy_kwargs"]["log_std_init"]=hyperparams_optuna["log_std_init"]
-            del hyperparams_optuna["log_std_init"]
+        cfg = get_config('soto_task_rma_conf.yaml')
+        arch_config = Box(cfg).arch_config
+        arch = rma.Architecture(arch_config=arch_config, device=arch_config.device,encoder=True)
+        policy_kwargs = arch.make_architecture()
+        # if "log_std_init" in hyperparams_optuna.keys():
+        #     kwargs["policy_kwargs"]["log_std_init"]=hyperparams_optuna["log_std_init"]
+        #     del hyperparams_optuna["log_std_init"]
+        kwargs["policy_kwargs"] = policy_kwargs
         kwargs.update(hyperparams_optuna)
         if self._default_hyperparams["agent"]=="SAC":
             kwargs["gradient_steps"]=kwargs["train_freq"]
@@ -169,11 +176,11 @@ def eval_objective(task_name:str, agent:str, path_agent:str, num_episodes:int, p
 #%%
 
 NUM_TRIALS=1000
-NUM_JOBS=4
+NUM_JOBS=1
 NUM_TIMESTEPS=500000
-NUM_EVAL_EP=100
+NUM_EVAL_EP=128
 NUM_TRAININGS=1
-NUM_ENV=100
+NUM_ENV=128
 NUM_THREADS=4
 GPU=0
 

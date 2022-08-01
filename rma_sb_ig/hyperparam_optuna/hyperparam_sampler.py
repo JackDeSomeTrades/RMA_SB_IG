@@ -36,7 +36,7 @@ class Sampler:
         activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU, "elu": nn.ELU, "leaky_relu": nn.LeakyReLU}["relu"]
         hyperparams_categorical = dict(n_steps=[8, 16, 32, 64, 128, 256, 512, 1024, 2048],
                                     gamma=[0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999],
-                                    batch_size=[8, 16, 32, 64, 128, 256, 512],
+                                    batch_size=[128, 256, 512,1024,2048,4096,8192],
                                     clip_range=[0.1, 0.2, 0.3, 0.4],
                                     n_epochs=[1, 5, 10, 20],
                                     gae_lambda=[0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0],

@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 100
+    num_envs: 128
     num_observations: 35
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 8
