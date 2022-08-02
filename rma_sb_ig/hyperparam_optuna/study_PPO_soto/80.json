@@ -1,0 +1,16 @@
+{
+    "agent": "PPO", 
+    "batch_size": 8192, 
+    "clip_range": 0.4, 
+    "ent_coef": 0.006327158851066823, 
+    "gae_lambda": 1.0, 
+    "gamma": 0.95, 
+    "learning_rate": 2.8870704859211105e-06, 
+    "max_grad_norm": 0.6, 
+    "n_epochs": 20, 
+    "n_steps": 8, 
+    "objective": 1524.9463653080165, 
+    "policy": "MlpPolicy", 
+    "trial": 80, 
+    "vf_coef": 0.10950733043676843
+}

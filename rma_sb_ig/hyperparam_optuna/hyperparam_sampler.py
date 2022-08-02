@@ -10,7 +10,7 @@ class Sampler:
     def sample(self):
         return dict(SAC=self.sample_sac_params, PPO=self.sample_ppo_params)[self.agent]()
 
-    def sample_sac_params(self) -> (dict, dict):
+    def sample_sac_params(self) :
         activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU, "elu": nn.ELU, "leaky_relu": nn.LeakyReLU}["relu"]
         hyperparams_categorical = dict(gamma=[0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999],
                                     batch_size=[16, 32, 64, 128, 256, 512],
@@ -32,11 +32,11 @@ class Sampler:
                                    device=self.device)
         return default_hyperparams, hyperparam_range
 
-    def sample_ppo_params(self) -> (dict, dict):
+    def sample_ppo_params(self):
         activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU, "elu": nn.ELU, "leaky_relu": nn.LeakyReLU}["relu"]
         hyperparams_categorical = dict(n_steps=[8, 16, 32, 64, 128, 256, 512, 1024, 2048],
                                     gamma=[0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999],
-                                    batch_size=[128, 256, 512,1024,2048,4096,8192],
+                                    batch_size=[1024,2048,4096,8192,16384,32768],
                                     clip_range=[0.1, 0.2, 0.3, 0.4],
                                     n_epochs=[1, 5, 10, 20],
                                     gae_lambda=[0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0],
@@ -56,7 +56,7 @@ class Sampler:
 
 #%%
 
-def sample_hyperparams(agent:str,  device:str="cuda:0")->(dict, dict):
+def sample_hyperparams(agent:str,  device:str="cuda:0"):
     sampler=Sampler(agent=agent, device=device)
     default_hyperparams, hyperparam_range=sampler.sample()
     return default_hyperparams, hyperparam_range

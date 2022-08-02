@@ -348,13 +348,13 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         self.reset_buf = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1.,dim = 1)
         d = self.box_dim[:,0]*torch.sin(self.angle_error) + self.box_dim[:,1]*torch.cos(self.angle_error)
-        self.test_pos = torch.logical_and(self.distance_sensors[:,0] > 0.8, self.distance_sensors[:,1] > 0.8)
+        self.test_pos = torch.logical_and(self.distance_sensors[:,0]+d > 1.3, self.distance_sensors[:,1]+d > 1.3)
 
         self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
 
         self.reset_buf |= self.time_out_buf
         self.reset_buf |= self.test_pos
-        self.reset_buf |= self.env_done
+        #self.reset_buf |= self.env_done
 
 
     def _prepare_reward_function(self):

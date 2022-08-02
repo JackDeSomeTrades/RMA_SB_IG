@@ -8,7 +8,7 @@ task_config:
     num_actions: 8
     env_spacing: 3. 
     send_timeouts: True # send time out information to the algorithm
-    episode_length_s : 5
+    episode_length_s : 15
     # episode length in seconds
   terrain:
     mesh_type: 'none' # "heightfield" # none, plane, heightfield or trimesh
@@ -131,8 +131,8 @@ task_config:
     soft_dof_pos_limit: 0.9 # percentage of urdf limits, values above this limit are penalized
     scales:
       turn: 10.
-      ecartement: 5.
-      termination: 1
+      #ecartement: 5.
+      termination: 3
       #distance_min : 0.1
 
 
