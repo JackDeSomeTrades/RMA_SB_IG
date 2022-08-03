@@ -1,33 +1,8 @@
 <robot name="soto_2_1">
 	<link name="base_footprint"/>
-	<link name="base_link">
-		<inertial>
-		<origin rpy="0 0 0" xyz="0.01 -0.01 0.02" />
-		<mass value="167.45" />
-		<inertia ixx="18.33" ixy="-6.02" ixz="1.41" iyy="88.5" iyz="-0.08" izz="104.26" />
-		</inertial>
-		<visual>
-		<geometry>
-			<mesh filename="package://soto_drive_base_2_1_description/meshes/base_link.STL" />
-		</geometry>
-		<material name="">
-			<color rgba="0.52941 0.54902 0.54902 1" />
-		</material>
-		</visual>
-		<collision>
-		<geometry>
-			<mesh filename="package://soto_drive_base_2_1_description/meshes/base_link_col.STL" />
-		</geometry>
-		</collision>
-	</link>
-	<joint name="base_footprint_to_base" type="fixed">
-		<origin rpy="0 0 0" xyz="0 0 0.1665" />
-		<parent link="base_footprint" />
-		<child link="base_link" />
-	</joint>
 	<joint name="base_to_manipulator_base" type="fixed">
-		<origin rpy="0 0 0" xyz="0.33418 0 -0.02188" />
-		<parent link="base_link" />
+		<origin rpy="0 0 0" xyz="0.33418 0 0.0" />
+		<parent link="base_footprint" />
 		<child link="manipulator_base_link" />
 	</joint>
 	<link name="manipulator_base_link">
@@ -44,11 +19,11 @@
 			<color rgba="0.89804 0.91765 0.92941 1" />
 		</material>
 		</visual>
-		<collision>
+		<!-- <collision>
 		<geometry>
 			<mesh filename="package://soto_vertical_axis_2_1_description/meshes/manipulator_base_link_col.STL" />
 		</geometry>
-		</collision>
+		</collision> -->
 	</link>
 	<link name="vertical_axis_link">
 		<inertial>
@@ -178,11 +153,11 @@
 			<color rgba="0.75294 0.75294 0.75294 1" />
 		</material>
 		</visual>
-		<collision>
+		<!-- <collision>
 		<geometry>
 			<mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/gripper_y_right_link_with_belt_col.STL" />
 		</geometry>
-		</collision>
+		</collision> -->
 	</link>
 	<joint name="gripper_y_right" type="prismatic">
 		<origin rpy="0 0 0" xyz="-0.337 -0.325 0.12155" />
@@ -232,11 +207,11 @@
 			<color rgba="0.75294 0.75294 0.75294 1" />
 		</material>
 		</visual>
-		<collision>
+		<!-- <collision>
 		<geometry>
 			<mesh filename="package://soto_conveyor_gripper_1_2_description/meshes/gripper_y_left_link_with_belt_col.STL" />
 		</geometry>
-		</collision>
+		</collision> -->
 	</link>
 	<joint name="gripper_y_left" type="prismatic">
 		<origin rpy="0 0 0" xyz="-0.337 0.325 0.12155" />
@@ -428,13 +403,13 @@
 	<link name="left_conveyor_belt">
 		<visual>
 			<geometry>
-				<box size = "5.0 0.05 0.01"/>
+				<box size = "5.0 0.03 0.01"/>
 			</geometry>
 			<material name="black"/>
 		</visual>
 		<collision>
 			<geometry>
-				<box size = "5.0 0.05 0.01"/>
+				<box size = "5.0 0.03 0.01"/>
 			</geometry>
 		</collision>
 		<inertial>
@@ -455,13 +430,13 @@
 	<link name="right_conveyor_belt">
 		<visual>
 			<geometry>
-				<box size = "5.0 0.05 0.01"/>
+				<box size = "5.0 0.03 0.01"/>
 			</geometry>
 			<material name="black"/>
 		</visual>
 		<collision>
 			<geometry>
-				<box size = "5.0 0.05 0.01"/>
+				<box size = "5.0 0.03 0.01"/>
 			</geometry>
 		</collision>
 		<inertial>

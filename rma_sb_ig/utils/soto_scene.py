@@ -1,5 +1,5 @@
 from logging import warning
-from isaacgym import gymapi
+from isaacgym import gymapi,gymtorch
 import torch
 from rma_sb_ig.utils.terrain import Terrain
 import os
@@ -11,6 +11,7 @@ from isaacgym import gymutil
 from isaacgym.torch_utils import *
 import math
 
+
 class SotoEnvScene:
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
         self.gym = gymapi.acquire_gym()
@@ -20,7 +21,7 @@ class SotoEnvScene:
         self.sim_device = sim_device
         sim_device_type, self.sim_device_id = gymutil.parse_device_str(self.sim_device)
         self.num_envs = cfg.env.num_envs
-        self.headless = True
+        self.headless = headless
         if sim_device_type == 'cuda' and sim_params.use_gpu_pipeline:
             self.device = self.sim_device
         else:
@@ -74,7 +75,6 @@ class SotoEnvScene:
                     sys.exit()
                 elif evt.action == "toggle_viewer_sync" and evt.value > 0:
                     self.enable_viewer_sync = not self.enable_viewer_sync
-
             # fetch results
             if self.device != 'cpu':
                 self.gym.fetch_results(self.sim, True)
@@ -114,12 +114,12 @@ class SotoEnvScene:
             raise Exception("This robot can only be used with PhysX")
 
     def _get_soto_asset_option(self,asset_options):
-        asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
+        #asset_options.replace_cylinder_with_capsule = self.cfg.asset.replace_cylinder_with_capsule
         asset_options.default_dof_drive_mode = self.cfg.asset.default_dof_drive_mode
         asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints
         asset_options.disable_gravity = self.cfg.asset.disable_gravity
         asset_options.override_com = self.cfg.asset.override_com
-        asset_options.vhacd_enabled = True
+        #asset_options.vhacd_enabled = True
         asset_options.override_inertia = self.cfg.asset.override_inertia
         asset_options.fix_base_link = self.cfg.asset.fix_base_link
         asset_options.angular_damping = self.cfg.asset.angular_damping
@@ -206,17 +206,17 @@ class SotoEnvScene:
 
             body_states = self.gym.get_actor_rigid_body_states(env, soto_handle, gymapi.DOMAIN_ENV)
             box_pose = self._process_box_pos(box_pose,default_dof_state,body_states,i)
-            self.box_handle = self.gym.create_actor(env, self.l_boxes_asset[i], box_pose, "box", i, 0, 1)
-            self.gym.set_rigid_body_color(env, self.box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
-            box_shape_props = self.gym.get_actor_rigid_shape_properties(env, self.box_handle)
+            box_handle = self.gym.create_actor(env, self.l_boxes_asset[i], box_pose, "box", i, 0, 1)
+            self.gym.set_rigid_body_color(env, box_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color)
+            box_shape_props = self.gym.get_actor_rigid_shape_properties(env, box_handle)
             box_shape_props = self._process_rigid_properties(box_shape_props, "box")
-            self.gym.set_actor_rigid_shape_properties(env, self.box_handle, box_shape_props)
-            box_properties = self.gym.get_actor_rigid_body_properties(env, self.box_handle)
+            self.gym.set_actor_rigid_shape_properties(env, box_handle, box_shape_props)
+            box_properties = self.gym.get_actor_rigid_body_properties(env, box_handle)
             box_properties = self._process_box_props(box_properties)
-            self.gym.set_actor_rigid_body_properties(env, self.box_handle, box_properties)
+            self.gym.set_actor_rigid_body_properties(env, box_handle, box_properties)
 
             self.actor_handles.append(soto_handle)
-            self.box_handles.append(self.box_handle)
+            self.box_handles.append(box_handle)
             self.envs.append(env)
 
         self.box_masses = torch.cuda.FloatTensor(self.box_masses)

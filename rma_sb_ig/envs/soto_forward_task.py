@@ -354,7 +354,7 @@ class SotoForwardTask(SotoEnvScene, BaseTask):
 
         self.reset_buf |= self.time_out_buf
         self.reset_buf |= self.test_pos
-        #self.reset_buf |= self.env_done
+        self.reset_buf |= self.env_done
 
 
     def _prepare_reward_function(self):

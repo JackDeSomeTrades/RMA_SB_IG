@@ -2,7 +2,7 @@ task_config:
   seed: 43
 
   env:
-    num_envs: 128
+    num_envs: 256
     num_observations: 35
     num_privileged_obs: None # if not None a privilege_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
     num_actions: 8
@@ -45,7 +45,7 @@ task_config:
     name: "soto_gripper" #actor name
     foot_name: "conveyor_belt" # name of the feet bodies, used to index body state and contact force tensors
     penalize_contacts_on: [] # important to provide the sidebar links all around the end effector
-    terminate_after_contacts_on: ["base_footprint", "gripper_base_x_link", "gripper_base_link","vertical_axis_link"]
+    terminate_after_contacts_on: [ "gripper_base_x_link", "gripper_base_link","vertical_axis_link"]
     self_collisions: 0  # 1 to disable, 0 to enable...bitwise filter
     disable_gravity: True
     collapse_fixed_joints: True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
@@ -60,8 +60,8 @@ task_config:
     linear_damping: 0.
     max_angular_velocity: 1000.
     max_linear_velocity: 1000.
-    armature: 0.
-    thickness: 0.01
+    armature: 0.01
+    thickness: 0.0
 
 
   distance_sensor :
@@ -76,8 +76,8 @@ task_config:
   control:
     # PD Drive parameters:
     control_type: 'P' # P: position, V: velocity, T: torques
-    stiffness: { 'joint': 20., 'conveyor_left_to_belt' : 10}  # [N/m]
-    damping: { 'joint': 1.0,'conveyor_left_to_belt' : 1.0}  # [N*m*s/rad]
+    stiffness: { 'joint': 900., 'conveyor_left_to_belt' : 900}  # [N/m]
+    damping: { 'joint': 50,'conveyor_left_to_belt' : 50}  # [N*m*s/rad]
     # action scale: target angle: actionScale * action + defaultAngle
     action_scale: 1.0
     # decimation: Number of control action updates @ sim DT per policy DT
@@ -98,11 +98,11 @@ task_config:
 
   domain_rand:
     randomize_friction : True
-    friction_static_range : [0.60,0.70]
+    friction_static_range : [0.6,1.0]
     randomize_base_mass: True
-    mass_box: [1.5, 5.0]
-    length_box : [0.40,0.42]
-    width_box : [0.6,0.62]
+    mass_box: [1.0, 7.0]
+    length_box : [0.4,0.4]
+    width_box : [0.6,0.6]
     height_box : [0.1,0.1]
     randomize_com : True
     com_x_distribution_range : [-0.15,0.15]
@@ -150,17 +150,17 @@ task_config:
        motor_strength: 0.01
 
   sim_param:
-    dt: 0.01
+    dt: 0.005
     substeps: 2
     gravity: [ 0., 0. ,-9.81 ]  # [m/s^2]
     up_axis: 1  # 0 is y, 1 is z
     use_gpu: True
     physx:
-      num_threads: 0
+      num_threads: 4
       solver_type: 0  # 0: pgs, 1: tgs
       num_position_iterations: 4
       num_velocity_iterations: 0
-      bounce_threshold_velocity: 0.5 #0.5 [m/s]
+      bounce_threshold_velocity: 0.8 #0.5 [m/s]
       max_depenetration_velocity: 100
       max_gpu_contact_pairs : 2**22
       contact_collection: 1 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
@@ -170,23 +170,23 @@ rl_config:
   device: 'cuda:0'
 #  batchsize_p1: 80000
   num_iterations_p1: 15000
-  n_timesteps: 750000
+  n_timesteps: 5000000
   normalize: True
   logging:
     dir: '{ROOT_DIR}/logs/'
-    #run_name : 'PPO_9__soto_rma'
+    run_name : 'PPO_4__soto'
   ppo:
-    n_steps: 32 # TODO: adapt to your setting
-    batch_size: 12500 # TODO: adapt to your setting
+    n_steps: 64 # TODO: adapt to your setting
+    batch_size: 2048 # TODO: adapt to your setting
 #    n_epochs: 5
-    gae_lambda: 0.92
-    gamma: 0.99
-    n_epochs: 5
-    ent_coef: 0.000000031753970770125596
-    lr: '0.00019931117936082058'
-    clip_range: 0.4
-    max_grad_norm: 0.3
-    vf_coef: 0.6214407547545151
+    gae_lambda: 0.9
+    gamma: 0.98
+    n_epochs: 20
+    ent_coef: 1.9662694115350997e-05
+    lr: '0.0004252346765827695'
+    clip_range: 0.1
+    max_grad_norm: 0.8
+    vf_coef: 0.40316708303145615
     # use_sde: False
     # sde_sample_freq: 4
 
